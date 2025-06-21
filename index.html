@@ -23,6 +23,7 @@
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
             #print-area { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+            .no-print { display: none !important; }
         }
     </style>
 </head>
@@ -165,7 +166,10 @@
             <!-- Tab 3: Dashboard -->
             <div id="tab-dashboard" class="tab-content">
                 <section id="dashboard" class="bg-white p-6 rounded-xl shadow-md">
-                    <h2 class="text-2xl font-bold mb-2 border-b pb-3 text-stone-800">3. สรุปภาพรวม</h2>
+                    <div class="flex justify-between items-center mb-2 border-b pb-3">
+                        <h2 class="text-2xl font-bold text-stone-800">3. สรุปภาพรวม</h2>
+                        <button id="print-dashboard-btn" class="bg-sky-600 text-white font-bold py-1 px-3 rounded-lg shadow-md hover:bg-sky-700 no-print">🖨️ พิมพ์</button>
+                    </div>
                     <p class="text-sm text-stone-500 mt-2 mb-4">แดชบอร์ดนี้จะสรุปข้อมูลการขายทั้งหมดในรูปแบบกราฟ ช่วยให้เห็นภาพรวมและแนวโน้มต่างๆ ได้อย่างรวดเร็ว โดยข้อมูลจะอัปเดตอัตโนมัติทุกครั้งที่มีการบันทึก</p>
                     <div class="space-y-8">
                         <div class="border-b pb-4 mb-4">
@@ -221,7 +225,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, where, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
         
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'cup-rubber-sales-app';
@@ -254,6 +259,8 @@
             printArea: document.getElementById('print-area'),
             reportDateInput: document.getElementById('report-date'),
             printReportBtn: document.getElementById('print-report-btn'),
+            printDashboardBtn: document.getElementById('print-dashboard-btn'),
+            dashboardSection: document.getElementById('dashboard'),
             modal: document.getElementById('modal'),
             modalTitle: document.getElementById('modal-title'),
             modalMessage: document.getElementById('modal-message'),
@@ -590,9 +597,9 @@
                             <tr class="border-b border-black">
                                 <th class="px-2 py-2 border-r border-black">ลำดับที่</th>
                                 <th class="px-2 py-2 border-r border-black">ชื่อ</th>
-                                <th class="px-2 py-2 border-r border-black">น้ำหนัก(กก.)</th>
-                                <th class="px-2 py-2 border-r border-black">ราคา(บาท)</th>
-                                <th class="px-2 py-2 border-r border-black">ยอดรวม(บาท)</th>
+                                <th class="px-2 py-2 border-r border-black">น้ำหนัก</th>
+                                <th class="px-2 py-2 border-r border-black">ราคา</th>
+                                <th class="px-2 py-2 border-r border-black">ยอดรวม</th>
                                 <th class="px-2 py-2 border-r border-black">ตาชั่งที่</th>
                                 <th class="px-2 py-2">ลายเซ็น</th>
                             </tr>
@@ -622,6 +629,7 @@
         }
 
         async function handleSave() {
+            if (!salesCollectionRef) return showAlert('ยังไม่พร้อมใช้งาน กรุณารอสักครู่');
             const seller = ui.sellerNameInput.value.trim();
             const date = ui.receiptDateInput.valueAsDate;
             const scaleNumber = ui.scaleNumberInput.value;
@@ -639,7 +647,7 @@
 
             try {
                 if (editingId) {
-                    const docRef = doc(db, "sales", editingId);
+                    const docRef = doc(db, salesCollectionRef.path, editingId);
                     const dataToUpdate = { ...saleData };
                     const originalDoc = localSalesData.find(s => s.id === editingId);
                     if (originalDoc && originalDoc.receiptId) {
@@ -681,7 +689,7 @@
             if (target.classList.contains('delete-btn')) {
                 showConfirm('คุณแน่ใจว่าต้องการลบรายการนี้?', async () => {
                     try {
-                        await deleteDoc(doc(db, "sales", id));
+                        await deleteDoc(doc(db, salesCollectionRef.path, id));
                         showAlert('ลบรายการสำเร็จ');
                     } catch (error) {
                          console.error("Error deleting document: ", error);
@@ -1003,8 +1011,8 @@
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         userId = user.uid;
-                        salesCollectionRef = collection(db, `artifacts/${appId}/public/data/sales`);
-                        weighingsCollectionRef = collection(db, `artifacts/${appId}/public/data/weighings`);
+                        salesCollectionRef = collection(db, "artifacts", appId, "public", "data", "sales");
+                        weighingsCollectionRef = collection(db, "artifacts", appId, "public", "data", "weighings");
                         
                         if(unsubscribeSales) unsubscribeSales();
                         const salesQuery = query(salesCollectionRef);
@@ -1049,11 +1057,11 @@
 
             if (target.classList.contains('delete-weighing-btn')) {
                 showConfirm('คุณแน่ใจว่าต้องการลบรายการวางยางนี้?', async () => {
-                    await deleteDoc(doc(db, weighingsCollectionRef.path, id));
+                    await deleteDoc(doc(weighingsCollectionRef, id));
                     showAlert('ลบรายการสำเร็จ');
                 });
             } else if (target.classList.contains('edit-weighing-btn')) {
-                const docRef = doc(db, weighingsCollectionRef.path, id);
+                const docRef = doc(weighingsCollectionRef, id);
                 const docSnap = await getDoc(docRef);
                 if(docSnap.exists()){
                     const data = docSnap.data();
