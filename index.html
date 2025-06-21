@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -6,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบบันทึกการขายยางก้อนถ้วย</title>
     <!-- Chosen Palette: Warm Harmony (Stone, Amber, White) -->
-    <!-- Application Structure Plan: A task-oriented dashboard with a two-column layout. The left column is dedicated to primary user actions: the receipt generation form and the sales data table. The right column contains the analytics dashboard. A new summary section has been added above the sales table to provide high-level aggregate data, giving users immediate feedback on overall performance. -->
-    <!-- Visualization & Content Choices: - Summary Metrics -> Goal: Inform -> Method: HTML cards -> Interaction: Auto-updates from Firestore. Justification: To provide a quick, high-level overview of key performance indicators (total sellers, weight, revenue) without needing to scan the entire table. - All other choices remain as before, creating a comprehensive system from data entry to high-level analysis. -->
+    <!-- Application Structure Plan: A tab-based navigation system is implemented to separate distinct user tasks, improving clarity and workflow. The tabs include: a primary receipt creation form, four dedicated weighing station logs, a comprehensive history/reporting view, and an analytics dashboard. This modular structure allows users to focus on a single task at a time (e.g., logging weights at a specific scale) before consolidating data for the final receipt, which streamlines the real-world process. -->
+    <!-- Visualization & Content Choices: - Weighing Logs (New) -> Goal: Organize/Inform -> Method: HTML Form + Dynamic Table per scale -> Interaction: Users select a scale, log weights for sellers, and this data is temporarily stored in Firestore. The table updates in real-time. Justification: To decouple initial weighing from final payment, mirroring a likely real-world workflow and reducing errors by allowing pre-consolidation data entry. - Receipt Form Integration -> Goal: Streamline -> Method: JS function -> Interaction: On the main receipt form, entering a seller's name queries the temporary weighing logs and auto-populates weight fields. Justification: This connects the two separate tasks, reducing manual re-entry and increasing efficiency. Other visualizations remain the same but are now organized into their respective tabs. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -17,8 +16,9 @@
     <style>
         body { font-family: 'Sarabun', sans-serif; }
         .chart-container { position: relative; height: 300px; width: 100%; max-width: 500px; margin: auto; }
-        .modal-backdrop { transition: opacity 0.3s ease; }
-        .modal-content { transition: transform 0.3s ease; }
+        .tab-btn.active { border-color: #d97706; background-color: #fef3c7; color: #b45309; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
         @media print {
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
@@ -35,10 +35,22 @@
             <p class="text-stone-600 mt-1">ออกใบเสร็จ บันทึกข้อมูล และดูสรุปยอดขายในที่เดียว</p>
         </header>
 
-        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Tab Navigation -->
+        <div class="mb-6 border-b border-stone-300">
+            <nav id="tabs" class="flex flex-wrap -mb-px">
+                <button data-tab="tab-receipt" class="tab-btn inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">1. ออกใบเสร็จ</button>
+                <button data-tab="tab-history" class="tab-btn inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">2. ประวัติและรายงาน</button>
+                <button data-tab="tab-dashboard" class="tab-btn inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">3. สรุปภาพรวม</button>
+                <button data-tab="tab-weighing-1" class="tab-btn inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">4. รับวางยาง (ตาชั่ง 1)</button>
+                <button data-tab="tab-weighing-2" class="tab-btn inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">5. รับวางยาง (ตาชั่ง 2)</button>
+                <button data-tab="tab-weighing-3" class="tab-btn inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">6. รับวางยาง (ตาชั่ง 3)</button>
+                <button data-tab="tab-weighing-4" class="tab-btn inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">7. รับวางยาง (ตาชั่ง 4)</button>
+            </nav>
+        </div>
 
-            <div class="lg:col-span-2 space-y-8">
-                
+        <main>
+            <!-- Tab 1: Receipt Generator -->
+            <div id="tab-receipt" class="tab-content">
                 <section id="receipt-generator" class="bg-white p-6 rounded-xl shadow-md">
                     <h2 class="text-2xl font-bold mb-2 border-b pb-3 text-stone-800">1. กรอกข้อมูลเพื่อออกใบเสร็จ</h2>
                     <p class="text-sm text-stone-500 mt-2 mb-4">ส่วนนี้คือศูนย์กลางการทำงาน สำหรับบันทึกข้อมูลการขาย ระบบจะคำนวณยอดรวมให้อัตโนมัติ และเมื่อบันทึกข้อมูลแล้วจะสร้างใบเสร็จสำหรับพิมพ์ได้ทันที</p>
@@ -93,8 +105,11 @@
                         </button>
                     </div>
                 </section>
+            </div>
 
-                <section id="sales-data" class="bg-white p-6 rounded-xl shadow-md">
+            <!-- Tab 2: History and Reports -->
+            <div id="tab-history" class="tab-content">
+                 <section id="sales-data" class="bg-white p-6 rounded-xl shadow-md">
                     <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-2 border-b pb-3">
                         <h2 class="text-2xl font-bold text-stone-800">2. ประวัติและรายงาน</h2>
                         <input type="text" id="search-box" class="mt-3 sm:mt-0 w-full sm:w-64 p-2 border border-stone-300 rounded-md shadow-sm" placeholder="🔍 ค้นหาตามชื่อผู้ขาย...">
@@ -146,8 +161,9 @@
                     </div>
                 </section>
             </div>
-
-            <div class="lg:col-span-1 space-y-8">
+            
+            <!-- Tab 3: Dashboard -->
+            <div id="tab-dashboard" class="tab-content">
                 <section id="dashboard" class="bg-white p-6 rounded-xl shadow-md">
                     <h2 class="text-2xl font-bold mb-2 border-b pb-3 text-stone-800">3. สรุปภาพรวม</h2>
                     <p class="text-sm text-stone-500 mt-2 mb-4">แดชบอร์ดนี้จะสรุปข้อมูลการขายทั้งหมดในรูปแบบกราฟ ช่วยให้เห็นภาพรวมและแนวโน้มต่างๆ ได้อย่างรวดเร็ว โดยข้อมูลจะอัปเดตอัตโนมัติทุกครั้งที่มีการบันทึก</p>
@@ -174,6 +190,13 @@
                     </div>
                 </section>
             </div>
+            
+            <!-- Tabs 4, 5, 6, 7: Weighing Stations -->
+            <div id="tab-weighing-1" class="tab-content"></div>
+            <div id="tab-weighing-2" class="tab-content"></div>
+            <div id="tab-weighing-3" class="tab-content"></div>
+            <div id="tab-weighing-4" class="tab-content"></div>
+
         </main>
     </div>
 
@@ -197,28 +220,23 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            apiKey: "AIzaSyCNVxG6s46SRXOYAeT0rJHAtz_-3IPUJNE",
-            authDomain: "coopksb001.firebaseapp.com",
-            projectId: "coopksb001",
-            storageBucket: "coopksb001.appspot.com",
-            messagingSenderId: "259378610497",
-            appId: "1:259378610497:web:fd12679830e97bf5e761c0",
-            measurementId: "G-1RHH9TMD73"
-        };
-        
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'cup-rubber-sales-app';
 
         let localSalesData = [];
         let salesBySellerChart, dailySalesChart;
         let editingId = null;
-        let db, auth, userId, salesCollectionRef;
+        let db, auth, userId, salesCollectionRef, weighingsCollectionRef;
+        let unsubscribeSales = null; 
+        let unsubscribeWeighings = {};
 
         const ui = {
+            appContainer: document.getElementById('app'),
+            tabs: document.getElementById('tabs'),
+            tabContents: document.querySelectorAll('.tab-content'),
             sellerNameInput: document.getElementById('seller-name'),
             receiptDateInput: document.getElementById('receipt-date'),
             dateDisplay: document.getElementById('date-display'),
@@ -386,7 +404,9 @@
             
             const dailyWeight = salesToday.reduce((acc, sale) => acc + sale.weight, 0);
 
-            ui.summaryDailyWeight.textContent = dailyWeight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            if(ui.summaryDailyWeight) {
+                ui.summaryDailyWeight.textContent = dailyWeight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
         }
 
 
@@ -412,14 +432,17 @@
             const labels = Object.keys(salesBySeller);
             const data = Object.values(salesBySeller);
             if (salesBySellerChart) salesBySellerChart.destroy();
-            salesBySellerChart = new Chart(document.getElementById('sales-by-seller-chart').getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{ label: 'ยอดขาย', data: data, backgroundColor: getChartColors(labels.length), borderColor: '#ffffff', borderWidth: 2 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-            });
+            const canvas = document.getElementById('sales-by-seller-chart');
+            if(canvas){
+                salesBySellerChart = new Chart(canvas.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{ label: 'ยอดขาย', data: data, backgroundColor: getChartColors(labels.length), borderColor: '#ffffff', borderWidth: 2 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                });
+            }
         }
 
         function renderDailySalesChart() {
@@ -436,14 +459,17 @@
             });
             const data = sortedLabels.map(label => salesByDay[label]);
             if (dailySalesChart) dailySalesChart.destroy();
-            dailySalesChart = new Chart(document.getElementById('daily-sales-chart').getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: sortedLabels,
-                    datasets: [{ label: 'ยอดขายรวมรายวัน', data: data, fill: true, backgroundColor: 'rgba(217, 119, 6, 0.2)', borderColor: 'rgb(217, 119, 6)', tension: 0.1, pointBackgroundColor: 'rgb(217, 119, 6)', pointRadius: 4 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
-            });
+            const canvas = document.getElementById('daily-sales-chart');
+            if(canvas){
+                dailySalesChart = new Chart(canvas.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: sortedLabels,
+                        datasets: [{ label: 'ยอดขายรวมรายวัน', data: data, fill: true, backgroundColor: 'rgba(217, 119, 6, 0.2)', borderColor: 'rgb(217, 119, 6)', tension: 0.1, pointBackgroundColor: 'rgb(217, 119, 6)', pointRadius: 4 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+                });
+            }
         }
 
         function createPrintableReceipt(sale) {
@@ -691,32 +717,286 @@
             }
         }
 
+        function createWeighingStationHTML(scaleId) {
+            return `
+                <section class="bg-white p-6 rounded-xl shadow-md">
+                    <h2 class="text-2xl font-bold mb-4 border-b pb-3 text-stone-800">รับวางยาง (ตาชั่งที่ ${scaleId})</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="md:col-span-2">
+                            <label for="weighing-seller-${scaleId}" class="block text-sm font-medium text-stone-600 mb-1">ชื่อผู้ขาย</label>
+                            <input type="text" id="weighing-seller-${scaleId}" class="w-full p-2 border border-stone-300 rounded-md shadow-sm" placeholder="ค้นหาหรือป้อนชื่อ">
+                        </div>
+                        <div>
+                            <label for="weighing-weight-${scaleId}" class="block text-sm font-medium text-stone-600 mb-1">จำนวนถุง</label>
+                            <input type="number" id="weighing-weight-${scaleId}" class="w-full p-2 border border-stone-300 rounded-md shadow-sm">
+                        </div>
+                        <div class="md:col-span-3">
+                             <button id="save-weighing-${scaleId}" data-scale="${scaleId}" class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700">บันทึกน้ำหนัก</button>
+                        </div>
+                    </div>
+                    <div class="mt-6 border-t pt-4">
+                        <div class="grid grid-cols-3 gap-4 items-end">
+                            <div>
+                                <label class="block text-sm font-medium text-stone-600">ผลรวมจำนวนถุง</label>
+                                <p id="total-bags-${scaleId}" class="text-lg font-bold">0</p>
+                            </div>
+                            <div>
+                                <label for="multiplier-weight-${scaleId}" class="block text-sm font-medium text-stone-600">น้ำหนัก/ถุง (กก.)</label>
+                                <input type="number" id="multiplier-weight-${scaleId}" class="w-full p-2 border border-stone-300 rounded-md shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-stone-600">ผลลัพธ์ (กก.)</label>
+                                <p id="total-calculated-weight-${scaleId}" class="text-lg font-bold">0.00</p>
+                            </div>
+                        </div>
+                         <div class="mt-4 flex justify-end">
+                            <button id="print-weighing-log-${scaleId}" data-scale="${scaleId}" class="bg-sky-600 text-white font-bold py-1 px-3 rounded-lg shadow-md hover:bg-sky-700">ปริ้นรายการตาชั่ง</button>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <h3 class="font-semibold mb-2">รายการที่ชั่งวันนี้ (ตาชั่งที่ ${scaleId})</h3>
+                        <div class="overflow-y-auto h-64 border rounded-lg">
+                             <table class="w-full text-sm text-left">
+                                <thead class="bg-stone-100 sticky top-0">
+                                    <tr>
+                                        <th class="px-4 py-2">เวลา</th>
+                                        <th class="px-4 py-2">ชื่อ</th>
+                                        <th class="px-4 py-2 text-right">จำนวนถุง</th>
+                                        <th class="px-4 py-2 w-1/3 text-center">น้ำหนักที่ชั่งได้</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="weighing-table-body-${scaleId}">
+                                    <tr><td colspan="4" class="text-center p-4 text-stone-400">ยังไม่มีรายการ</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            `;
+        }
+        
+        function renderWeighingStations() {
+            for (let i = 1; i <= 4; i++) {
+                const tabContent = document.getElementById(`tab-weighing-${i}`);
+                if(tabContent) {
+                    tabContent.innerHTML = createWeighingStationHTML(i);
+                    document.getElementById(`save-weighing-${i}`).addEventListener('click', saveWeighing);
+                    document.getElementById(`multiplier-weight-${i}`).addEventListener('input', () => calculateTotalWeight(i));
+                    document.getElementById(`print-weighing-log-${i}`).addEventListener('click', printWeighingLog);
+                }
+            }
+        }
+
+        async function saveWeighing(event) {
+            if (!weighingsCollectionRef) return showAlert('ยังไม่พร้อมใช้งาน กรุณารอสักครู่');
+            const scaleId = event.target.dataset.scale;
+            const sellerName = document.getElementById(`weighing-seller-${scaleId}`).value.trim();
+            const bags = parseInt(document.getElementById(`weighing-weight-${scaleId}`).value);
+
+            if (!sellerName || !bags || bags <= 0) {
+                showAlert('กรุณากรอกชื่อผู้ขายและจำนวนถุงให้ถูกต้อง');
+                return;
+            }
+
+            try {
+                await addDoc(weighingsCollectionRef, {
+                    sellerName,
+                    bags,
+                    scaleId: parseInt(scaleId),
+                    timestamp: new Date(),
+                    userId
+                });
+                document.getElementById(`weighing-seller-${scaleId}`).value = '';
+                document.getElementById(`weighing-weight-${scaleId}`).value = '';
+                document.getElementById(`weighing-seller-${scaleId}`).focus();
+
+            } catch(error) {
+                console.error("Error saving weighing: ", error);
+                showAlert(`เกิดข้อผิดพลาดในการบันทึกน้ำหนัก: ${error.message}`);
+            }
+        }
+
+        function calculateTotalWeight(scaleId) {
+            const totalBagsEl = document.getElementById(`total-bags-${scaleId}`);
+            const multiplierEl = document.getElementById(`multiplier-weight-${scaleId}`);
+            const resultEl = document.getElementById(`total-calculated-weight-${scaleId}`);
+
+            const totalBags = parseInt(totalBagsEl.textContent) || 0;
+            const multiplier = parseFloat(multiplierEl.value) || 0;
+
+            resultEl.textContent = (totalBags * multiplier).toFixed(2);
+        }
+
+        function printWeighingLog(event) {
+            if (!weighingsCollectionRef) return showAlert("ยังไม่พร้อมใช้งาน กรุณารอสักครู่");
+            const scaleId = event.target.dataset.scale;
+            
+            const q = query(weighingsCollectionRef, where("scaleId", "==", parseInt(scaleId)));
+
+            getDocs(q).then(snapshot => {
+                const today = new Date();
+                const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                
+                const salesForDay = snapshot.docs
+                    .map(doc => doc.data())
+                    .filter(data => data.timestamp.toDate() >= todayStart);
+
+                if (salesForDay.length === 0) {
+                    showAlert(`ไม่พบข้อมูลสำหรับตาชั่งที่ ${scaleId} ในวันนี้`);
+                    return;
+                }
+
+                let tableRows = '';
+                let index = 1;
+                salesForDay.sort((a,b) => a.timestamp.toDate() - b.timestamp.toDate()).forEach(data => {
+                     tableRows += `
+                        <tr class="border-b">
+                            <td class="px-2 py-2 text-center">${index++}</td>
+                            <td class="px-2 py-2">${data.sellerName}</td>
+                            <td class="px-2 py-2 text-center">${data.bags}</td>
+                            <td class="px-2 py-2 border-l" style="width: 25%;"></td>
+                            <td class="px-2 py-2 border-l" style="width: 25%;"></td>
+                        </tr>
+                    `;
+                });
+
+                 const reportHTML = `
+                    <style>
+                        @media print {
+                            @page { size: A4; margin: 1.5cm; }
+                            .print-container { width: 100%; margin: 0; padding: 0; }
+                            .print-table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+                            .print-table th, .print-table td { border: 1px solid black; padding: 4px 8px; text-align: left; }
+                            .print-table th { background-color: #e7e5e4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                            .text-center { text-align: center; }
+                        }
+                    </style>
+                    <div class="print-container">
+                        <div class="text-center mb-4">
+                            <h2 class="text-xl font-bold">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</h2>
+                            <h3 class="text-lg">รายงานการชั่งยางประจำวันที่ ${today.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })} (ตาชั่งที่ ${scaleId})</h3>
+                        </div>
+                        <table class="print-table">
+                            <thead>
+                                <tr class="border-b border-black">
+                                    <th class="text-center">ลำดับที่</th>
+                                    <th>ชื่อ</th>
+                                    <th class="text-center">จำนวนถุง</th>
+                                    <th>น้ำหนักที่ชั่งได้</th>
+                                    <th>ลายเซ็น</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tableRows}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                ui.printArea.innerHTML = reportHTML;
+                window.print();
+            });
+        }
+        
+        function setupWeighingListeners() {
+            if (!weighingsCollectionRef) return;
+            for (let i = 1; i <= 4; i++) {
+                const q = query(weighingsCollectionRef, where("scaleId", "==", i));
+
+                if (unsubscribeWeighings[i]) unsubscribeWeighings[i]();
+
+                unsubscribeWeighings[i] = onSnapshot(q, (snapshot) => {
+                    const todayStart = new Date();
+                    todayStart.setHours(0, 0, 0, 0);
+
+                    const tableBody = document.getElementById(`weighing-table-body-${i}`);
+                    if (!tableBody) return;
+                    tableBody.innerHTML = '';
+                    let totalBags = 0;
+                    
+                    const todaysDocs = snapshot.docs.filter(doc => doc.data().timestamp.toDate() >= todayStart);
+
+                    if (todaysDocs.length === 0) {
+                         tableBody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-stone-400">ยังไม่มีรายการ</td></tr>';
+                    } else {
+                         todaysDocs.sort((a,b) => b.data().timestamp.toDate() - a.data().timestamp.toDate()).forEach(doc => {
+                            const data = doc.data();
+                            totalBags += data.bags;
+                            const row = document.createElement('tr');
+                            row.className = 'border-b';
+                            row.innerHTML = `
+                                <td class="px-4 py-2">${data.timestamp.toDate().toLocaleTimeString('th-TH')}</td>
+                                <td class="px-4 py-2">${data.sellerName}</td>
+                                <td class="px-4 py-2 text-right">${data.bags}</td>
+                                <td class="px-4 py-2 w-1/3 text-center border-l"></td>
+                            `;
+                            tableBody.appendChild(row);
+                        });
+                    }
+
+                    const totalBagsEl = document.getElementById(`total-bags-${i}`);
+                    if (totalBagsEl) {
+                        totalBagsEl.textContent = totalBags;
+                        calculateTotalWeight(i);
+                    }
+                });
+            }
+        }
+
+        async function fetchAndPopulateWeights(sellerName) {
+             if (!weighingsCollectionRef) return;
+             const q = query(weighingsCollectionRef, where("sellerName", "==", sellerName));
+             const querySnapshot = await getDocs(q);
+
+             const todayStart = new Date();
+             todayStart.setHours(0, 0, 0, 0);
+
+             const todaysDocs = querySnapshot.docs.filter(doc => {
+                const ts = doc.data().timestamp;
+                if (!ts) return false;
+                return ts.toDate() >= todayStart;
+             });
+
+             if(todaysDocs.length === 0) return;
+            
+             const weights = todaysDocs.map(doc => doc.data().bags); // Use bags
+             const weightInputs = document.querySelectorAll('#weight-inputs-container .weight-input');
+            
+             weights.forEach((weight, index) => {
+                if(index < weightInputs.length) {
+                    weightInputs[index].value = weight;
+                }
+             });
+             calculateTotals();
+
+             showConfirm(`พบข้อมูลวางยาง ${weights.length} รายการของ ${sellerName} ต้องการล้างข้อมูลนี้หรือไม่?`, () => {
+                todaysDocs.forEach(async (d) => {
+                    await deleteDoc(doc(weighingsCollectionRef, d.id));
+                });
+             });
+        }
+        
         async function initApp() {
             if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
-                renderTable([]);
-                renderSummary();
-                renderDailySummary();
                 showAlert('การตั้งค่า Firebase ไม่ถูกต้อง ไม่สามารถเชื่อมต่อฐานข้อมูลได้');
                 console.error('Firebase config is missing.');
                 return;
             }
             try {
                 const app = initializeApp(firebaseConfig);
-                const analytics = getAnalytics(app);
                 auth = getAuth(app);
                 db = getFirestore(app);
+                
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         userId = user.uid;
-                        salesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/sales`);
-                        const q = query(salesCollectionRef);
-                        onSnapshot(q, (snapshot) => {
-                            let sales = [];
-                            snapshot.forEach((doc) => {
-                                sales.push({ id: doc.id, ...doc.data() });
-                            });
-                            sales.sort((a,b) => b.date.toDate() - a.date.toDate());
-                            localSalesData = sales;
+                        salesCollectionRef = collection(db, `artifacts/${appId}/public/data/sales`);
+                        weighingsCollectionRef = collection(db, `artifacts/${appId}/public/data/weighings`);
+                        
+                        if(unsubscribeSales) unsubscribeSales();
+                        const salesQuery = query(salesCollectionRef);
+                        unsubscribeSales = onSnapshot(salesQuery, (snapshot) => {
+                            localSalesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            localSalesData.sort((a,b) => b.date.toDate() - a.date.toDate());
                             renderTable(localSalesData);
                             renderDashboard();
                             renderSummary();
@@ -725,6 +1005,7 @@
                             console.error("Error fetching data with onSnapshot: ", error);
                             showAlert(`เกิดข้อผิดพลาดในการดึงข้อมูล: ${error.message}`);
                         });
+                        setupWeighingListeners();
                     } else {
                          try {
                              if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -738,6 +1019,7 @@
                         }
                     }
                 });
+
             } catch (error) {
                  console.error("Firebase initialization error: ", error);
                  showAlert(`เกิดข้อผิดพลาดในการเริ่มต้นระบบ: ${error.message}`);
@@ -745,21 +1027,45 @@
         }
         
         document.addEventListener('DOMContentLoaded', () => {
-            ui.receiptDateInput.valueAsDate = new Date();
-            ui.reportDateInput.valueAsDate = new Date();
-            updateDateDisplay();
-            ui.saveButton.addEventListener('click', handleSave);
-            ui.cancelEditButton.addEventListener('click', clearForm);
-            ui.salesTableBody.addEventListener('click', handleTableClick);
-            ui.receiptDateInput.addEventListener('input', updateDateDisplay);
-            ui.printReportBtn.addEventListener('click', createDailySummaryReport);
-            const calculationInputs = [...ui.weightInputsContainer.querySelectorAll('.weight-input'), ui.pricePerKgInput];
+            renderWeighingStations();
+            
+            ui.tabs.addEventListener('click', (e) => {
+                if (e.target.dataset.tab) {
+                    const targetTab = e.target.dataset.tab;
+                    ui.tabs.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                    ui.tabContents.forEach(content => content.classList.remove('active'));
+                    e.target.classList.add('active');
+                    document.getElementById(targetTab).classList.add('active');
+                }
+            });
+            
+            document.querySelector('[data-tab="tab-receipt"]').classList.add('active');
+            document.getElementById('tab-receipt').classList.add('active');
+            
+            ui.sellerNameInput.addEventListener('blur', (e) => {
+                const sellerName = e.target.value.trim();
+                if(sellerName) {
+                    fetchAndPopulateWeights(sellerName);
+                }
+            });
+
+             ui.saveButton.addEventListener('click', handleSave);
+             ui.cancelEditButton.addEventListener('click', clearForm);
+             ui.salesTableBody.addEventListener('click', handleTableClick);
+             ui.printReportBtn.addEventListener('click', createDailySummaryReport);
+             ui.receiptDateInput.addEventListener('input', updateDateDisplay);
+             const calculationInputs = [...document.querySelectorAll('.weight-input'), ui.pricePerKgInput];
             calculationInputs.forEach(input => input.addEventListener('input', calculateTotals));
             ui.searchBox.addEventListener('input', (e) => {
                 const searchTerm = e.target.value.toLowerCase();
                 const filteredData = localSalesData.filter(sale => sale.seller.toLowerCase().includes(searchTerm));
                 renderTable(filteredData);
             });
+
+            ui.receiptDateInput.valueAsDate = new Date();
+            ui.reportDateInput.valueAsDate = new Date();
+            updateDateDisplay();
+
             initApp();
         });
     </script>
