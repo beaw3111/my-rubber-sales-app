@@ -226,7 +226,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, where, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
         
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'cup-rubber-sales-app';
@@ -1099,6 +1098,9 @@
              ui.cancelEditButton.addEventListener('click', clearForm);
              ui.salesTableBody.addEventListener('click', handleTableClick);
              ui.printReportBtn.addEventListener('click', createDailySummaryReport);
+             if(ui.printDashboardBtn) {
+                ui.printDashboardBtn.addEventListener('click', () => window.print());
+             }
              ui.receiptDateInput.addEventListener('input', updateDateDisplay);
              const calculationInputs = [...document.querySelectorAll('.weight-input'), ui.pricePerKgInput];
             calculationInputs.forEach(input => input.addEventListener('input', calculateTotals));
