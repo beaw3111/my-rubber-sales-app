@@ -1,634 +1,640 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบบันทึกการขายยางก้อนถ้วย</title>
-    <!-- Chosen Palette: Warm Harmony (Stone, Amber, White) -->
-    <!-- Application Structure Plan: A task-oriented dashboard with a two-column layout. The left column is dedicated to primary user actions: the receipt generation form and the sales data table. The right column contains the analytics dashboard. A new summary section has been added above the sales table to provide high-level aggregate data, giving users immediate feedback on overall performance. -->
-    <!-- Visualization & Content Choices: - Summary Metrics -> Goal: Inform -> Method: HTML cards -> Interaction: Auto-updates from Firestore. Justification: To provide a quick, high-level overview of key performance indicators (total sellers, weight, revenue) without needing to scan the entire table. - All other choices remain as before, creating a comprehensive system from data entry to high-level analysis. -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Sarabun', sans-serif; }
-        .chart-container { position: relative; height: 300px; width: 100%; max-width: 500px; margin: auto; }
-        .modal-backdrop { transition: opacity 0.3s ease; }
-        .modal-content { transition: transform 0.3s ease; }
-        @media print {
-            body * { visibility: hidden; }
-            #print-area, #print-area * { visibility: visible; }
-            #print-area { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบบันทึกการขายยางก้อนถ้วย</title>
+    <!-- Chosen Palette: Warm Harmony (Stone, Amber, White) -->
+    <!-- Application Structure Plan: A task-oriented dashboard with a two-column layout. The left column is dedicated to primary user actions: the receipt generation form and the sales data table. The right column contains the analytics dashboard. A new summary section has been added above the sales table to provide high-level aggregate data, giving users immediate feedback on overall performance. -->
+    <!-- Visualization & Content Choices: - Summary Metrics -> Goal: Inform -> Method: HTML cards -> Interaction: Auto-updates from Firestore. Justification: To provide a quick, high-level overview of key performance indicators (total sellers, weight, revenue) without needing to scan the entire table. - All other choices remain as before, creating a comprehensive system from data entry to high-level analysis. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; }
+        .chart-container { position: relative; height: 300px; width: 100%; max-width: 500px; margin: auto; }
+        .modal-backdrop { transition: opacity 0.3s ease; }
+        .modal-content { transition: transform 0.3s ease; }
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+        }
+    </style>
 </head>
 <body class="bg-stone-100 text-stone-800">
 
-    <div id="app" class="container mx-auto p-4 sm:p-6 lg:p-8">
-        
-        <header class="mb-8">
-            <h1 class="text-4xl font-bold text-stone-900">ระบบจัดการขายยางก้อนถ้วย</h1>
-            <p class="text-stone-600 mt-1">ออกใบเสร็จ บันทึกข้อมูล และดูสรุปยอดขายในที่เดียว</p>
-        </header>
+    <div id="app" class="container mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold text-stone-900">ระบบจัดการขายยางก้อนถ้วย</h1>
+            <p class="text-stone-600 mt-1">ออกใบเสร็จ บันทึกข้อมูล และดูสรุปยอดขายในที่เดียว</p>
+        </header>
 
-        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-            <div class="lg:col-span-2 space-y-8">
-                
-                <section id="receipt-generator" class="bg-white p-6 rounded-xl shadow-md">
-                    <h2 class="text-2xl font-bold mb-2 border-b pb-3 text-stone-800">1. กรอกข้อมูลเพื่อออกใบเสร็จ</h2>
-                    <p class="text-sm text-stone-500 mt-2 mb-4">ส่วนนี้คือศูนย์กลางการทำงาน สำหรับบันทึกข้อมูลการขาย ระบบจะคำนวณยอดรวมให้อัตโนมัติ และเมื่อบันทึกข้อมูลแล้วจะสร้างใบเสร็จสำหรับพิมพ์ได้ทันที</p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="seller-name" class="block text-sm font-medium text-stone-600 mb-1">ชื่อ-สกุล ผู้ขาย</label>
-                            <input type="text" id="seller-name" class="w-full p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500" placeholder="เช่น นายสมชาย ใจดี">
-                        </div>
-                        <div>
-                            <label for="receipt-date" class="block text-sm font-medium text-stone-600 mb-1">วันที่ <span id="date-display" class="font-normal text-stone-500 ml-2"></span></label>
-                            <input type="date" id="receipt-date" class="w-full p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500">
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-stone-600 mb-1">น้ำหนัก (กก.) - ใส่ได้สูงสุด 5 รายการ</label>
-                            <div id="weight-inputs-container" class="grid grid-cols-2 sm:grid-cols-5 gap-4">
-                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 1">
-                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 2">
-                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 3">
-                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 4">
-                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 5">
-                            </div>
-                        </div>
-                        <div>
-                            <label for="price-per-kg" class="block text-sm font-medium text-stone-600 mb-1">ราคาต่อหน่วย (บาท/กก.)</label>
-                            <input type="number" id="price-per-kg" class="w-full p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500" placeholder="0.00">
-                        </div>
-                        <div class="md:col-span-2 bg-stone-200 p-4 rounded-lg space-y-3">
-                            <div class="flex justify-between items-center">
-                                <span class="font-medium text-stone-600">น้ำหนักรวม (กก.):</span>
-                                <span id="total-weight" class="text-xl font-bold text-stone-800">0.00</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="font-medium text-stone-600">รวมเป็นเงินทั้งสิ้น (บาท):</span>
-                                <span id="total-amount" class="text-2xl font-bold text-amber-600">0.00</span>
-                            </div>
-                            <div class="flex justify-between items-center text-right">
-                                <span class="font-medium text-stone-600">(ตัวอักษร):</span>
-                                <span id="total-amount-text" class="text-sm text-stone-500">-</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-6 flex justify-end items-center gap-4">
-                        <button id="cancel-edit-button" class="hidden bg-stone-200 text-stone-700 font-bold py-2 px-6 rounded-lg hover:bg-stone-300 transition-colors">
-                            ยกเลิก
-                        </button>
-                        <button id="save-button" class="bg-amber-600 text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-colors">
-                            บันทึกและพิมพ์ใบเสร็จ
-                        </button>
-                    </div>
-                </section>
+            <div class="lg:col-span-2 space-y-8">
+                
+                <section id="receipt-generator" class="bg-white p-6 rounded-xl shadow-md">
+                    <h2 class="text-2xl font-bold mb-2 border-b pb-3 text-stone-800">1. กรอกข้อมูลเพื่อออกใบเสร็จ</h2>
+                    <p class="text-sm text-stone-500 mt-2 mb-4">ส่วนนี้คือศูนย์กลางการทำงาน สำหรับบันทึกข้อมูลการขาย ระบบจะคำนวณยอดรวมให้อัตโนมัติ และเมื่อบันทึกข้อมูลแล้วจะสร้างใบเสร็จสำหรับพิมพ์ได้ทันที</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="seller-name" class="block text-sm font-medium text-stone-600 mb-1">ชื่อ-สกุล ผู้ขาย</label>
+                            <input type="text" id="seller-name" class="w-full p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500" placeholder="เช่น นายสมชาย ใจดี">
+                        </div>
+                        <div>
+                            <label for="receipt-date" class="block text-sm font-medium text-stone-600 mb-1">วันที่ <span id="date-display" class="font-normal text-stone-500 ml-2"></span></label>
+                            <input type="date" id="receipt-date" class="w-full p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-stone-600 mb-1">น้ำหนัก (กก.) - ใส่ได้สูงสุด 5 รายการ</label>
+                            <div id="weight-inputs-container" class="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 1">
+                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 2">
+                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 3">
+                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 4">
+                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 5">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="price-per-kg" class="block text-sm font-medium text-stone-600 mb-1">ราคาต่อหน่วย (บาท/กก.)</label>
+                            <input type="number" id="price-per-kg" class="w-full p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500" placeholder="0.00">
+                        </div>
+                        <div class="md:col-span-2 bg-stone-200 p-4 rounded-lg space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium text-stone-600">น้ำหนักรวม (กก.):</span>
+                                <span id="total-weight" class="text-xl font-bold text-stone-800">0.00</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium text-stone-600">รวมเป็นเงินทั้งสิ้น (บาท):</span>
+                                <span id="total-amount" class="text-2xl font-bold text-amber-600">0.00</span>
+                            </div>
+                            <div class="flex justify-between items-center text-right">
+                                <span class="font-medium text-stone-600">(ตัวอักษร):</span>
+                                <span id="total-amount-text" class="text-sm text-stone-500">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end items-center gap-4">
+                        <button id="cancel-edit-button" class="hidden bg-stone-200 text-stone-700 font-bold py-2 px-6 rounded-lg hover:bg-stone-300 transition-colors">
+                            ยกเลิก
+                        </button>
+                        <button id="save-button" class="bg-amber-600 text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-colors">
+                            บันทึกและพิมพ์ใบเสร็จ
+                        </button>
+                    </div>
+                </section>
 
-                <section id="sales-data" class="bg-white p-6 rounded-xl shadow-md">
-                    <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-2 border-b pb-3">
-                        <h2 class="text-2xl font-bold text-stone-800">2. ประวัติการขายทั้งหมด</h2>
-                        <input type="text" id="search-box" class="mt-3 sm:mt-0 w-full sm:w-64 p-2 border border-stone-300 rounded-md shadow-sm" placeholder="🔍 ค้นหาตามชื่อผู้ขาย...">
-                    </div>
-                     <p class="text-sm text-stone-500 mt-2 mb-4">ข้อมูลการขายทั้งหมดที่เคยบันทึกไว้จะแสดงในตารางนี้ คุณสามารถค้นหาข้อมูลตามชื่อผู้ขาย แก้ไขรายการที่ผิดพลาด หรือลบรายการที่ไม่ต้องการได้</p>
-                     
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                        <div class="bg-stone-200 p-4 rounded-lg text-center">
-                            <p class="text-sm font-medium text-stone-600">จำนวนผู้ขายทั้งหมด</p>
-                            <p id="summary-total-sellers" class="text-2xl font-bold text-amber-600">0</p>
-                        </div>
-                        <div class="bg-stone-200 p-4 rounded-lg text-center">
-                            <p class="text-sm font-medium text-stone-600">น้ำหนักรวมทั้งหมด (กก.)</p>
-                            <p id="summary-total-weight" class="text-2xl font-bold text-amber-600">0.00</p>
-                        </div>
-                        <div class="bg-stone-200 p-4 rounded-lg text-center">
-                            <p class="text-sm font-medium text-stone-600">ยอดขายรวมทั้งหมด (บาท)</p>
-                            <p id="summary-total-price" class="text-2xl font-bold text-amber-600">0.00</p>
-                        </div>
-                    </div>
+                <section id="sales-data" class="bg-white p-6 rounded-xl shadow-md">
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-2 border-b pb-3">
+                        <h2 class="text-2xl font-bold text-stone-800">2. ประวัติการขายทั้งหมด</h2>
+                        <input type="text" id="search-box" class="mt-3 sm:mt-0 w-full sm:w-64 p-2 border border-stone-300 rounded-md shadow-sm" placeholder="🔍 ค้นหาตามชื่อผู้ขาย...">
+                    </div>
+                     <p class="text-sm text-stone-500 mt-2 mb-4">ข้อมูลการขายทั้งหมดที่เคยบันทึกไว้จะแสดงในตารางนี้ คุณสามารถค้นหาข้อมูลตามชื่อผู้ขาย แก้ไขรายการที่ผิดพลาด หรือลบรายการที่ไม่ต้องการได้</p>
+                     
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-stone-200 p-4 rounded-lg text-center">
+                            <p class="text-sm font-medium text-stone-600">จำนวนผู้ขายทั้งหมด</p>
+                            <p id="summary-total-sellers" class="text-2xl font-bold text-amber-600">0</p>
+                        </div>
+                        <div class="bg-stone-200 p-4 rounded-lg text-center">
+                            <p class="text-sm font-medium text-stone-600">น้ำหนักรวมทั้งหมด (กก.)</p>
+                            <p id="summary-total-weight" class="text-2xl font-bold text-amber-600">0.00</p>
+                        </div>
+                        <div class="bg-stone-200 p-4 rounded-lg text-center">
+                            <p class="text-sm font-medium text-stone-600">ยอดขายรวมทั้งหมด (บาท)</p>
+                            <p id="summary-total-price" class="text-2xl font-bold text-amber-600">0.00</p>
+                        </div>
+                    </div>
 
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left text-stone-500">
-                            <thead class="text-xs text-stone-700 uppercase bg-stone-200">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3">วันที่</th>
-                                    <th scope="col" class="px-6 py-3">ชื่อผู้ขาย</th>
-                                    <th scope="col" class="px-6 py-3 text-right">น้ำหนัก (กก.)</th>
-                                    <th scope="col" class="px-6 py-3 text-right">ราคา/หน่วย</th>
-                                    <th scope="col" class="px-6 py-3 text-right">ยอดรวม (บาท)</th>
-                                    <th scope="col" class="px-6 py-3 text-center">การดำเนินการ</th>
-                                </tr>
-                            </thead>
-                            <tbody id="sales-table-body">
-                                <tr>
-                                    <td colspan="6" class="px-6 py-8 text-center text-stone-400">กำลังโหลดข้อมูล...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-            </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-stone-500">
+                            <thead class="text-xs text-stone-700 uppercase bg-stone-200">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3">วันที่</th>
+                                    <th scope="col" class="px-6 py-3">ชื่อผู้ขาย</th>
+                                    <th scope="col" class="px-6 py-3 text-right">น้ำหนัก (กก.)</th>
+                                    <th scope="col" class="px-6 py-3 text-right">ราคา/หน่วย</th>
+                                    <th scope="col" class="px-6 py-3 text-right">ยอดรวม (บาท)</th>
+                                    <th scope="col" class="px-6 py-3 text-center">การดำเนินการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sales-table-body">
+                                <tr>
+                                    <td colspan="6" class="px-6 py-8 text-center text-stone-400">กำลังโหลดข้อมูล...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
 
-            <div class="lg:col-span-1 space-y-8">
-                <section id="dashboard" class="bg-white p-6 rounded-xl shadow-md">
-                    <h2 class="text-2xl font-bold mb-2 border-b pb-3 text-stone-800">3. สรุปภาพรวม</h2>
-                    <p class="text-sm text-stone-500 mt-2 mb-4">แดชบอร์ดนี้จะสรุปข้อมูลการขายทั้งหมดในรูปแบบกราฟ ช่วยให้เห็นภาพรวมและแนวโน้มต่างๆ ได้อย่างรวดเร็ว โดยข้อมูลจะอัปเดตอัตโนมัติทุกครั้งที่มีการบันทึก</p>
-                    <div class="space-y-8">
-                        <div>
-                            <h3 class="font-bold text-center mb-2 text-stone-700">สัดส่วนยอดขายตามผู้ขาย</h3>
-                            <div class="chart-container">
-                                <canvas id="sales-by-seller-chart"></canvas>
-                            </div>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-center mb-2 text-stone-700">แนวโน้มยอดขายรายวัน</h3>
-                            <div class="chart-container">
-                                <canvas id="daily-sales-chart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </div>
-        </main>
-    </div>
+            <div class="lg:col-span-1 space-y-8">
+                <section id="dashboard" class="bg-white p-6 rounded-xl shadow-md">
+                    <h2 class="text-2xl font-bold mb-2 border-b pb-3 text-stone-800">3. สรุปภาพรวม</h2>
+                    <p class="text-sm text-stone-500 mt-2 mb-4">แดชบอร์ดนี้จะสรุปข้อมูลการขายทั้งหมดในรูปแบบกราฟ ช่วยให้เห็นภาพรวมและแนวโน้มต่างๆ ได้อย่างรวดเร็ว โดยข้อมูลจะอัปเดตอัตโนมัติทุกครั้งที่มีการบันทึก</p>
+                    <div class="space-y-8">
+                        <div>
+                            <h3 class="font-bold text-center mb-2 text-stone-700">สัดส่วนยอดขายตามผู้ขาย</h3>
+                            <div class="chart-container">
+                                <canvas id="sales-by-seller-chart"></canvas>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-center mb-2 text-stone-700">แนวโน้มยอดขายรายวัน</h3>
+                            <div class="chart-container">
+                                <canvas id="daily-sales-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
 
-    <div id="print-area" class="p-8 bg-white text-black"></div>
-    
-    <div id="modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden opacity-0" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="modal-content bg-white rounded-xl shadow-2xl w-full max-w-md transform scale-95">
-            <div class="p-6">
-                <div class="text-center">
-                     <h3 id="modal-title" class="text-lg leading-6 font-bold text-stone-900"></h3>
-                    <div class="mt-2">
-                        <p id="modal-message" class="text-sm text-stone-500"></p>
-                    </div>
-                </div>
-            </div>
-            <div id="modal-actions" class="bg-stone-50 px-6 py-4 rounded-b-xl flex flex-row-reverse gap-3">
-            </div>
-        </div>
-    </div>
+    <div id="print-area" class="p-8 bg-white text-black"></div>
+    
+    <div id="modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden opacity-0" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="modal-content bg-white rounded-xl shadow-2xl w-full max-w-md transform scale-95">
+            <div class="p-6">
+                <div class="text-center">
+                     <h3 id="modal-title" class="text-lg leading-6 font-bold text-stone-900"></h3>
+                    <div class="mt-2">
+                        <p id="modal-message" class="text-sm text-stone-500"></p>
+                    </div>
+                </div>
+            </div>
+            <div id="modal-actions" class="bg-stone-50 px-6 py-4 rounded-b-xl flex flex-row-reverse gap-3">
+            </div>
+        </div>
+    </div>
 
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cup-rubber-sales-app';
+        // This configuration will use the globally provided Firebase credentials in the Canvas environment.
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cup-rubber-sales-app';
 
-        let localSalesData = [];
-        let salesBySellerChart, dailySalesChart;
-        let editingId = null;
-        let db, auth, userId, salesCollectionRef;
+        let localSalesData = [];
+        let salesBySellerChart, dailySalesChart;
+        let editingId = null;
+        let db, auth, userId, salesCollectionRef;
 
-        const ui = {
-            sellerNameInput: document.getElementById('seller-name'),
-            receiptDateInput: document.getElementById('receipt-date'),
-            dateDisplay: document.getElementById('date-display'),
-            weightInputsContainer: document.getElementById('weight-inputs-container'),
-            pricePerKgInput: document.getElementById('price-per-kg'),
-            totalWeightEl: document.getElementById('total-weight'),
-            totalAmountEl: document.getElementById('total-amount'),
-            totalAmountTextEl: document.getElementById('total-amount-text'),
-            saveButton: document.getElementById('save-button'),
-            cancelEditButton: document.getElementById('cancel-edit-button'),
-            salesTableBody: document.getElementById('sales-table-body'),
-            searchBox: document.getElementById('search-box'),
-            printArea: document.getElementById('print-area'),
-            modal: document.getElementById('modal'),
-            modalTitle: document.getElementById('modal-title'),
-            modalMessage: document.getElementById('modal-message'),
-            modalActions: document.getElementById('modal-actions'),
-            summaryTotalSellers: document.getElementById('summary-total-sellers'),
-            summaryTotalWeight: document.getElementById('summary-total-weight'),
-            summaryTotalPrice: document.getElementById('summary-total-price'),
-        };
+        const ui = {
+            sellerNameInput: document.getElementById('seller-name'),
+            receiptDateInput: document.getElementById('receipt-date'),
+            dateDisplay: document.getElementById('date-display'),
+            weightInputsContainer: document.getElementById('weight-inputs-container'),
+            pricePerKgInput: document.getElementById('price-per-kg'),
+            totalWeightEl: document.getElementById('total-weight'),
+            totalAmountEl: document.getElementById('total-amount'),
+            totalAmountTextEl: document.getElementById('total-amount-text'),
+            saveButton: document.getElementById('save-button'),
+            cancelEditButton: document.getElementById('cancel-edit-button'),
+            salesTableBody: document.getElementById('sales-table-body'),
+            searchBox: document.getElementById('search-box'),
+            printArea: document.getElementById('print-area'),
+            modal: document.getElementById('modal'),
+            modalTitle: document.getElementById('modal-title'),
+            modalMessage: document.getElementById('modal-message'),
+            modalActions: document.getElementById('modal-actions'),
+            summaryTotalSellers: document.getElementById('summary-total-sellers'),
+            summaryTotalWeight: document.getElementById('summary-total-weight'),
+            summaryTotalPrice: document.getElementById('summary-total-price'),
+        };
 
-        function showModal(title, message, buttons) {
-            ui.modalTitle.textContent = title;
-            ui.modalMessage.textContent = message;
-            ui.modalActions.innerHTML = '';
-            buttons.forEach(btn => {
-                const buttonEl = document.createElement('button');
-                buttonEl.textContent = btn.text;
-                buttonEl.className = btn.classes;
-                buttonEl.onclick = () => {
-                    hideModal();
-                    if (btn.onClick) btn.onClick();
-                };
-                ui.modalActions.appendChild(buttonEl);
-            });
-            ui.modal.classList.remove('hidden');
-            setTimeout(() => {
-                ui.modal.classList.remove('opacity-0');
-                ui.modal.querySelector('.modal-content').classList.remove('scale-95');
-            }, 10);
-        }
+        function showModal(title, message, buttons) {
+            ui.modalTitle.textContent = title;
+            ui.modalMessage.textContent = message;
+            ui.modalActions.innerHTML = '';
+            buttons.forEach(btn => {
+                const buttonEl = document.createElement('button');
+                buttonEl.textContent = btn.text;
+                buttonEl.className = btn.classes;
+                buttonEl.onclick = () => {
+                    hideModal();
+                    if (btn.onClick) btn.onClick();
+                };
+                ui.modalActions.appendChild(buttonEl);
+            });
+            ui.modal.classList.remove('hidden');
+            setTimeout(() => {
+                ui.modal.classList.remove('opacity-0');
+                ui.modal.querySelector('.modal-content').classList.remove('scale-95');
+            }, 10);
+        }
 
-        function hideModal() {
-            ui.modal.classList.add('opacity-0');
-            ui.modal.querySelector('.modal-content').classList.add('scale-95');
-            setTimeout(() => ui.modal.classList.add('hidden'), 300);
-        }
-        
-        function showAlert(message) {
-             showModal('แจ้งเตือน', message, [
-                { text: 'ตกลง', classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-amber-600 text-base font-medium text-white hover:bg-amber-700 sm:w-auto sm:text-sm' }
-             ]);
-        }
-        
-        function showConfirm(message, onConfirm) {
-            showModal('ยืนยันการดำเนินการ', message, [
-                { text: 'ยืนยัน', classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:ml-3 sm:w-auto sm:text-sm', onClick: onConfirm },
-                { text: 'ยกเลิก', classes: 'mt-3 w-full inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 sm:mt-0 sm:w-auto sm:text-sm' }
-            ]);
-        }
+        function hideModal() {
+            ui.modal.classList.add('opacity-0');
+            ui.modal.querySelector('.modal-content').classList.add('scale-95');
+            setTimeout(() => ui.modal.classList.add('hidden'), 300);
+        }
+        
+        function showAlert(message) {
+             showModal('แจ้งเตือน', message, [
+                { text: 'ตกลง', classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-amber-600 text-base font-medium text-white hover:bg-amber-700 sm:w-auto sm:text-sm' }
+             ]);
+        }
+        
+        function showConfirm(message, onConfirm) {
+            showModal('ยืนยันการดำเนินการ', message, [
+                { text: 'ยืนยัน', classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:ml-3 sm:w-auto sm:text-sm', onClick: onConfirm },
+                { text: 'ยกเลิก', classes: 'mt-3 w-full inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 sm:mt-0 sm:w-auto sm:text-sm' }
+            ]);
+        }
 
-        function bahttext(number) {
-            number = Number(number).toFixed(2);
-            let [integer, fraction] = number.split('.');
-            const t = ['', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า'];
-            const r = ['', 'สิบ', 'ร้อย', 'พัน', 'หมื่น', 'แสน', 'ล้าน'];
-            
-            function convert(n) {
-                let s = '';
-                let l = n.length;
-                for (let i = 0; i < l; i++) {
-                    let d = parseInt(n.charAt(i));
-                    let p = l - i - 1;
-                    if (d > 0) {
-                        if (p === 1 && d === 2) s += 'ยี่';
-                        else if (p === 1 && d === 1) s += '';
-                        else if (p === 0 && d === 1 && s.length > 0 && n.length > 1) s += 'เอ็ด';
-                        else s += t[d];
-                        s += r[p];
-                    }
-                }
-                return s;
-            }
+        function bahttext(number) {
+            number = Number(number).toFixed(2);
+            let [integer, fraction] = number.split('.');
+            const t = ['', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า'];
+            const r = ['', 'สิบ', 'ร้อย', 'พัน', 'หมื่น', 'แสน', 'ล้าน'];
+            
+            function convert(n) {
+                let s = '';
+                let l = n.length;
+                for (let i = 0; i < l; i++) {
+                    let d = parseInt(n.charAt(i));
+                    let p = l - i - 1;
+                    if (d > 0) {
+                        if (p === 1 && d === 2) s += 'ยี่';
+                        else if (p === 1 && d === 1) s += '';
+                        else if (p === 0 && d === 1 && s.length > 0 && n.length > 1) s += 'เอ็ด';
+                        else s += t[d];
+                        s += r[p];
+                    }
+                }
+                return s;
+            }
 
-            let intText = convert(integer) || 'ศูนย์';
-            let fracText = '';
-            if (parseInt(fraction, 10) > 0) {
-                 fracText = convert(fraction) + 'สตางค์';
-            }
-           
-            if (!intText && !fracText) return 'ศูนย์บาทถ้วน';
-            return (intText ? intText + 'บาท' : '') + (parseInt(fraction) === 0 ? 'ถ้วน' : fracText);
-        }
-        
-        function calculateTotals() {
-            let totalWeight = 0;
-            const weightInputs = ui.weightInputsContainer.querySelectorAll('.weight-input');
-            weightInputs.forEach(input => {
-                totalWeight += parseFloat(input.value) || 0;
-            });
-            const pricePerKg = parseFloat(ui.pricePerKgInput.value) || 0;
-            const totalAmount = totalWeight * pricePerKg;
-            ui.totalWeightEl.textContent = totalWeight.toFixed(2);
-            ui.totalAmountEl.textContent = totalAmount.toFixed(2);
-            ui.totalAmountTextEl.textContent = bahttext(totalAmount);
-        }
+            let intText = convert(integer) || 'ศูนย์';
+            let fracText = '';
+            if (parseInt(fraction, 10) > 0) {
+                 fracText = convert(fraction) + 'สตางค์';
+            }
+           
+            if (!intText && !fracText) return 'ศูนย์บาทถ้วน';
+            return (intText ? intText + 'บาท' : '') + (parseInt(fraction) === 0 ? 'ถ้วน' : fracText);
+        }
+        
+        function calculateTotals() {
+            let totalWeight = 0;
+            const weightInputs = ui.weightInputsContainer.querySelectorAll('.weight-input');
+            weightInputs.forEach(input => {
+                totalWeight += parseFloat(input.value) || 0;
+            });
+            const pricePerKg = parseFloat(ui.pricePerKgInput.value) || 0;
+            const totalAmount = totalWeight * pricePerKg;
+            ui.totalWeightEl.textContent = totalWeight.toFixed(2);
+            ui.totalAmountEl.textContent = totalAmount.toFixed(2);
+            ui.totalAmountTextEl.textContent = bahttext(totalAmount);
+        }
 
-        function renderTable(dataToRender) {
-            ui.salesTableBody.innerHTML = '';
-            if (dataToRender.length === 0) {
-                ui.salesTableBody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-stone-400">ยังไม่มีข้อมูลการขาย...</td></tr>';
-                return;
-            }
-            dataToRender.forEach(sale => {
-                const row = document.createElement('tr');
-                row.className = 'bg-white border-b hover:bg-stone-50';
-                const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
-                row.innerHTML = `
-                    <td class="px-6 py-4">${saleDate.toLocaleDateString('th-TH')}</td>
-                    <td class="px-6 py-4 font-medium text-stone-900 whitespace-nowrap">${sale.seller}</td>
-                    <td class="px-6 py-4 text-right">${sale.weight.toFixed(2)}</td>
-                    <td class="px-6 py-4 text-right">${sale.price.toFixed(2)}</td>
-                    <td class="px-6 py-4 text-right font-bold text-amber-600">${sale.total.toFixed(2)}</td>
-                    <td class="px-6 py-4 text-center space-x-2">
-                        <button class="reprint-btn text-gray-500 hover:text-gray-700 p-1" data-id="${sale.id}" title="พิมพ์ซ้ำ">🖨️</button>
-                        <button class="edit-btn text-blue-600 hover:text-blue-800 p-1" data-id="${sale.id}" title="แก้ไข">✏️</button>
-                        <button class="delete-btn text-red-600 hover:text-red-800 p-1" data-id="${sale.id}" title="ลบ">🗑️</button>
-                    </td>
-                `;
-                ui.salesTableBody.appendChild(row);
-            });
-        }
-        
-        function renderSummary() {
-            if (!localSalesData || localSalesData.length === 0) {
-                ui.summaryTotalSellers.textContent = '0';
-                ui.summaryTotalWeight.textContent = '0.00';
-                ui.summaryTotalPrice.textContent = '0.00';
-                return;
-            }
+        function renderTable(dataToRender) {
+            ui.salesTableBody.innerHTML = '';
+            if (dataToRender.length === 0) {
+                ui.salesTableBody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-stone-400">ยังไม่มีข้อมูลการขาย...</td></tr>';
+                return;
+            }
+            dataToRender.forEach(sale => {
+                const row = document.createElement('tr');
+                row.className = 'bg-white border-b hover:bg-stone-50';
+                const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
+                row.innerHTML = `
+                    <td class="px-6 py-4">${saleDate.toLocaleDateString('th-TH')}</td>
+                    <td class="px-6 py-4 font-medium text-stone-900 whitespace-nowrap">${sale.seller}</td>
+                    <td class="px-6 py-4 text-right">${sale.weight.toFixed(2)}</td>
+                    <td class="px-6 py-4 text-right">${sale.price.toFixed(2)}</td>
+                    <td class="px-6 py-4 text-right font-bold text-amber-600">${sale.total.toFixed(2)}</td>
+                    <td class="px-6 py-4 text-center space-x-2">
+                        <button class="reprint-btn text-gray-500 hover:text-gray-700 p-1" data-id="${sale.id}" title="พิมพ์ซ้ำ">🖨️</button>
+                        <button class="edit-btn text-blue-600 hover:text-blue-800 p-1" data-id="${sale.id}" title="แก้ไข">✏️</button>
+                        <button class="delete-btn text-red-600 hover:text-red-800 p-1" data-id="${sale.id}" title="ลบ">🗑️</button>
+                    </td>
+                `;
+                ui.salesTableBody.appendChild(row);
+            });
+        }
+        
+        function renderSummary() {
+            if (!localSalesData || localSalesData.length === 0) {
+                ui.summaryTotalSellers.textContent = '0';
+                ui.summaryTotalWeight.textContent = '0.00';
+                ui.summaryTotalPrice.textContent = '0.00';
+                return;
+            }
 
-            const totalSellers = new Set(localSalesData.map(s => s.seller)).size;
-            const totalWeight = localSalesData.reduce((acc, sale) => acc + sale.weight, 0);
-            const totalPrice = localSalesData.reduce((acc, sale) => acc + sale.total, 0);
+            const totalSellers = new Set(localSalesData.map(s => s.seller)).size;
+            const totalWeight = localSalesData.reduce((acc, sale) => acc + sale.weight, 0);
+            const totalPrice = localSalesData.reduce((acc, sale) => acc + sale.total, 0);
 
-            ui.summaryTotalSellers.textContent = totalSellers.toLocaleString('th-TH');
-            ui.summaryTotalWeight.textContent = totalWeight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            ui.summaryTotalPrice.textContent = totalPrice.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
+            ui.summaryTotalSellers.textContent = totalSellers.toLocaleString('th-TH');
+            ui.summaryTotalWeight.textContent = totalWeight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            ui.summaryTotalPrice.textContent = totalPrice.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
 
-        function renderDashboard() {
-            renderSalesBySellerChart();
-            renderDailySalesChart();
-        }
-        
-        function getChartColors(count) {
-            const baseColors = ['#d97706', '#f59e0b', '#fcd34d', '#fef3c7', '#fffbeb', '#b45309', '#92400e'];
-            let colors = [];
-            for(let i = 0; i < count; i++) {
-                colors.push(baseColors[i % baseColors.length]);
-            }
-            return colors;
-        }
+        function renderDashboard() {
+            renderSalesBySellerChart();
+            renderDailySalesChart();
+        }
+        
+        function getChartColors(count) {
+            const baseColors = ['#d97706', '#f59e0b', '#fcd34d', '#fef3c7', '#fffbeb', '#b45309', '#92400e'];
+            let colors = [];
+            for(let i = 0; i < count; i++) {
+                colors.push(baseColors[i % baseColors.length]);
+            }
+            return colors;
+        }
 
-        function renderSalesBySellerChart() {
-            const salesBySeller = localSalesData.reduce((acc, sale) => {
-                acc[sale.seller] = (acc[sale.seller] || 0) + sale.total;
-                return acc;
-            }, {});
-            const labels = Object.keys(salesBySeller);
-            const data = Object.values(salesBySeller);
-            if (salesBySellerChart) salesBySellerChart.destroy();
-            salesBySellerChart = new Chart(document.getElementById('sales-by-seller-chart').getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{ label: 'ยอดขาย', data: data, backgroundColor: getChartColors(labels.length), borderColor: '#ffffff', borderWidth: 2 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-            });
-        }
+        function renderSalesBySellerChart() {
+            const salesBySeller = localSalesData.reduce((acc, sale) => {
+                acc[sale.seller] = (acc[sale.seller] || 0) + sale.total;
+                return acc;
+            }, {});
+            const labels = Object.keys(salesBySeller);
+            const data = Object.values(salesBySeller);
+            if (salesBySellerChart) salesBySellerChart.destroy();
+            salesBySellerChart = new Chart(document.getElementById('sales-by-seller-chart').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{ label: 'ยอดขาย', data: data, backgroundColor: getChartColors(labels.length), borderColor: '#ffffff', borderWidth: 2 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+        }
 
-        function renderDailySalesChart() {
-            const salesByDay = localSalesData.reduce((acc, sale) => {
-                const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
-                const day = saleDate.toLocaleDateString('th-TH', { year: '2-digit', month: 'short', day: 'numeric'});
-                acc[day] = (acc[day] || 0) + sale.total;
-                return acc;
-            }, {});
-            const sortedLabels = Object.keys(salesByDay).sort((a,b) => {
-                 const dateA = new Date(a.split('/')[2] - 543, a.split('/')[1] -1, a.split('/')[0]);
-                 const dateB = new Date(b.split('/')[2] - 543, b.split('/')[1] -1, b.split('/')[0]);
-                 return dateA - dateB;
-            });
-            const data = sortedLabels.map(label => salesByDay[label]);
-            if (dailySalesChart) dailySalesChart.destroy();
-            dailySalesChart = new Chart(document.getElementById('daily-sales-chart').getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: sortedLabels,
-                    datasets: [{ label: 'ยอดขายรวมรายวัน', data: data, fill: true, backgroundColor: 'rgba(217, 119, 6, 0.2)', borderColor: 'rgb(217, 119, 6)', tension: 0.1, pointBackgroundColor: 'rgb(217, 119, 6)', pointRadius: 4 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
-            });
-        }
+        function renderDailySalesChart() {
+            const salesByDay = localSalesData.reduce((acc, sale) => {
+                const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
+                const day = saleDate.toLocaleDateString('th-TH', { year: '2-digit', month: 'short', day: 'numeric'});
+                acc[day] = (acc[day] || 0) + sale.total;
+                return acc;
+            }, {});
+            const sortedLabels = Object.keys(salesByDay).sort((a,b) => {
+                 const dateA = new Date(a.split('/')[2] - 543, a.split('/')[1] -1, a.split('/')[0]);
+                 const dateB = new Date(b.split('/')[2] - 543, b.split('/')[1] -1, b.split('/')[0]);
+                 return dateA - dateB;
+            });
+            const data = sortedLabels.map(label => salesByDay[label]);
+            if (dailySalesChart) dailySalesChart.destroy();
+            dailySalesChart = new Chart(document.getElementById('daily-sales-chart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: sortedLabels,
+                    datasets: [{ label: 'ยอดขายรวมรายวัน', data: data, fill: true, backgroundColor: 'rgba(217, 119, 6, 0.2)', borderColor: 'rgb(217, 119, 6)', tension: 0.1, pointBackgroundColor: 'rgb(217, 119, 6)', pointRadius: 4 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+            });
+        }
 
-        function createPrintableReceipt(sale) {
-            const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
-            
-            const generateSingleReceiptHTML = (title) => `
-                <div class="w-1/2 p-4 border border-dashed border-stone-400 h-full flex flex-col text-xs">
-                    <div class="text-center mb-4">
-                        <h2 class="text-base font-bold">${title}</h2>
-                        <h3 class="text-sm font-semibold mt-1">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</h3>
-                        <p class="text-xs text-stone-600">15/1 ม.6 ต.หนองโพนงาม อ.เกษตรสมบูรณ์ จ.ชัยภูมิ</p>
-                    </div>
-                    <div class="border-y border-stone-300 py-1 mb-2">
-                        <div class="flex justify-between">
-                            <span class="font-semibold">เลขที่ใบเสร็จ:</span>
-                            <span>${sale.receiptId || 'N/A'}</span>
-                        </div>
-                        <div class="flex justify-between mt-1">
-                            <span class="font-semibold">วันที่:</span>
-                            <span>${saleDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                        </div>
-                    </div>
-                    <div class="mb-2">
-                        <span class="font-semibold">ผู้ขาย:</span>
-                        <span>${sale.seller}</span>
-                    </div>
-                    <table class="w-full my-1">
-                        <thead class="border-y border-stone-300">
-                            <tr>
-                                <th class="py-1 text-left font-semibold">รายการ</th>
-                                <th class="py-1 text-right font-semibold">ยอดรวม (บาท)</th>
-                            </tr>
-                        </thead>
-                        <tbody class="border-b border-stone-300">
-                            <tr>
-                                <td class="py-2 align-top">
-                                    ค่ายางก้อนถ้วย
-                                    <span class="block text-xs text-stone-600">น้ำหนัก: ${sale.weight.toFixed(2)} กก. @ ${sale.price.toFixed(2)} บาท/กก.</span>
-                                </td>
-                                <td class="text-right align-top pt-2">${sale.total.toFixed(2)}</td>
-                            </tr>
-                        </tbody>
-                        <tfoot>
-                            <tr class="font-bold">
-                                <td class="py-2">รวมเป็นเงิน</td>
-                                <td class="text-right">${sale.total.toFixed(2)}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                    <p class="text-center mb-4 font-semibold">(${bahttext(sale.total)})</p>
-                    <div class="flex-grow"></div>
-                    <div class="flex justify-center text-center mt-4">
-                        <div>
-                            <p class="pb-1">........................................</p>
-                            <p>(ผู้รับเงิน)</p>
-                        </div>
-                    </div>
-                </div>
-            `;
+        function createPrintableReceipt(sale) {
+            const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
+            
+            const generateSingleReceiptHTML = (title) => `
+                <div class="w-1/2 p-4 border border-dashed border-stone-400 h-full flex flex-col text-xs">
+                    <div class="text-center mb-4">
+                        <h2 class="text-base font-bold">${title}</h2>
+                        <h3 class="text-sm font-semibold mt-1">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</h3>
+                        <p class="text-xs text-stone-600">15/1 ม.6 ต.หนองโพนงาม อ.เกษตรสมบูรณ์ จ.ชัยภูมิ</p>
+                    </div>
+                    <div class="border-y border-stone-300 py-1 mb-2">
+                        <div class="flex justify-between">
+                            <span class="font-semibold">เลขที่ใบเสร็จ:</span>
+                            <span>${sale.receiptId || 'N/A'}</span>
+                        </div>
+                        <div class="flex justify-between mt-1">
+                            <span class="font-semibold">วันที่:</span>
+                            <span>${saleDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <span class="font-semibold">ผู้ขาย:</span>
+                        <span>${sale.seller}</span>
+                    </div>
+                    <table class="w-full my-1">
+                        <thead class="border-y border-stone-300">
+                            <tr>
+                                <th class="py-1 text-left font-semibold">รายการ</th>
+                                <th class="py-1 text-right font-semibold">ยอดรวม (บาท)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="border-b border-stone-300">
+                            <tr>
+                                <td class="py-2 align-top">
+                                    ค่ายางก้อนถ้วย
+                                    <span class="block text-xs text-stone-600">น้ำหนัก: ${sale.weight.toFixed(2)} กก. @ ${sale.price.toFixed(2)} บาท/กก.</span>
+                                </td>
+                                <td class="text-right align-top pt-2">${sale.total.toFixed(2)}</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr class="font-bold">
+                                <td class="py-2">รวมเป็นเงิน</td>
+                                <td class="text-right">${sale.total.toFixed(2)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    <p class="text-center mb-4 font-semibold">(${bahttext(sale.total)})</p>
+                    <div class="flex-grow"></div>
+                    <div class="flex justify-center text-center mt-4">
+                        <div>
+                            <p class="pb-1">........................................</p>
+                            <p>(ผู้รับเงิน)</p>
+                        </div>
+                    </div>
+                </div>
+            `;
 
-            ui.printArea.innerHTML = `
-                <div class="flex gap-4">
-                    ${generateSingleReceiptHTML('ใบเสร็จรับเงิน ต้นฉบับ')}
-                    ${generateSingleReceiptHTML('ใบเสร็จรับเงิน (สำเนา)')}
-                </div>
-            `;
-            window.print();
-        }
+            ui.printArea.innerHTML = `
+                <div class="flex gap-4">
+                    ${generateSingleReceiptHTML('ใบเสร็จรับเงิน ต้นฉบับ')}
+                    ${generateSingleReceiptHTML('ใบเสร็จรับเงิน (สำเนา)')}
+                </div>
+            `;
+            window.print();
+        }
 
-        function clearForm() {
-            ui.sellerNameInput.value = '';
-            const weightInputs = ui.weightInputsContainer.querySelectorAll('.weight-input');
-            weightInputs.forEach(input => input.value = '');
-            ui.pricePerKgInput.value = '';
-            editingId = null;
-            ui.saveButton.textContent = 'บันทึกและพิมพ์ใบเสร็จ';
-            ui.cancelEditButton.classList.add('hidden');
-            calculateTotals();
-        }
+        function clearForm() {
+            ui.sellerNameInput.value = '';
+            const weightInputs = ui.weightInputsContainer.querySelectorAll('.weight-input');
+            weightInputs.forEach(input => input.value = '');
+            ui.pricePerKgInput.value = '';
+            editingId = null;
+            ui.saveButton.textContent = 'บันทึกและพิมพ์ใบเสร็จ';
+            ui.cancelEditButton.classList.add('hidden');
+            calculateTotals();
+        }
 
-        async function handleSave() {
-            const seller = ui.sellerNameInput.value.trim();
-            const date = ui.receiptDateInput.valueAsDate;
-            const weight = parseFloat(ui.totalWeightEl.textContent) || 0;
-            const price = parseFloat(ui.pricePerKgInput.value) || 0;
-            const total = parseFloat(ui.totalAmountEl.textContent) || 0;
-            const weightInputs = Array.from(ui.weightInputsContainer.querySelectorAll('.weight-input')).map(input => parseFloat(input.value) || 0).filter(v => v > 0);
+        async function handleSave() {
+            const seller = ui.sellerNameInput.value.trim();
+            const date = ui.receiptDateInput.valueAsDate;
+            const weight = parseFloat(ui.totalWeightEl.textContent) || 0;
+            const price = parseFloat(ui.pricePerKgInput.value) || 0;
+            const total = parseFloat(ui.totalAmountEl.textContent) || 0;
+            const weightInputs = Array.from(ui.weightInputsContainer.querySelectorAll('.weight-input')).map(input => parseFloat(input.value) || 0).filter(v => v > 0);
 
-            if (!seller || !date || weight <= 0 || price <= 0) {
-                showAlert('กรุณากรอกข้อมูลให้ครบถ้วน: ชื่อผู้ขาย, น้ำหนัก และราคา');
-                return;
-            }
+            if (!seller || !date || weight <= 0 || price <= 0) {
+                showAlert('กรุณากรอกข้อมูลให้ครบถ้วน: ชื่อผู้ขาย, น้ำหนัก และราคา');
+                return;
+            }
 
-            const saleData = { seller, date, weight, weights: weightInputs, price, total, userId };
+            const saleData = { seller, date, weight, weights: weightInputs, price, total, userId };
 
-            try {
-                if (editingId) {
-                    const docRef = doc(db, salesCollectionRef.path, editingId);
-                    await updateDoc(docRef, saleData);
-                    showAlert('อัปเดตข้อมูลสำเร็จ');
-                } else {
-                    const now = new Date();
-                    const year = now.getFullYear();
-                    const month = (now.getMonth() + 1).toString().padStart(2, '0');
-                    const day = now.getDate().toString().padStart(2, '0');
-                    const todayStart = new Date(now.setHours(0, 0, 0, 0));
-                    const salesToday = localSalesData.filter(sale => {
-                        const saleDate = sale.date.toDate();
-                        return saleDate >= todayStart;
-                    });
-                    const nextReceiptNumber = salesToday.length + 1;
-                    saleData.receiptId = `${year}${month}${day}-${String(nextReceiptNumber).padStart(3, '0')}`;
-                    const docRef = await addDoc(salesCollectionRef, saleData);
-                    showAlert('บันทึกข้อมูลสำเร็จ');
-                    createPrintableReceipt({...saleData, id: docRef.id });
-                }
-                clearForm();
-            } catch (error) {
-                console.error("Error saving document: ", error);
-                showAlert(`เกิดข้อผิดพลาดในการบันทึก: ${error.message}`);
-            }
-        }
-        
-        function handleTableClick(e) {
-            const target = e.target.closest('button');
-            if (!target) return;
+            try {
+                if (editingId) {
+                    const docRef = doc(db, salesCollectionRef.path, editingId);
+                    await updateDoc(docRef, saleData);
+                    showAlert('อัปเดตข้อมูลสำเร็จ');
+                } else {
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+                    const day = now.getDate().toString().padStart(2, '0');
+                    const todayStart = new Date(now.setHours(0, 0, 0, 0));
+                    const salesToday = localSalesData.filter(sale => {
+                        const saleDate = sale.date.toDate();
+                        return saleDate >= todayStart;
+                    });
+                    const nextReceiptNumber = salesToday.length + 1;
+                    saleData.receiptId = `${year}${month}${day}-${String(nextReceiptNumber).padStart(3, '0')}`;
+                    const docRef = await addDoc(salesCollectionRef, saleData);
+                    showAlert('บันทึกข้อมูลสำเร็จ');
+                    createPrintableReceipt({...saleData, id: docRef.id });
+                }
+                clearForm();
+            } catch (error) {
+                console.error("Error saving document: ", error);
+                showAlert(`เกิดข้อผิดพลาดในการบันทึก: ${error.message}`);
+            }
+        }
+        
+        function handleTableClick(e) {
+            const target = e.target.closest('button');
+            if (!target) return;
 
-            const id = target.dataset.id;
-            const saleToProcess = localSalesData.find(sale => sale.id === id);
-            if (!saleToProcess) return;
+            const id = target.dataset.id;
+            const saleToProcess = localSalesData.find(sale => sale.id === id);
+            if (!saleToProcess) return;
 
-            if (target.classList.contains('delete-btn')) {
-                showConfirm('คุณแน่ใจว่าต้องการลบรายการนี้?', async () => {
-                    try {
-                        await deleteDoc(doc(db, salesCollectionRef.path, id));
-                        showAlert('ลบรายการสำเร็จ');
-                    } catch (error) {
-                         console.error("Error deleting document: ", error);
-                         showAlert(`เกิดข้อผิดพลาดในการลบ: ${error.message}`);
-                    }
-                });
-            } else if (target.classList.contains('edit-btn')) {
-                editingId = id;
-                ui.sellerNameInput.value = saleToProcess.seller;
-                const saleDate = saleToProcess.date instanceof Date ? saleToProcess.date : saleToProcess.date.toDate();
-                ui.receiptDateInput.value = saleDate.toISOString().split('T')[0];
-                ui.pricePerKgInput.value = saleToProcess.price;
-                const weightInputs = ui.weightInputsContainer.querySelectorAll('.weight-input');
-                weightInputs.forEach((input, index) => {
-                    input.value = saleToProcess.weights[index] || '';
-                });
-                calculateTotals();
-                ui.saveButton.textContent = 'อัปเดตข้อมูล';
-                ui.cancelEditButton.classList.remove('hidden');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            } else if (target.classList.contains('reprint-btn')) {
-                createPrintableReceipt(saleToProcess);
-            }
-        }
-        
-        function updateDateDisplay() {
-            const date = ui.receiptDateInput.valueAsDate;
-            if (date) {
-                ui.dateDisplay.textContent = `(${date.toLocaleDateString('th-TH')})`;
-            } else {
-                const today = new Date();
-                ui.dateDisplay.textContent = `(${today.toLocaleDateString('th-TH')})`;
-            }
-        }
+            if (target.classList.contains('delete-btn')) {
+                showConfirm('คุณแน่ใจว่าต้องการลบรายการนี้?', async () => {
+                    try {
+                        await deleteDoc(doc(db, salesCollectionRef.path, id));
+                        showAlert('ลบรายการสำเร็จ');
+                    } catch (error) {
+                         console.error("Error deleting document: ", error);
+                         showAlert(`เกิดข้อผิดพลาดในการลบ: ${error.message}`);
+                    }
+                });
+            } else if (target.classList.contains('edit-btn')) {
+                editingId = id;
+                ui.sellerNameInput.value = saleToProcess.seller;
+                const saleDate = saleToProcess.date instanceof Date ? saleToProcess.date : saleToProcess.date.toDate();
+                ui.receiptDateInput.value = saleDate.toISOString().split('T')[0];
+                ui.pricePerKgInput.value = saleToProcess.price;
+                const weightInputs = ui.weightInputsContainer.querySelectorAll('.weight-input');
+                weightInputs.forEach((input, index) => {
+                    input.value = saleToProcess.weights[index] || '';
+                });
+                calculateTotals();
+                ui.saveButton.textContent = 'อัปเดตข้อมูล';
+                ui.cancelEditButton.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else if (target.classList.contains('reprint-btn')) {
+                createPrintableReceipt(saleToProcess);
+            }
+        }
+        
+        function updateDateDisplay() {
+            const date = ui.receiptDateInput.valueAsDate;
+            if (date) {
+                ui.dateDisplay.textContent = `(${date.toLocaleDateString('th-TH')})`;
+            } else {
+                const today = new Date();
+                ui.dateDisplay.textContent = `(${today.toLocaleDateString('th-TH')})`;
+            }
+        }
 
-        async function initApp() {
-            if (!firebaseConfig || Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
-                renderTable([]);
-                renderSummary();
-                showAlert('การตั้งค่า Firebase ไม่สมบูรณ์ กรุณาใส่ข้อมูล Config ในไฟล์ index.html ก่อนอัปโหลด');
-                console.error('Firebase config is missing or incomplete.');
-                return;
-            }
-            try {
-                const app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        salesCollectionRef = collection(db, "artifacts", appId, "users", userId, "sales");
-                        const q = query(salesCollectionRef);
-                        onSnapshot(q, (snapshot) => {
-                            let sales = [];
-                            snapshot.forEach((doc) => {
-                                sales.push({ id: doc.id, ...doc.data() });
-                            });
-                            sales.sort((a,b) => b.date.toDate() - a.date.toDate());
-                            localSalesData = sales;
-                            renderTable(localSalesData);
-                            renderDashboard();
-                            renderSummary();
-                        }, (error) => {
-                            console.error("Error fetching data with onSnapshot: ", error);
-                            showAlert(`เกิดข้อผิดพลาดในการดึงข้อมูล: ${error.message}`);
-                        });
-                    } else {
-                         try {
-                            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                                await signInWithCustomToken(auth, __initial_auth_token);
-                            } else {
-                                await signInAnonymously(auth);
-                            }
-                        } catch (error) {
-                            console.error('Sign-in failed:', error);
-                            showAlert(`การยืนยันตัวตนล้มเหลว: ${error.message}`);
-                        }
-                    }
-                });
-            } catch (error) {
-                 console.error("Firebase initialization error: ", error);
-                 showAlert(`เกิดข้อผิดพลาดในการเริ่มต้นระบบ: ${error.message}`);
-            }
-        }
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            ui.receiptDateInput.valueAsDate = new Date();
-            updateDateDisplay();
-            ui.saveButton.addEventListener('click', handleSave);
-            ui.cancelEditButton.addEventListener('click', clearForm);
-            ui.salesTableBody.addEventListener('click', handleTableClick);
-            ui.receiptDateInput.addEventListener('input', updateDateDisplay);
-            const calculationInputs = [...ui.weightInputsContainer.querySelectorAll('.weight-input'), ui.pricePerKgInput];
-            calculationInputs.forEach(input => input.addEventListener('input', calculateTotals));
-            ui.searchBox.addEventListener('input', (e) => {
-                const searchTerm = e.target.value.toLowerCase();
-                const filteredData = localSalesData.filter(sale => sale.seller.toLowerCase().includes(searchTerm));
-                renderTable(filteredData);
-            });
-            initApp();
-        });
-    </script>
+        async function initApp() {
+            // Check for valid Firebase config
+            if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey || firebaseConfig.apiKey === "YOUR_API_KEY") {
+                 const isCanvasEnv = typeof __firebase_config !== 'undefined';
+                 if (!isCanvasEnv) {
+                    renderTable([]);
+                    renderSummary();
+                    showAlert('การตั้งค่า Firebase ไม่สมบูรณ์ กรุณาใส่ข้อมูล Config ในไฟล์ index.html');
+                    console.error('Firebase config is missing or is a placeholder.');
+                    return;
+                 }
+            }
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        salesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/sales`);
+                        const q = query(salesCollectionRef);
+                        onSnapshot(q, (snapshot) => {
+                            let sales = [];
+                            snapshot.forEach((doc) => {
+                                sales.push({ id: doc.id, ...doc.data() });
+                            });
+                            sales.sort((a,b) => b.date.toDate() - a.date.toDate());
+                            localSalesData = sales;
+                            renderTable(localSalesData);
+                            renderDashboard();
+                            renderSummary();
+                        }, (error) => {
+                            console.error("Error fetching data with onSnapshot: ", error);
+                            showAlert(`เกิดข้อผิดพลาดในการดึงข้อมูล: ${error.message}`);
+                        });
+                    } else {
+                         try {
+                            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                                await signInWithCustomToken(auth, __initial_auth_token);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                        } catch (error) {
+                            console.error('Sign-in failed:', error);
+                            showAlert(`การยืนยันตัวตนล้มเหลว: ${error.message}`);
+                        }
+                    }
+                });
+            } catch (error) {
+                 console.error("Firebase initialization error: ", error);
+                 showAlert(`เกิดข้อผิดพลาดในการเริ่มต้นระบบ: ${error.message}`);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            ui.receiptDateInput.valueAsDate = new Date();
+            updateDateDisplay();
+            ui.saveButton.addEventListener('click', handleSave);
+            ui.cancelEditButton.addEventListener('click', clearForm);
+            ui.salesTableBody.addEventListener('click', handleTableClick);
+            ui.receiptDateInput.addEventListener('input', updateDateDisplay);
+            const calculationInputs = [...ui.weightInputsContainer.querySelectorAll('.weight-input'), ui.pricePerKgInput];
+            calculationInputs.forEach(input => input.addEventListener('input', calculateTotals));
+            ui.searchBox.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const filteredData = localSalesData.filter(sale => sale.seller.toLowerCase().includes(searchTerm));
+                renderTable(filteredData);
+            });
+            initApp();
+        });
+    </script>
 </body>
 </html>
