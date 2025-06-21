@@ -222,18 +222,8 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { initializeApp } from "firebase/app";
-        import { getAnalytics } from "firebase/analytics";
-
-        const firebaseConfig = {
-        apiKey: "AIzaSyCNVxG6s46SRXOYAeT0rJHAtz_-3IPUJNE",
-        authDomain: "coopksb001.firebaseapp.com",
-        projectId: "coopksb001",
-        storageBucket: "coopksb001.firebasestorage.app",
-        messagingSenderId: "259378610497",
-        appId: "1:259378610497:web:fd12679830e97bf5e761c0",
-        measurementId: "G-1RHH9TMD73"
-        };
+        
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'cup-rubber-sales-app';
 
         let localSalesData = [];
@@ -247,6 +237,7 @@
             appContainer: document.getElementById('app'),
             tabs: document.getElementById('tabs'),
             tabContents: document.querySelectorAll('.tab-content'),
+
             sellerNameInput: document.getElementById('seller-name'),
             receiptDateInput: document.getElementById('receipt-date'),
             dateDisplay: document.getElementById('date-display'),
@@ -648,7 +639,7 @@
 
             try {
                 if (editingId) {
-                    const docRef = doc(db, salesCollectionRef.path, editingId);
+                    const docRef = doc(db, "sales", editingId);
                     const dataToUpdate = { ...saleData };
                     const originalDoc = localSalesData.find(s => s.id === editingId);
                     if (originalDoc && originalDoc.receiptId) {
@@ -690,7 +681,7 @@
             if (target.classList.contains('delete-btn')) {
                 showConfirm('คุณแน่ใจว่าต้องการลบรายการนี้?', async () => {
                     try {
-                        await deleteDoc(doc(db, salesCollectionRef.path, id));
+                        await deleteDoc(doc(db, "sales", id));
                         showAlert('ลบรายการสำเร็จ');
                     } catch (error) {
                          console.error("Error deleting document: ", error);
@@ -887,7 +878,7 @@
                             <h3 class="text-lg">รายงานการชั่งยางประจำวันที่ ${today.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })} (ตาชั่งที่ ${scaleId})</h3>
                         </div>
                         <table class="print-table">
-                            <thead>
+                            <thead class="bg-stone-200">
                                 <tr class="border-b border-black">
                                     <th class="text-center">ลำดับที่</th>
                                     <th>ชื่อ</th>
@@ -993,15 +984,14 @@
             }
             try {
                 const app = initializeApp(firebaseConfig);
-                const analytics = getAnalytics(app);
                 auth = getAuth(app);
                 db = getFirestore(app);
                 
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         userId = user.uid;
-                        salesCollectionRef = collection(db, `artifacts/${appId}/public/data/sales`);
-                        weighingsCollectionRef = collection(db, `artifacts/${appId}/public/data/weighings`);
+                        salesCollectionRef = collection(db, "artifacts", appId, "public", "data", "sales");
+                        weighingsCollectionRef = collection(db, "artifacts", appId, "public", "data", "weighings");
                         
                         if(unsubscribeSales) unsubscribeSales();
                         const salesQuery = query(salesCollectionRef);
