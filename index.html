@@ -176,20 +176,11 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-		import { initializeApp } from "firebase/app";
-		import { getAnalytics } from "firebase/analytics";
-
-        // This configuration will use the globally provided Firebase credentials in the Canvas environment.
-        const firebaseConfig = {
-					apiKey: "AIzaSyCNVxG6s46SRXOYAeT0rJHAtz_-3IPUJNE",
-					authDomain: "coopksb001.firebaseapp.com",
-					projectId: "coopksb001",
-					storageBucket: "coopksb001.firebasestorage.app",
-					messagingSenderId: "259378610497",
-					appId: "1:259378610497:web:fd12679830e97bf5e761c0",
-					measurementId: "G-1RHH9TMD73"};
+        
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'cup-rubber-sales-app';
 
@@ -575,20 +566,16 @@
         }
 
         async function initApp() {
-            // Check for valid Firebase config
             if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
-                 const isCanvasEnv = typeof __firebase_config !== 'undefined';
-                 if (!isCanvasEnv) {
-                    renderTable([]);
-                    renderSummary();
-                    showAlert('การตั้งค่า Firebase ไม่สมบูรณ์ กรุณาใส่ข้อมูล Config ที่ถูกต้องในไฟล์ index.html');
-                    console.error('Firebase config is missing or is a placeholder.');
-                    return;
-                 }
+                renderTable([]);
+                renderSummary();
+                showAlert('การตั้งค่า Firebase ไม่ถูกต้อง ไม่สามารถเชื่อมต่อฐานข้อมูลได้');
+                console.error('Firebase config is missing.');
+                return;
             }
             try {
                 const app = initializeApp(firebaseConfig);
-				const analytics = getAnalytics(app);
+                const analytics = getAnalytics(app);
                 auth = getAuth(app);
                 db = getFirestore(app);
                 onAuthStateChanged(auth, async (user) => {
@@ -612,7 +599,7 @@
                         });
                     } else {
                          try {
-                            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                                 await signInWithCustomToken(auth, __initial_auth_token);
                             } else {
                                 await signInAnonymously(auth);
