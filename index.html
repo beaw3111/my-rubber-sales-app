@@ -1028,8 +1028,9 @@
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         userId = user.uid;
-                        salesCollectionRef = collection(db, `artifacts/${appId}/public/data/sales`);
-                        weighingsCollectionRef = collection(db, `artifacts/${appId}/public/data/weighings`);
+                        // --- FIX: Simplified collection paths ---
+                        salesCollectionRef = collection(db, 'sales');
+                        weighingsCollectionRef = collection(db, 'weighings');
                         
                         if(unsubscribeSales) unsubscribeSales();
                         const salesQuery = query(salesCollectionRef);
