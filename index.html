@@ -226,7 +226,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, where, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyCNVxG6s46SRXOYAeT0rJHAtz_-3IPUJNE",
@@ -383,6 +383,7 @@
                     <td class="px-6 py-4 text-right">${sale.price.toFixed(2)}</td>
                     <td class="px-6 py-4 text-right font-bold text-amber-600">${sale.total.toFixed(2)}</td>
                     <td class="px-6 py-4 text-center space-x-2">
+                    <td class="px-6 py-4 text-right font-bold text-amber-600">${sale.total.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                         <button class="reprint-btn text-gray-500 hover:text-gray-700 p-1" data-id="${sale.id}" title="พิมพ์ซ้ำ">🖨️</button>
                         <button class="edit-btn text-blue-600 hover:text-blue-800 p-1" data-id="${sale.id}" title="แก้ไข">✏️</button>
                         <button class="delete-btn text-red-600 hover:text-red-800 p-1" data-id="${sale.id}" title="ลบ">🗑️</button>
@@ -561,8 +562,12 @@
         }
         
         function createDailySummaryReport() {
-            const reportDate = ui.reportDateInput.valueAsDate;
-            if (!reportDate) {
+            const reportDate = new Date();
+            const formattedDate = reportDate.toLocaleDateString('th-TH', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+            }); {
                 showAlert('กรุณาเลือกวันที่ที่ต้องการทำรายงาน');
                 return;
             }
@@ -579,7 +584,10 @@
                 showAlert(`ไม่พบข้อมูลการขายในวันที่ ${reportStart.toLocaleDateString('th-TH')}`);
                 return;
             }
-            
+            if (salesForDay.length === 0) {
+                showAlert(`ไม่พบข้อมูลการขายในวันที่ ${reportStart.toLocaleDateString('th-TH')}`);
+                return;
+            }
             let tableRows = '';
             salesForDay.forEach((sale, index) => {
                 tableRows += `
@@ -599,7 +607,7 @@
                 <div class="p-8 bg-white text-black">
                     <div class="text-center mb-4">
                         <h2 class="text-xl font-bold">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</h2>
-                        <h3 class="text-lg">รายงานการชั่งยางประจำวันที่ ${reportStart.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</h3>
+                        <h3 class="text-lg">รายงานการชั่งยางประจำวันที่ ${formattedDate} (ตาชั่งที่ ${scaleId})</h3>
                     </div>
                     <table class="w-full text-sm border-collapse border border-black">
                         <thead class="bg-stone-200">
@@ -639,6 +647,12 @@
 
         async function handleSave() {
             if (!salesCollectionRef) return showAlert('ยังไม่พร้อมใช้งาน กรุณารอสักครู่');
+            if (weightInputs.length === 0) {showAlert('กรุณากรอกน้ำหนักอย่างน้อย 1 รายการ');
+                return;
+    }
+            if (total <= 0) {showAlert('ยอดรวมต้องมากกว่า 0 บาท');
+            return;
+    }
             const seller = ui.sellerNameInput.value.trim();
             const date = ui.receiptDateInput.valueAsDate;
             const scaleNumber = ui.scaleNumberInput.value;
@@ -796,16 +810,17 @@
         
         function renderWeighingStations() {
             for (let i = 1; i <= 4; i++) {
-                const tabContent = document.getElementById(`tab-weighing-${i}`);
-                if(tabContent) {
-                    tabContent.innerHTML = createWeighingStationHTML(i);
-                    document.getElementById(`save-weighing-${i}`).addEventListener('click', saveWeighing);
-                    document.getElementById(`multiplier-weight-${i}`).addEventListener('input', () => calculateTotalWeight(i));
-                    document.getElementById(`print-weighing-log-${i}`).addEventListener('click', printWeighingLog);
-                    document.getElementById(`weighing-table-body-${i}`).addEventListener('click', handleWeighingTableClick);
-                }
+            const tabContent = document.getElementById(`tab-weighing-${i}`);
+            if(tabContent) {
+                tabContent.innerHTML = createWeighingStationHTML(i);
+                document.getElementById(`save-weighing-${i}`).addEventListener('click', saveWeighing);
+                document.getElementById(`multiplier-weight-${i}`).addEventListener('input', () => calculateTotalWeight(i));
+                document.getElementById(`weighing-weight-${i}`).addEventListener('input', () => calculateTotalWeight(i)); // เพิ่มบรรทัดนี้
+                document.getElementById(`print-weighing-log-${i}`).addEventListener('click', printWeighingLog);
+                document.getElementById(`weighing-table-body-${i}`).addEventListener('click', handleWeighingTableClick);
             }
         }
+    }
 
         async function saveWeighing(event) {
             if (!weighingsCollectionRef) return showAlert('ยังไม่พร้อมใช้งาน กรุณารอสักครู่');
@@ -1117,7 +1132,10 @@
             calculationInputs.forEach(input => input.addEventListener('input', calculateTotals));
             ui.searchBox.addEventListener('input', (e) => {
                 const searchTerm = e.target.value.toLowerCase();
-                const filteredData = localSalesData.filter(sale => sale.seller.toLowerCase().includes(searchTerm));
+                const filteredData = localSalesData.filter(sale => 
+                    sale.seller.toLowerCase().includes(searchTerm) ||
+                    sale.date.toDate().toLocaleDateString('th-TH').includes(searchTerm)
+                );
                 renderTable(filteredData);
             });
 
