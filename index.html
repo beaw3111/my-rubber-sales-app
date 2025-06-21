@@ -224,10 +224,20 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, where, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const firebaseConfig = {
+            apiKey: "AIzaSyCNVxG6s46SRXOYAeT0rJHAtz_-3IPUJNE",
+            authDomain: "coopksb001.firebaseapp.com",
+            projectId: "coopksb001",
+            storageBucket: "coopksb001.appspot.com",
+            messagingSenderId: "259378610497",
+            appId: "1:259378610497:web:fd12679830e97bf5e761c0",
+            measurementId: "G-1RHH9TMD73"
+        };
+        
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'cup-rubber-sales-app';
 
         let localSalesData = [];
@@ -646,7 +656,7 @@
 
             try {
                 if (editingId) {
-                    const docRef = doc(db, salesCollectionRef.path, editingId);
+                    const docRef = doc(db, "sales", editingId);
                     const dataToUpdate = { ...saleData };
                     const originalDoc = localSalesData.find(s => s.id === editingId);
                     if (originalDoc && originalDoc.receiptId) {
@@ -688,7 +698,7 @@
             if (target.classList.contains('delete-btn')) {
                 showConfirm('คุณแน่ใจว่าต้องการลบรายการนี้?', async () => {
                     try {
-                        await deleteDoc(doc(db, salesCollectionRef.path, id));
+                        await deleteDoc(doc(db, "sales", id));
                         showAlert('ลบรายการสำเร็จ');
                     } catch (error) {
                          console.error("Error deleting document: ", error);
@@ -1004,6 +1014,7 @@
             }
             try {
                 const app = initializeApp(firebaseConfig);
+                const analytics = getAnalytics(app);
                 auth = getAuth(app);
                 db = getFirestore(app);
                 
