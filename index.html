@@ -27,153 +27,189 @@
 </head>
 <body class="bg-stone-100 text-stone-800">
 
-    <div id="app" class="container mx-auto p-4 sm:p-6 lg:p-8">
-        
-        <header class="mb-8">
-            <h1 class="text-4xl font-bold text-stone-900">ระบบจัดการขายยางก้อนถ้วย</h1>
-            <p class="text-stone-600 mt-1">ออกใบเสร็จ บันทึกข้อมูล และดูสรุปยอดขายในที่เดียว</p>
-        </header>
-
-        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-            <div class="lg:col-span-2 space-y-8">
-                
-                <section id="receipt-generator" class="bg-white p-6 rounded-xl shadow-md">
-                    <h2 class="text-2xl font-bold mb-2 border-b pb-3 text-stone-800">1. กรอกข้อมูลเพื่อออกใบเสร็จ</h2>
-                    <p class="text-sm text-stone-500 mt-2 mb-4">ส่วนนี้คือศูนย์กลางการทำงาน สำหรับบันทึกข้อมูลการขาย ระบบจะคำนวณยอดรวมให้อัตโนมัติ และเมื่อบันทึกข้อมูลแล้วจะสร้างใบเสร็จสำหรับพิมพ์ได้ทันที</p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="seller-name" class="block text-sm font-medium text-stone-600 mb-1">ชื่อ-สกุล ผู้ขาย</label>
-                            <input type="text" id="seller-name" class="w-full p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500" placeholder="เช่น นายสมชาย ใจดี">
-                        </div>
-                        <div>
-                            <label for="scale-number" class="block text-sm font-medium text-stone-600 mb-1">ตาชั่งที่</label>
-                            <input type="number" id="scale-number" min="1" max="9" class="w-full p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500" placeholder="1-9">
-                        </div>
-                        <div class="md:col-span-2">
-                            <label for="receipt-date" class="block text-sm font-medium text-stone-600 mb-1">วันที่ <span id="date-display" class="font-normal text-stone-500 ml-2"></span></label>
-                            <input type="date" id="receipt-date" class="w-full p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500">
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-stone-600 mb-1">น้ำหนัก (กก.) - ใส่ได้สูงสุด 5 รายการ</label>
-                            <div id="weight-inputs-container" class="grid grid-cols-2 sm:grid-cols-5 gap-4">
-                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 1">
-                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 2">
-                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 3">
-                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 4">
-                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 5">
-                            </div>
-                        </div>
-                        <div class="md:col-span-2">
-                            <label for="price-per-kg" class="block text-sm font-medium text-stone-600 mb-1">ราคาต่อหน่วย (บาท/กก.)</label>
-                            <input type="number" id="price-per-kg" class="w-full p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500" placeholder="0.00">
-                        </div>
-                        <div class="md:col-span-2 bg-stone-200 p-4 rounded-lg space-y-3">
-                            <div class="flex justify-between items-center">
-                                <span class="font-medium text-stone-600">น้ำหนักรวม (กก.):</span>
-                                <span id="total-weight" class="text-xl font-bold text-stone-800">0.00</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="font-medium text-stone-600">รวมเป็นเงินทั้งสิ้น (บาท):</span>
-                                <span id="total-amount" class="text-2xl font-bold text-amber-600">0.00</span>
-                            </div>
-                            <div class="flex justify-between items-center text-right">
-                                <span class="font-medium text-stone-600">(ตัวอักษร):</span>
-                                <span id="total-amount-text" class="text-sm text-stone-500">-</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-6 flex justify-end items-center gap-4">
-                        <button id="cancel-edit-button" class="hidden bg-stone-200 text-stone-700 font-bold py-2 px-6 rounded-lg hover:bg-stone-300 transition-colors">
-                            ยกเลิก
-                        </button>
-                        <button id="save-button" class="bg-amber-600 text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-colors">
-                            บันทึกและพิมพ์ใบเสร็จ
-                        </button>
-                    </div>
-                </section>
-
-                <section id="sales-data" class="bg-white p-6 rounded-xl shadow-md">
-                    <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-2 border-b pb-3">
-                        <h2 class="text-2xl font-bold text-stone-800">2. ประวัติและรายงาน</h2>
-                        <input type="text" id="search-box" class="mt-3 sm:mt-0 w-full sm:w-64 p-2 border border-stone-300 rounded-md shadow-sm" placeholder="🔍 ค้นหาตามชื่อผู้ขาย...">
-                    </div>
-                     <p class="text-sm text-stone-500 mt-2 mb-4">ข้อมูลการขายทั้งหมดที่เคยบันทึกไว้จะแสดงในตารางนี้ คุณสามารถค้นหาข้อมูลตามชื่อผู้ขาย แก้ไขรายการที่ผิดพลาด หรือลบรายการที่ไม่ต้องการได้</p>
-                     
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                        <div class="bg-stone-200 p-4 rounded-lg text-center">
-                            <p class="text-sm font-medium text-stone-600">จำนวนผู้ขายทั้งหมด</p>
-                            <p id="summary-total-sellers" class="text-2xl font-bold text-amber-600">0</p>
-                        </div>
-                        <div class="bg-stone-200 p-4 rounded-lg text-center">
-                            <p class="text-sm font-medium text-stone-600">น้ำหนักรวมทั้งหมด (กก.)</p>
-                            <p id="summary-total-weight" class="text-2xl font-bold text-amber-600">0.00</p>
-                        </div>
-                        <div class="bg-stone-200 p-4 rounded-lg text-center">
-                            <p class="text-sm font-medium text-stone-600">ยอดขายรวมทั้งหมด (บาท)</p>
-                            <p id="summary-total-price" class="text-2xl font-bold text-amber-600">0.00</p>
-                        </div>
-                    </div>
-
-                    <div class="border-t pt-4 mt-6">
-                        <h3 class="text-lg font-semibold text-stone-700">พิมพ์รายงานสรุปประจำวัน</h3>
-                        <div class="flex items-center gap-4 mt-2">
-                             <input type="date" id="report-date" class="p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500">
-                             <button id="print-report-btn" class="bg-sky-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-sky-700 transition-colors">พิมพ์รายงาน</button>
-                        </div>
-                    </div>
-
-
-                    <div class="overflow-x-auto mt-6">
-                        <table class="w-full text-sm text-left text-stone-500">
-                            <thead class="text-xs text-stone-700 uppercase bg-stone-200">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3">วันที่</th>
-                                    <th scope="col" class="px-6 py-3">ชื่อผู้ขาย</th>
-                                    <th scope="col" class="px-6 py-3 text-right">น้ำหนัก (กก.)</th>
-                                    <th scope="col" class="px-6 py-3 text-right">ราคา/หน่วย</th>
-                                    <th scope="col" class="px-6 py-3 text-right">ยอดรวม (บาท)</th>
-                                    <th scope="col" class="px-6 py-3 text-center">การดำเนินการ</th>
-                                </tr>
-                            </thead>
-                            <tbody id="sales-table-body">
-                                <tr>
-                                    <td colspan="6" class="px-6 py-8 text-center text-stone-400">กำลังโหลดข้อมูล...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
+    <!-- Login Page -->
+    <div id="login-page" class="flex items-center justify-center min-h-screen">
+        <div class="w-full max-w-md bg-white p-8 rounded-xl shadow-lg">
+            <h2 class="text-3xl font-bold text-center text-stone-900 mb-2">ยินดีต้อนรับ</h2>
+            <p class="text-center text-stone-500 mb-6">กรุณาเข้าสู่ระบบเพื่อใช้งาน</p>
+            <div class="space-y-4">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-stone-600">ชื่อผู้ใช้</label>
+                    <input type="text" id="username" class="mt-1 w-full p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-stone-600">รหัสผ่าน</label>
+                    <input type="password" id="password" class="mt-1 w-full p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500">
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                    <button id="login-btn" class="w-full bg-amber-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-amber-700 transition-colors">เข้าสู่ระบบ</button>
+                    <button id="register-btn" class="w-full bg-stone-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-stone-700 transition-colors">ลงทะเบียน</button>
+                </div>
             </div>
+        </div>
+    </div>
 
-            <div class="lg:col-span-1 space-y-8">
-                <section id="dashboard" class="bg-white p-6 rounded-xl shadow-md">
-                    <h2 class="text-2xl font-bold mb-2 border-b pb-3 text-stone-800">3. สรุปภาพรวม</h2>
-                    <p class="text-sm text-stone-500 mt-2 mb-4">แดชบอร์ดนี้จะสรุปข้อมูลการขายทั้งหมดในรูปแบบกราฟ ช่วยให้เห็นภาพรวมและแนวโน้มต่างๆ ได้อย่างรวดเร็ว โดยข้อมูลจะอัปเดตอัตโนมัติทุกครั้งที่มีการบันทึก</p>
-                    <div class="space-y-8">
-                        <div class="border-b pb-4 mb-4">
-                            <h3 class="font-bold text-center mb-2 text-stone-700">สรุปยอดประจำวัน</h3>
-                            <div class="bg-amber-100 p-4 rounded-lg text-center">
-                                <p class="text-sm font-medium text-amber-800">ปริมาณรวมวันนี้ (กก.)</p>
-                                <p id="summary-daily-weight" class="text-2xl font-bold text-amber-700">0.00</p>
+    <!-- Main App Container -->
+    <div id="app-container" class="hidden">
+        <div id="app" class="container mx-auto p-4 sm:p-6 lg:p-8">
+            <header class="mb-8 flex justify-between items-center">
+                <div>
+                    <h1 class="text-4xl font-bold text-stone-900">ระบบจัดการขายยางก้อนถ้วย</h1>
+                    <p id="welcome-message" class="text-stone-600 mt-1">ออกใบเสร็จ บันทึกข้อมูล และดูสรุปยอดขายในที่เดียว</p>
+                </div>
+                <button id="logout-btn" class="bg-red-500 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-red-600 transition-colors">ออกจากระบบ</button>
+            </header>
+
+            <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                <div class="lg:col-span-2 space-y-8">
+                    
+                    <!-- Admin Panel -->
+                    <section id="admin-panel" class="hidden bg-white p-6 rounded-xl shadow-md">
+                         <h2 class="text-2xl font-bold mb-2 border-b pb-3 text-stone-800">แผงควบคุมผู้ดูแลระบบ</h2>
+                         <p class="text-sm text-stone-500 mt-2 mb-4">อนุมัติหรือปฏิเสธคำขอลงทะเบียนผู้ใช้ใหม่</p>
+                         <div id="pending-users-list" class="space-y-3">
+                            <p class="text-stone-500">ไม่มีผู้ใช้ที่รอการอนุมัติ</p>
+                         </div>
+                    </section>
+                    
+                    <section id="receipt-generator" class="bg-white p-6 rounded-xl shadow-md">
+                        <h2 class="text-2xl font-bold mb-2 border-b pb-3 text-stone-800">1. กรอกข้อมูลเพื่อออกใบเสร็จ</h2>
+                        <p class="text-sm text-stone-500 mt-2 mb-4">ส่วนนี้คือศูนย์กลางการทำงาน สำหรับบันทึกข้อมูลการขาย ระบบจะคำนวณยอดรวมให้อัตโนมัติ และเมื่อบันทึกข้อมูลแล้วจะสร้างใบเสร็จสำหรับพิมพ์ได้ทันที</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="seller-name" class="block text-sm font-medium text-stone-600 mb-1">ชื่อ-สกุล ผู้ขาย</label>
+                                <input type="text" id="seller-name" class="w-full p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500" placeholder="เช่น นายสมชาย ใจดี">
+                            </div>
+                            <div>
+                                <label for="scale-number" class="block text-sm font-medium text-stone-600 mb-1">ตาชั่งที่</label>
+                                <input type="number" id="scale-number" min="1" max="9" class="w-full p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500" placeholder="1-9">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="receipt-date" class="block text-sm font-medium text-stone-600 mb-1">วันที่ <span id="date-display" class="font-normal text-stone-500 ml-2"></span></label>
+                                <input type="date" id="receipt-date" class="w-full p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-stone-600 mb-1">น้ำหนัก (กก.) - ใส่ได้สูงสุด 5 รายการ</label>
+                                <div id="weight-inputs-container" class="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                                    <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 1">
+                                    <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 2">
+                                    <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 3">
+                                    <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 4">
+                                    <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 5">
+                                </div>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="price-per-kg" class="block text-sm font-medium text-stone-600 mb-1">ราคาต่อหน่วย (บาท/กก.)</label>
+                                <input type="number" id="price-per-kg" class="w-full p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500" placeholder="0.00">
+                            </div>
+                            <div class="md:col-span-2 bg-stone-200 p-4 rounded-lg space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium text-stone-600">น้ำหนักรวม (กก.):</span>
+                                    <span id="total-weight" class="text-xl font-bold text-stone-800">0.00</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium text-stone-600">รวมเป็นเงินทั้งสิ้น (บาท):</span>
+                                    <span id="total-amount" class="text-2xl font-bold text-amber-600">0.00</span>
+                                </div>
+                                <div class="flex justify-between items-center text-right">
+                                    <span class="font-medium text-stone-600">(ตัวอักษร):</span>
+                                    <span id="total-amount-text" class="text-sm text-stone-500">-</span>
+                                </div>
                             </div>
                         </div>
-                        <div>
-                            <h3 class="font-bold text-center mb-2 text-stone-700">สัดส่วนยอดขายตามผู้ขาย</h3>
-                            <div class="chart-container">
-                                <canvas id="sales-by-seller-chart"></canvas>
+                        <div class="mt-6 flex justify-end items-center gap-4">
+                            <button id="cancel-edit-button" class="hidden bg-stone-200 text-stone-700 font-bold py-2 px-6 rounded-lg hover:bg-stone-300 transition-colors">
+                                ยกเลิก
+                            </button>
+                            <button id="save-button" class="bg-amber-600 text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-colors">
+                                บันทึกและพิมพ์ใบเสร็จ
+                            </button>
+                        </div>
+                    </section>
+
+                    <section id="sales-data" class="bg-white p-6 rounded-xl shadow-md">
+                        <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-2 border-b pb-3">
+                            <h2 class="text-2xl font-bold text-stone-800">2. ประวัติและรายงาน</h2>
+                            <input type="text" id="search-box" class="mt-3 sm:mt-0 w-full sm:w-64 p-2 border border-stone-300 rounded-md shadow-sm" placeholder="🔍 ค้นหาตามชื่อผู้ขาย...">
+                        </div>
+                         <p class="text-sm text-stone-500 mt-2 mb-4">ข้อมูลการขายทั้งหมดที่เคยบันทึกไว้จะแสดงในตารางนี้ คุณสามารถค้นหาข้อมูลตามชื่อผู้ขาย แก้ไขรายการที่ผิดพลาด หรือลบรายการที่ไม่ต้องการได้</p>
+                         
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                            <div class="bg-stone-200 p-4 rounded-lg text-center">
+                                <p class="text-sm font-medium text-stone-600">จำนวนผู้ขายทั้งหมด</p>
+                                <p id="summary-total-sellers" class="text-2xl font-bold text-amber-600">0</p>
+                            </div>
+                            <div class="bg-stone-200 p-4 rounded-lg text-center">
+                                <p class="text-sm font-medium text-stone-600">น้ำหนักรวมทั้งหมด (กก.)</p>
+                                <p id="summary-total-weight" class="text-2xl font-bold text-amber-600">0.00</p>
+                            </div>
+                            <div class="bg-stone-200 p-4 rounded-lg text-center">
+                                <p class="text-sm font-medium text-stone-600">ยอดขายรวมทั้งหมด (บาท)</p>
+                                <p id="summary-total-price" class="text-2xl font-bold text-amber-600">0.00</p>
                             </div>
                         </div>
-                        <div>
-                            <h3 class="font-bold text-center mb-2 text-stone-700">แนวโน้มยอดขายรายวัน</h3>
-                            <div class="chart-container">
-                                <canvas id="daily-sales-chart"></canvas>
+
+                        <div class="border-t pt-4 mt-6">
+                            <h3 class="text-lg font-semibold text-stone-700">พิมพ์รายงานสรุปประจำวัน</h3>
+                            <div class="flex items-center gap-4 mt-2">
+                                 <input type="date" id="report-date" class="p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500">
+                                 <button id="print-report-btn" class="bg-sky-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-sky-700 transition-colors">พิมพ์รายงาน</button>
                             </div>
                         </div>
-                    </div>
-                </section>
-            </div>
-        </main>
+
+
+                        <div class="overflow-x-auto mt-6">
+                            <table class="w-full text-sm text-left text-stone-500">
+                                <thead class="text-xs text-stone-700 uppercase bg-stone-200">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3">วันที่</th>
+                                        <th scope="col" class="px-6 py-3">ชื่อผู้ขาย</th>
+                                        <th scope="col" class="px-6 py-3 text-right">น้ำหนัก (กก.)</th>
+                                        <th scope="col" class="px-6 py-3 text-right">ราคา/หน่วย</th>
+                                        <th scope="col" class="px-6 py-3 text-right">ยอดรวม (บาท)</th>
+                                        <th scope="col" class="px-6 py-3 text-center">การดำเนินการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sales-table-body">
+                                    <tr>
+                                        <td colspan="6" class="px-6 py-8 text-center text-stone-400">กำลังโหลดข้อมูล...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="lg:col-span-1 space-y-8">
+                    <section id="dashboard" class="bg-white p-6 rounded-xl shadow-md">
+                        <h2 class="text-2xl font-bold mb-2 border-b pb-3 text-stone-800">3. สรุปภาพรวม</h2>
+                        <p class="text-sm text-stone-500 mt-2 mb-4">แดชบอร์ดนี้จะสรุปข้อมูลการขายทั้งหมดในรูปแบบกราฟ ช่วยให้เห็นภาพรวมและแนวโน้มต่างๆ ได้อย่างรวดเร็ว โดยข้อมูลจะอัปเดตอัตโนมัติทุกครั้งที่มีการบันทึก</p>
+                        <div class="space-y-8">
+                            <div class="border-b pb-4 mb-4">
+                                <h3 class="font-bold text-center mb-2 text-stone-700">สรุปยอดประจำวัน</h3>
+                                <div class="bg-amber-100 p-4 rounded-lg text-center">
+                                    <p class="text-sm font-medium text-amber-800">ปริมาณรวมวันนี้ (กก.)</p>
+                                    <p id="summary-daily-weight" class="text-2xl font-bold text-amber-700">0.00</p>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-center mb-2 text-stone-700">สัดส่วนยอดขายตามผู้ขาย</h3>
+                                <div class="chart-container">
+                                    <canvas id="sales-by-seller-chart"></canvas>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-center mb-2 text-stone-700">แนวโน้มยอดขายรายวัน</h3>
+                                <div class="chart-container">
+                                    <canvas id="daily-sales-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </main>
+        </div>
     </div>
 
     <div id="print-area"></div>
@@ -197,8 +233,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, where, getDocs, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyCNVxG6s46SRXOYAeT0rJHAtz_-3IPUJNE",
@@ -216,8 +252,21 @@
         let salesBySellerChart, dailySalesChart;
         let editingId = null;
         let db, auth, userId, salesCollectionRef;
+        let unsubscribeSales = null; 
+        let unsubscribePendingUsers = null;
 
         const ui = {
+            loginPage: document.getElementById('login-page'),
+            appContainer: document.getElementById('app-container'),
+            usernameInput: document.getElementById('username'),
+            passwordInput: document.getElementById('password'),
+            loginBtn: document.getElementById('login-btn'),
+            registerBtn: document.getElementById('register-btn'),
+            logoutBtn: document.getElementById('logout-btn'),
+            welcomeMessage: document.getElementById('welcome-message'),
+            adminPanel: document.getElementById('admin-panel'),
+            pendingUsersList: document.getElementById('pending-users-list'),
+
             sellerNameInput: document.getElementById('seller-name'),
             receiptDateInput: document.getElementById('receipt-date'),
             dateDisplay: document.getElementById('date-display'),
@@ -692,9 +741,7 @@
 
         async function initApp() {
             if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
-                renderTable([]);
-                renderSummary();
-                renderDailySummary();
+                ui.loginPage.classList.remove('hidden');
                 showAlert('การตั้งค่า Firebase ไม่ถูกต้อง ไม่สามารถเชื่อมต่อฐานข้อมูลได้');
                 console.error('Firebase config is missing.');
                 return;
@@ -704,37 +751,67 @@
                 const analytics = getAnalytics(app);
                 auth = getAuth(app);
                 db = getFirestore(app);
+                
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
-                        userId = user.uid;
-                        salesCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/sales`);
-                        const q = query(salesCollectionRef);
-                        onSnapshot(q, (snapshot) => {
-                            let sales = [];
-                            snapshot.forEach((doc) => {
-                                sales.push({ id: doc.id, ...doc.data() });
-                            });
-                            sales.sort((a,b) => b.date.toDate() - a.date.toDate());
-                            localSalesData = sales;
-                            renderTable(localSalesData);
-                            renderDashboard();
-                            renderSummary();
-                            renderDailySummary();
-                        }, (error) => {
-                            console.error("Error fetching data with onSnapshot: ", error);
-                            showAlert(`เกิดข้อผิดพลาดในการดึงข้อมูล: ${error.message}`);
-                        });
+                         const userDocRef = doc(db, "users", user.uid);
+                         const userDocSnap = await getDoc(userDocRef);
+                         
+                         if (userDocSnap.exists()) {
+                             const userData = userDocSnap.data();
+                             userId = user.uid;
+                        
+                             if(userData.status === 'approved') {
+                                ui.loginPage.classList.add('hidden');
+                                ui.appContainer.classList.remove('hidden');
+                                 ui.welcomeMessage.textContent = `ยินดีต้อนรับ, ${userData.username}`;
+                                
+                                if(userData.username === 'admin') {
+                                    ui.adminPanel.classList.remove('hidden');
+                                    setupAdminListener();
+                                } else {
+                                    ui.adminPanel.classList.add('hidden');
+                                }
+
+                                if(unsubscribeSales) unsubscribeSales(); 
+
+                                salesCollectionRef = collection(db, `sales`);
+                                const salesQuery = query(salesCollectionRef);
+                                unsubscribeSales = onSnapshot(salesQuery, (snapshot) => {
+                                    let sales = [];
+                                    snapshot.forEach((doc) => {
+                                        sales.push({ id: doc.id, ...doc.data() });
+                                    });
+                                    sales.sort((a,b) => b.date.toDate() - a.date.toDate());
+                                    localSalesData = sales;
+                                    renderTable(localSalesData);
+                                    renderDashboard();
+                                    renderSummary();
+                                    renderDailySummary();
+                                }, (error) => {
+                                    console.error("Error fetching data with onSnapshot: ", error);
+                                    showAlert(`เกิดข้อผิดพลาดในการดึงข้อมูล: ${error.message}`);
+                                });
+                             } else {
+                                 showAlert("บัญชีของคุณกำลังรอการอนุมัติ");
+                                 signOut(auth);
+                             }
+                         } else {
+                            // If user exists in Auth but not Firestore, they might be a newly registered user
+                             showAlert("ลงทะเบียนสำเร็จแล้ว โปรดรอการอนุมัติจากผู้ดูแลระบบ");
+                            signOut(auth);
+                         }
+
                     } else {
-                         try {
-                             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                                await signInWithCustomToken(auth, __initial_auth_token);
-                            } else {
-                                await signInAnonymously(auth);
-                            }
-                        } catch (error) {
-                            console.error('Sign-in failed:', error);
-                            showAlert(`การยืนยันตัวตนล้มเหลว: ${error.message}`);
-                        }
+                        ui.loginPage.classList.remove('hidden');
+                        ui.appContainer.classList.add('hidden');
+                        if (unsubscribeSales) unsubscribeSales();
+                        if (unsubscribePendingUsers) unsubscribePendingUsers();
+                        localSalesData = [];
+                        renderTable([]);
+                        renderDashboard();
+                        renderSummary();
+                        renderDailySummary();
                     }
                 });
             } catch (error) {
@@ -743,10 +820,113 @@
             }
         }
         
+        function setupAdminListener(){
+             const pendingUsersQuery = query(collection(db, "users"), where("status", "==", "pending"));
+             unsubscribePendingUsers = onSnapshot(pendingUsersQuery, (snapshot) => {
+                ui.pendingUsersList.innerHTML = '';
+                if(snapshot.empty) {
+                    ui.pendingUsersList.innerHTML = '<p class="text-stone-500">ไม่มีผู้ใช้ที่รอการอนุมัติ</p>';
+                    return;
+                }
+                snapshot.forEach(doc => {
+                    const userData = doc.data();
+                    const userDiv = document.createElement('div');
+                    userDiv.className = "flex justify-between items-center p-2 border rounded-md";
+                    userDiv.innerHTML = `
+                        <span>${userData.username} (${userData.email})</span>
+                        <div>
+                            <button data-uid="${doc.id}" class="approve-btn bg-green-500 text-white px-3 py-1 rounded-md hover:bg-green-600 mr-2">อนุมัติ</button>
+                            <button data-uid="${doc.id}" class="reject-btn bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600">ปฏิเสธ</button>
+                        </div>
+                    `;
+                    ui.pendingUsersList.appendChild(userDiv);
+                });
+             });
+        }
+        
+        ui.pendingUsersList.addEventListener('click', async (e) => {
+            if(e.target.matches('.approve-btn')) {
+                const uid = e.target.dataset.uid;
+                const userRef = doc(db, "users", uid);
+                await updateDoc(userRef, { status: "approved" });
+                showAlert('อนุมัติผู้ใช้เรียบร้อยแล้ว');
+            } else if (e.target.matches('.reject-btn')) {
+                const uid = e.target.dataset.uid;
+                const userRef = doc(db, "users", uid);
+                await deleteDoc(userRef);
+                showAlert('ปฏิเสธและลบคำขอผู้ใช้เรียบร้อยแล้ว');
+            }
+        });
+
         document.addEventListener('DOMContentLoaded', () => {
             ui.receiptDateInput.valueAsDate = new Date();
             ui.reportDateInput.valueAsDate = new Date();
             updateDateDisplay();
+            
+            ui.loginBtn.addEventListener('click', async () => {
+                const username = ui.usernameInput.value.trim().toLowerCase();
+                const password = ui.passwordInput.value;
+                if(!username || !password) return showAlert('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน');
+                
+                const email = username === 'admin' ? 'admin@coopksb.com' : `${username}@coop.local`;
+
+                try {
+                    await signInWithEmailAndPassword(auth, email, password);
+                } catch (error) {
+                    showAlert('เข้าสู่ระบบล้มเหลว: ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+                }
+            });
+
+            ui.registerBtn.addEventListener('click', async () => {
+                const username = ui.usernameInput.value.trim().toLowerCase();
+                const password = ui.passwordInput.value;
+                if(!username || !password) return showAlert('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน');
+                if (password.length < 6) return showAlert('รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร');
+
+                const isAdminRegistration = (username === 'admin' && password === 'as106445184');
+                const email = isAdminRegistration ? 'admin@coopksb.com' : `${username}@coop.local`;
+                
+                const q = query(collection(db, "users"), where("username", "==", username));
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                    return showAlert('ชื่อผู้ใช้นี้ถูกใช้งานแล้ว');
+                }
+                
+                try {
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    const user = userCredential.user;
+                    
+                    const status = isAdminRegistration ? 'approved' : 'pending';
+                    await setDoc(doc(db, "users", user.uid), {
+                        username: username,
+                        email: email,
+                        status: status
+                    });
+                    
+                    if(isAdminRegistration) {
+                        showAlert('สร้างบัญชีผู้ดูแลระบบสำเร็จแล้ว กรุณาเข้าสู่ระบบ');
+                    } else {
+                        showAlert('ลงทะเบียนสำเร็จแล้ว โปรดรอการอนุมัติจากผู้ดูแลระบบ');
+                    }
+                    await signOut(auth);
+
+                } catch (error) {
+                    if (error.code === 'auth/email-already-in-use') {
+                        showAlert('ชื่อผู้ใช้นี้ถูกใช้งานแล้ว');
+                    } else {
+                        showAlert('ลงทะเบียนล้มเหลว: ' + error.message);
+                    }
+                }
+            });
+            
+            ui.logoutBtn.addEventListener('click', async () => {
+                try {
+                    await signOut(auth);
+                } catch (error) {
+                     showAlert('ออกจากระบบล้มเหลว: ' + error.message);
+                }
+            });
+
             ui.saveButton.addEventListener('click', handleSave);
             ui.cancelEditButton.addEventListener('click', clearForm);
             ui.salesTableBody.addEventListener('click', handleTableClick);
