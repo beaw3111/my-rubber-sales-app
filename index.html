@@ -567,12 +567,12 @@
 
         async function initApp() {
             // Check for valid Firebase config
-            if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey || firebaseConfig.apiKey === "YOUR_API_KEY") {
+            if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
                  const isCanvasEnv = typeof __firebase_config !== 'undefined';
                  if (!isCanvasEnv) {
                     renderTable([]);
                     renderSummary();
-                    showAlert('การตั้งค่า Firebase ไม่สมบูรณ์ กรุณาใส่ข้อมูล Config ในไฟล์ index.html');
+                    showAlert('การตั้งค่า Firebase ไม่สมบูรณ์ กรุณาใส่ข้อมูล Config ที่ถูกต้องในไฟล์ index.html');
                     console.error('Firebase config is missing or is a placeholder.');
                     return;
                  }
