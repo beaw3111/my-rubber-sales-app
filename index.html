@@ -222,8 +222,18 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        import { initializeApp } from "firebase/app";
+        import { getAnalytics } from "firebase/analytics";
+
+        const firebaseConfig = {
+        apiKey: "AIzaSyCNVxG6s46SRXOYAeT0rJHAtz_-3IPUJNE",
+        authDomain: "coopksb001.firebaseapp.com",
+        projectId: "coopksb001",
+        storageBucket: "coopksb001.firebasestorage.app",
+        messagingSenderId: "259378610497",
+        appId: "1:259378610497:web:fd12679830e97bf5e761c0",
+        measurementId: "G-1RHH9TMD73"
+        };
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'cup-rubber-sales-app';
 
         let localSalesData = [];
@@ -983,6 +993,7 @@
             }
             try {
                 const app = initializeApp(firebaseConfig);
+                const analytics = getAnalytics(app);
                 auth = getAuth(app);
                 db = getFirestore(app);
                 
