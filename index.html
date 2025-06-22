@@ -64,9 +64,10 @@
 
 <body class="bg-stone-100 text-stone-800">
     <div id="app" class="container mx-auto p-4 sm:p-6 lg:p-8">
-        <header class="mb-8">
+        <header class="mb-8 text-center">
             <h1 class="text-4xl font-bold text-stone-900">ระบบจัดการขายยางก้อนถ้วย</h1>
-            <p class="text-stone-600 mt-1">ออกใบเสร็จ บันทึกข้อมูล และดูสรุปยอดขายในที่เดียว</p>
+            <p class="text-xl font-semibold text-stone-700 mt-2">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</p>
+            <p class="text-stone-600 mt-2">ออกใบเสร็จ บันทึกข้อมูล และดูสรุปยอดขายในที่เดียว</p>
         </header>
         <div class="mb-6 border-b border-stone-300">
             <nav id="tabs" class="flex flex-wrap -mb-px">
@@ -993,6 +994,7 @@
                              <td class="px-2 py-2 text-center">${index++}</td>
                              <td class="px-2 py-2">${data.sellerName}</td>
                              <td class="px-2 py-2 text-center">${data.bags}</td>
+                             <td class="px-2 py-2 text-center border-l"></td>
                          </tr>
                     `;
                 });
@@ -1020,6 +1022,7 @@
                                      <th class="text-center">ลำดับที่</th>
                                      <th>ชื่อ</th>
                                      <th class="text-center">จำนวนถุง</th>
+                                     <th class="text-center">น้ำหนักที่ชั่ง</th>
                                  </tr>
                              </thead>
                              <tbody>
@@ -1131,8 +1134,8 @@
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         userId = user.uid;
-                        salesCollectionRef = collection(db, "artifacts", appId, "public/data/sales");
-                        weighingsCollectionRef = collection(db, "artifacts", appId, "public/data/weighings");
+                        salesCollectionRef = collection(db, "artifacts", appId, "users", userId, "sales");
+                        weighingsCollectionRef = collection(db, "artifacts", appId, "users", userId, "weighings");
 
                         if (unsubscribeSales) unsubscribeSales();
                         const salesQuery = query(salesCollectionRef);
