@@ -1,3 +1,10 @@
+ยอดเยี่ยมเลยครับ\! การเพิ่ม "สรุปผลรวมตาชั่ง" เป็นแนวคิดที่ดีมาก จะช่วยให้เห็นภาพรวมของปริมาณยางที่รับเข้ามาในแต่ละวันได้อย่างรวดเร็วก่อนที่จะทำการชั่งจริง และปุ่มลบข้อมูลทั้งหมดก็จะช่วยให้เริ่มต้นวันใหม่ได้สะดวกยิ่งขึ้น
+
+ผมได้ทำการอัปเดตโค้ดตามที่คุณต้องการเรียบร้อยแล้วครับ
+
+**นี่คือโค้ดเวอร์ชันใหม่:**
+
+```html
 <!DOCTYPE html>
 <html lang="th">
 
@@ -78,6 +85,7 @@
                 <button data-tab="tab-weighing-2" class="tab-btn inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">5. รับวางยาง (ตาชั่ง 2)</button>
                 <button data-tab="tab-weighing-3" class="tab-btn inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">6. รับวางยาง (ตาชั่ง 3)</button>
                 <button data-tab="tab-weighing-4" class="tab-btn inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">7. รับวางยาง (ตาชั่ง 4)</button>
+                <button data-tab="tab-weighing-summary" class="tab-btn inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">8. สรุปผลรวมตาชั่ง</button>
             </nav>
         </div>
         <main>
@@ -221,6 +229,35 @@
             <div id="tab-weighing-2" class="tab-content"></div>
             <div id="tab-weighing-3" class="tab-content"></div>
             <div id="tab-weighing-4" class="tab-content"></div>
+            <div id="tab-weighing-summary" class="tab-content">
+                <section class="bg-white p-6 rounded-xl shadow-md">
+                    <h2 class="text-2xl font-bold mb-4 border-b pb-3 text-stone-800">8. สรุปผลรวมตาชั่งทั้งหมด (สำหรับวันนี้)</h2>
+                    <div class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-stone-50 p-6 rounded-lg items-center">
+                            <div class="text-center">
+                                <p class="text-base font-medium text-stone-600">ผลรวมจำนวนถุงทั้งหมด</p>
+                                <p id="summary-total-bags" class="text-4xl font-bold text-amber-600 mt-1">0</p>
+                            </div>
+                            <div class="flex flex-col justify-center">
+                                <label for="summary-multiplier-weight" class="block text-sm font-medium text-stone-600 mb-1 text-center">น้ำหนัก/ถุง (กก.)</label>
+                                <input type="number" id="summary-multiplier-weight" class="w-full p-2 border border-stone-300 rounded-md shadow-sm text-center text-lg" placeholder="กรอกน้ำหนักเฉลี่ย">
+                            </div>
+                            <div class="text-center">
+                                <p class="text-base font-medium text-stone-600">ผลลัพธ์น้ำหนักรวม (กก.)</p>
+                                <p id="summary-calculated-weight" class="text-4xl font-bold text-green-600 mt-1">0.00</p>
+                            </div>
+                        </div>
+
+                        <div class="border-t pt-6 mt-6">
+                            <h3 class="text-lg font-semibold text-red-700">จัดการข้อมูล (การกระทำนี้มีความเสี่ยง)</h3>
+                            <p class="text-sm text-stone-500 mt-1 mb-4">ใช้สำหรับล้างข้อมูลการรับวางยางทั้งหมดของวันนี้เมื่อเริ่มการชั่งจริง</p>
+                            <button id="delete-all-weighings-btn" class="w-full md:w-auto bg-red-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
+                                🗑️ ลบข้อมูลที่วางไว้ทั้งหมด (สำหรับวันนี้)
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </div>
         </main>
     </div>
     <div id="print-area"></div>
@@ -263,7 +300,8 @@
             query,
             where,
             getDocs,
-            getDoc
+            getDoc,
+            writeBatch
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
@@ -285,6 +323,7 @@
         let db, auth, userId, salesCollectionRef, weighingsCollectionRef;
         let unsubscribeSales = null;
         let unsubscribeWeighings = {};
+        let dailyWeighingData = {}; // NEW: Store daily weighing data by scale
 
         const ui = {
             appContainer: document.getElementById('app'),
@@ -316,6 +355,11 @@
             summaryTotalWeight: document.getElementById('summary-total-weight'),
             summaryTotalPrice: document.getElementById('summary-total-price'),
             summaryDailyWeight: document.getElementById('summary-daily-weight'),
+            // NEW UI Elements
+            summaryTotalBags: document.getElementById('summary-total-bags'),
+            summaryMultiplierWeight: document.getElementById('summary-multiplier-weight'),
+            summaryCalculatedWeight: document.getElementById('summary-calculated-weight'),
+            deleteAllWeighingsBtn: document.getElementById('delete-all-weighings-btn'),
         };
 
         function showModal(title, message, buttons) {
@@ -365,7 +409,9 @@
 
         function bahttext(number) {
             number = Number(number).toFixed(2);
-            let [integer, fraction] = number.split('.');
+            let [integer,
+                fraction
+            ] = number.split('.');
             const t = ['', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า'];
             const r = ['', 'สิบ', 'ร้อย', 'พัน', 'หมื่น', 'แสน', 'ล้าน'];
 
@@ -861,7 +907,7 @@
                             <input type="number" id="weighing-weight-${scaleId}" class="w-full p-2 border border-stone-300 rounded-md shadow-sm" step="any">
                         </div>
                         <div class="md:col-span-3">
-                              <button id="save-weighing-${scaleId}" data-scale="${scaleId}" class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700">บันทึกจำนวนถุง</button>
+                                <button id="save-weighing-${scaleId}" data-scale="${scaleId}" class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700">บันทึกจำนวนถุง</button>
                         </div>
                     </div>
                     <div class="mt-6 border-t pt-4">
@@ -990,51 +1036,107 @@
                 let index = 1;
                 salesForDay.sort((a, b) => a.timestamp.toDate() - b.timestamp.toDate()).forEach(data => {
                     tableRows += `
-                         <tr class="border-b">
-                             <td class="px-2 py-2 text-center">${index++}</td>
-                             <td class="px-2 py-2">${data.sellerName}</td>
-                             <td class="px-2 py-2 text-center">${data.bags}</td>
-                             <td class="px-2 py-2 text-center border-l"></td>
-                         </tr>
-                    `;
+                            <tr class="border-b">
+                                 <td class="px-2 py-2 text-center">${index++}</td>
+                                 <td class="px-2 py-2">${data.sellerName}</td>
+                                 <td class="px-2 py-2 text-center">${data.bags}</td>
+                                 <td class="px-2 py-2 text-center border-l"></td>
+                            </tr>
+                        `;
                 });
 
                 const reportHTML = `
-                       <style>
-                           @media print {
-                               @page { size: A4; margin: 1.5cm; }
-                               body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                               .print-container { width: 100%; margin: 0; padding: 0; }
-                               .print-table { width: 100%; border-collapse: collapse; font-size: 10pt; }
-                               .print-table th, .print-table td { border: 1px solid black; padding: 4px 8px; text-align: left; }
-                               .print-table th { background-color: #f5f5f4 !important; }
-                               .text-center { text-align: center; }
-                           }
-                       </style>
-                       <div class="print-container">
-                           <div class="text-center mb-4">
-                               <h2 class="text-xl font-bold">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</h2>
-                               <h3 class="text-lg">รายงานการชั่งยางประจำวันที่ ${today.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })} (ตาชั่งที่ ${scaleId})</h3>
-                           </div>
-                           <table class="print-table">
-                               <thead class="bg-stone-200">
-                                   <tr class="border-b border-black">
-                                       <th class="text-center" style="width: 10%;">ลำดับที่</th>
-                                       <th style="width: 40%;">ชื่อ</th>
-                                       <th class="text-center" style="width: 20%;">จำนวนถุง</th>
-                                       <th class="text-center" style="width: 30%;">น้ำหนักที่ชั่ง</th>
-                                   </tr>
-                               </thead>
-                               <tbody>
-                                   ${tableRows}
-                               </tbody>
-                           </table>
-                       </div>
-                `;
+                            <style>
+                                @media print {
+                                    @page { size: A4; margin: 1.5cm; }
+                                    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                                    .print-container { width: 100%; margin: 0; padding: 0; }
+                                    .print-table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+                                    .print-table th, .print-table td { border: 1px solid black; padding: 4px 8px; text-align: left; }
+                                    .print-table th { background-color: #f5f5f4 !important; }
+                                    .text-center { text-align: center; }
+                                }
+                            </style>
+                            <div class="print-container">
+                                <div class="text-center mb-4">
+                                    <h2 class="text-xl font-bold">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</h2>
+                                    <h3 class="text-lg">รายงานการชั่งยางประจำวันที่ ${today.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })} (ตาชั่งที่ ${scaleId})</h3>
+                                </div>
+                                <table class="print-table">
+                                    <thead class="bg-stone-200">
+                                        <tr class="border-b border-black">
+                                            <th class="text-center" style="width: 10%;">ลำดับที่</th>
+                                            <th style="width: 40%;">ชื่อ</th>
+                                            <th class="text-center" style="width: 20%;">จำนวนถุง</th>
+                                            <th class="text-center" style="width: 30%;">น้ำหนักที่ชั่ง</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${tableRows}
+                                    </tbody>
+                                </table>
+                            </div>
+                        `;
                 ui.printArea.innerHTML = reportHTML;
                 window.print();
             });
         }
+        
+        // NEW: Calculate overall summary weight
+        function calculateSummaryTotalWeight() {
+            const totalBags = parseFloat(ui.summaryTotalBags.textContent) || 0;
+            const multiplier = parseFloat(ui.summaryMultiplierWeight.value) || 0;
+            ui.summaryCalculatedWeight.textContent = (totalBags * multiplier).toFixed(2);
+        }
+
+        // NEW: Update the summary tab with total bags
+        function updateWeighingSummary() {
+            let totalBags = 0;
+            for (const scaleId in dailyWeighingData) {
+                const scaleDocs = dailyWeighingData[scaleId];
+                totalBags += scaleDocs.reduce((sum, doc) => sum + doc.bags, 0);
+            }
+            ui.summaryTotalBags.textContent = totalBags;
+            calculateSummaryTotalWeight();
+        }
+
+        // NEW: Delete all weighing records for today
+        async function deleteAllTodaysWeighings() {
+            showConfirm(
+                'คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลการวางยางทั้งหมดของวันนี้? การกระทำนี้ไม่สามารถย้อนกลับได้',
+                async () => {
+                    const todayStart = new Date();
+                    todayStart.setHours(0, 0, 0, 0);
+
+                    const q = query(weighingsCollectionRef, where("timestamp", ">=", todayStart));
+                    
+                    try {
+                        const querySnapshot = await getDocs(q);
+                        if (querySnapshot.empty) {
+                            showAlert('ไม่พบข้อมูลการวางยางของวันนี้ให้ลบ');
+                            return;
+                        }
+                        
+                        const batch = writeBatch(db);
+                        querySnapshot.forEach(doc => {
+                            batch.delete(doc.ref);
+                        });
+
+                        await batch.commit();
+
+                        ui.summaryMultiplierWeight.value = '';
+                        Object.keys(dailyWeighingData).forEach(key => { dailyWeighingData[key] = []; });
+                        updateWeighingSummary();
+                        
+                        showAlert(`ลบข้อมูลการวางยางของวันนี้จำนวน ${querySnapshot.size} รายการเรียบร้อยแล้ว`);
+                    } catch (error) {
+                        console.error("Error deleting all weighings: ", error);
+                        showAlert(`เกิดข้อผิดพลาดในการลบข้อมูล: ${error.message}`);
+                    }
+                }
+            );
+        }
+
 
         function setupWeighingListeners() {
             if (!weighingsCollectionRef) return;
@@ -1056,7 +1158,11 @@
                         id: doc.id,
                         ...doc.data()
                     }));
+                    
                     const todaysDocs = docs.filter(data => data.timestamp.toDate() >= todayStart);
+                    
+                    dailyWeighingData[i] = todaysDocs; // Update global store
+                    updateWeighingSummary(); // Update summary tab
 
                     if (todaysDocs.length === 0) {
                         tableBody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-stone-400">ยังไม่มีรายการ</td></tr>';
@@ -1080,7 +1186,7 @@
 
                     const totalBagsEl = document.getElementById(`total-bags-${i}`);
                     if (totalBagsEl) {
-                        totalBagsEl.textContent = totalBags.toFixed(2);
+                        totalBagsEl.textContent = totalBags;
                         calculateTotalWeight(i);
                     }
                 });
@@ -1241,6 +1347,11 @@
                 renderTable(filteredData);
             });
 
+            // NEW Event Listeners for Summary Tab
+            ui.summaryMultiplierWeight.addEventListener('input', calculateSummaryTotalWeight);
+            ui.deleteAllWeighingsBtn.addEventListener('click', deleteAllTodaysWeighings);
+
+
             ui.receiptDateInput.valueAsDate = new Date();
             ui.reportDateInput.valueAsDate = new Date();
             updateDateDisplay();
@@ -1251,3 +1362,4 @@
 </body>
 
 </html>
+```
