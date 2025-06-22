@@ -1134,8 +1134,9 @@
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         userId = user.uid;
-                        salesCollectionRef = collection(db, "artifacts", appId, "users", userId, "sales");
-                        weighingsCollectionRef = collection(db, "artifacts", appId, "users", userId, "weighings");
+                        salesCollectionRef = collection(db, "artifacts", appId, "public", "data", "sales");
+                        weighingsCollectionRef = collection(db, "artifacts", appId, "public", "data", "weighings");
+
 
                         if (unsubscribeSales) unsubscribeSales();
                         const salesQuery = query(salesCollectionRef);
