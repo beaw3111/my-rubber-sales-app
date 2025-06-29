@@ -153,10 +153,25 @@
                     <div class="border-t pt-4 mt-8">
                         <h3 class="text-lg font-semibold text-stone-700">สรุปยอดขายแยกตามตาชั่ง (วันนี้)</h3>
                         <div id="sales-summary-by-scale" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-                            <div class="col-span-full text-center text-stone-500">ไม่มีข้อมูลการขายสำหรับวันนี้</div>
+                            </div>
+                        <div id="sales-summary-today-total" class="mt-4 p-4 bg-amber-200 rounded-lg text-center hidden">
+                             <h4 class="text-md font-bold text-amber-800">ยอดรวม (วันนี้)</h4>
+                             <div class="flex justify-center gap-x-6 gap-y-2 flex-wrap mt-2">
+                                 <div>
+                                     <span class="text-sm text-amber-700">น้ำหนักรวม: </span>
+                                     <span id="summary-today-total-weight" class="font-bold text-amber-900">0.00</span>
+                                     <span class="text-sm text-amber-700"> กก.</span>
+                                 </div>
+                                 <div>
+                                     <span class="text-sm text-amber-700">ยอดเงินรวม: </span>
+                                     <span id="summary-today-total-amount" class="font-bold text-amber-900">0.00</span>
+                                     <span class="text-sm text-amber-700"> บาท</span>
+                                 </div>
+                             </div>
                         </div>
-                    </div>
-                    </section>
+                        </div>
+
+                </section>
             </div>
             <div id="tab-history" class="tab-content">
                 <section id="sales-data" class="bg-white p-6 rounded-xl shadow-md">
@@ -169,7 +184,9 @@
                     <div class="border-t pt-4 mt-6">
                         <h3 class="text-lg font-semibold text-stone-700">เครื่องมือรายงาน</h3>
                         <div class="flex items-center gap-4 mt-2 flex-wrap">
-                            <input type="date" id="report-date" class="p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500">
+                            <select id="report-date-select" class="p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500 bg-white">
+                                <option value="">--- เลือกวันที่ทำรายงาน ---</option>
+                            </select>
                             <button id="print-report-btn" class="bg-sky-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-sky-700 transition-colors">พิมพ์รายงาน</button>
                             <button id="export-excel-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors">Export to Excel</button>
                         </div>
@@ -179,6 +196,7 @@
                         <table class="w-full text-sm text-left text-stone-500">
                             <thead class="text-xs text-stone-700 uppercase bg-stone-200">
                                 <tr>
+                                    <th scope="col" class="px-4 py-3 text-center">คิว</th>
                                     <th scope="col" class="px-6 py-3">วันที่</th>
                                     <th scope="col" class="px-6 py-3">ชื่อผู้ขาย</th>
                                     <th scope="col" class="px-6 py-3 text-right">น้ำหนัก (กก.)</th>
@@ -189,7 +207,7 @@
                             </thead>
                             <tbody id="sales-table-body">
                                 <tr>
-                                    <td colspan="6" class="px-6 py-8 text-center text-stone-400">กำลังโหลดข้อมูล...</td>
+                                    <td colspan="7" class="px-6 py-8 text-center text-stone-400">กำลังโหลดข้อมูล...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -221,6 +239,7 @@
                             </div>
                         </div>
                     </div>
+
                     <div class="space-y-8">
                         <div class="border-b pb-4 mb-4">
                             <h3 class="font-bold text-center mb-2 text-stone-700">สรุปยอดประจำวัน</h3>
@@ -369,7 +388,7 @@
             salesTableBody: document.getElementById('sales-table-body'),
             searchBox: document.getElementById('search-box'),
             printArea: document.getElementById('print-area'),
-            reportDateInput: document.getElementById('report-date'),
+            reportDateSelect: document.getElementById('report-date-select'), // MODIFIED
             printReportBtn: document.getElementById('print-report-btn'),
             exportExcelBtn: document.getElementById('export-excel-btn'),
             printDashboardBtn: document.getElementById('print-dashboard-btn'),
@@ -387,6 +406,9 @@
             summaryCalculatedWeight: document.getElementById('summary-calculated-weight'),
             deleteAllWeighingsBtn: document.getElementById('delete-all-weighings-btn'),
             salesSummaryByScale: document.getElementById('sales-summary-by-scale'),
+            salesSummaryTodayTotal: document.getElementById('sales-summary-today-total'), // NEW
+            summaryTodayTotalWeight: document.getElementById('summary-today-total-weight'), // NEW
+            summaryTodayTotalAmount: document.getElementById('summary-today-total-amount'), // NEW
         };
 
         /**
@@ -514,15 +536,15 @@
         function renderTable(dataToRender) {
             ui.salesTableBody.innerHTML = ''; // Clear existing rows
             if (dataToRender.length === 0) {
-                ui.salesTableBody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-stone-400">ยังไม่มีข้อมูลการขาย...</td></tr>';
+                ui.salesTableBody.innerHTML = '<tr><td colspan="7" class="px-6 py-8 text-center text-stone-400">ยังไม่มีข้อมูลการขาย...</td></tr>';
                 return;
             }
-            dataToRender.forEach(sale => {
+            dataToRender.forEach((sale, index) => {
                 const row = document.createElement('tr');
                 row.className = 'bg-white border-b hover:bg-stone-50';
-                // Convert Firebase Timestamp to Date object if necessary
                 const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
                 row.innerHTML = `
+                    <td class="px-4 py-4 text-center font-medium">${sale.dailyQueueNumber || '-'}</td>
                     <td class="px-6 py-4">${saleDate.toLocaleDateString('th-TH')}</td>
                     <td class="px-6 py-4 font-medium text-stone-900 whitespace-nowrap">${sale.seller}</td>
                     <td class="px-6 py-4 text-right">${sale.weight.toFixed(2)}</td>
@@ -569,11 +591,9 @@
          */
         function renderDailySummary() {
             const today = new Date();
-            // Set time to beginning of the day for comparison
             const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
             const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
 
-            // Filter sales data for today's date
             const salesToday = localSalesData.filter(sale => {
                 const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
                 return saleDate >= todayStart && saleDate <= todayEnd;
@@ -657,7 +677,6 @@
         function renderDailySalesChart() {
             const salesByDay = localSalesData.reduce((acc, sale) => {
                 const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
-                // Format date for chart labels (Thai locale, short year)
                 const day = saleDate.toLocaleDateString('th-TH', {
                     year: '2-digit',
                     month: 'short',
@@ -667,22 +686,20 @@
                 return acc;
             }, {});
 
-            // Sort labels chronologically
             const sortedLabels = Object.keys(salesByDay).sort((a, b) => {
-                // Convert Thai date string to Date object for proper sorting
                 const parseThaiDate = (dateString) => {
                     const parts = dateString.split(' ');
                     const day = parseInt(parts[0]);
                     const monthMap = { 'ม.ค.': 0, 'ก.พ.': 1, 'มี.ค.': 2, 'เม.ย.': 3, 'พ.ค.': 4, 'มิ.ย.': 5, 'ก.ค.': 6, 'ส.ค.': 7, 'ก.ย.': 8, 'ต.ค.': 9, 'พ.ย.': 10, 'ธ.ค.': 11 };
                     const month = monthMap[parts[1]];
-                    const year = parseInt(parts[2]) + 2500 - 543; // Convert Buddhist year to Gregorian
+                    const year = parseInt(parts[2]) + 2500 - 543;
                     return new Date(year, month, day);
                 };
                 return parseThaiDate(a) - parseThaiDate(b);
             });
             const data = sortedLabels.map(label => salesByDay[label]);
 
-            if (dailySalesChart) dailySalesChart.destroy(); // Destroy previous chart instance
+            if (dailySalesChart) dailySalesChart.destroy();
 
             const canvas = document.getElementById('daily-sales-chart');
             if (canvas) {
@@ -793,7 +810,7 @@
          * Creates and prints a daily summary report based on the selected date.
          */
         function createDailySummaryReport() {
-            const reportDateStr = ui.reportDateInput.value;
+            const reportDateStr = ui.reportDateSelect.value; // MODIFIED to read from select
             if (!reportDateStr) {
                 showAlert('กรุณาเลือกวันที่ที่ต้องการทำรายงาน');
                 return;
@@ -811,10 +828,10 @@
             const salesForDay = localSalesData.filter(sale => {
                 const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
                 return saleDate >= reportStart && saleDate <= reportEnd;
-            });
+            }).sort((a,b) => (a.dailyQueueNumber || 0) - (b.dailyQueueNumber || 0)); // Sort by queue number
 
             if (salesForDay.length === 0) {
-                showAlert(`ไม่พบข้อมูลการขายในวันที่ ${reportStart.toLocaleDateString('th-TH')}`);
+                showAlert(`ไม่พบข้อมูลการขายในวันที่ ${formattedDate}`);
                 return;
             }
 
@@ -822,7 +839,7 @@
             salesForDay.forEach((sale, index) => {
                 tableRows += `
                     <tr class="border-b">
-                        <td class="px-2 py-2 text-center">${index + 1}</td>
+                        <td class="px-2 py-2 text-center">${sale.dailyQueueNumber || index + 1}</td>
                         <td class="px-2 py-2">${sale.seller}</td>
                         <td class="px-2 py-2 text-right">${sale.weight.toFixed(2)}</td>
                         <td class="px-2 py-2 text-right">${sale.price.toFixed(2)}</td>
@@ -842,7 +859,7 @@
                     <table class="w-full text-sm border-collapse border border-black">
                         <thead class="bg-stone-200">
                             <tr class="border-b border-black">
-                                <th class="px-2 py-2 border-r border-black">ลำดับที่</th>
+                                <th class="px-2 py-2 border-r border-black">คิว</th>
                                 <th class="px-2 py-2 border-r border-black">ชื่อ</th>
                                 <th class="px-2 py-2 border-r border-black">น้ำหนัก</th>
                                 <th class="px-2 py-2 border-r border-black">ราคา</th>
@@ -944,25 +961,33 @@
 
             try {
                 if (editingId) {
-                    const docRef = doc(salesCollectionRef, editingId);
-                    const dataToUpdate = { ...saleData };
                     const originalDoc = localSalesData.find(s => s.id === editingId);
-                    if (originalDoc && originalDoc.receiptId) {
-                        dataToUpdate.receiptId = originalDoc.receiptId;
+                    if (originalDoc) {
+                        // Preserve original queue number and receipt ID on edit
+                        saleData.dailyQueueNumber = originalDoc.dailyQueueNumber;
+                        saleData.receiptId = originalDoc.receiptId;
                     }
-                    await updateDoc(docRef, dataToUpdate);
+                    const docRef = doc(salesCollectionRef, editingId);
+                    await updateDoc(docRef, saleData);
                     showAlert('อัปเดตข้อมูลสำเร็จ');
                 } else {
+                    // Get queue number for the specific day of the new record
+                    const recordDateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+                    const recordDateEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+                    
+                    const salesOnDate = localSalesData.filter(sale => {
+                        const d = sale.date.toDate();
+                        return d >= recordDateStart && d <= recordDateEnd;
+                    });
+                    saleData.dailyQueueNumber = salesOnDate.length + 1;
+
+                    // Generate receipt ID
                     const now = new Date();
                     const year = now.getFullYear();
                     const month = (now.getMonth() + 1).toString().padStart(2, '0');
                     const day = now.getDate().toString().padStart(2, '0');
-
                     const todayStart = new Date(now.setHours(0, 0, 0, 0));
-                    const salesToday = localSalesData.filter(sale => {
-                        const saleDate = sale.date.toDate();
-                        return saleDate >= todayStart;
-                    });
+                    const salesToday = localSalesData.filter(sale => sale.date.toDate() >= todayStart);
                     const nextReceiptNumber = salesToday.length + 1;
                     saleData.receiptId = `${year}${month}${day}-${String(nextReceiptNumber).padStart(3, '0')}`;
 
@@ -1122,13 +1147,27 @@
                 return;
             }
 
-            const headers = ['ลำดับที่', 'วันที่', 'ชื่อผู้ขาย', 'น้ำหนัก (กก.)', 'ราคา/หน่วย (บาท)', 'ยอดรวม (บาท)', 'ตาชั่งที่'];
+            // Create a sorted copy for export
+            const sortedData = [...localSalesData].sort((a, b) => {
+                const dateA = a.date.toDate();
+                const dateB = b.date.toDate();
+                
+                // Compare by date first (descending)
+                if (dateB.getTime() !== dateA.getTime()) {
+                    return dateB.getTime() - dateA.getTime();
+                }
+                
+                // If dates are the same, sort by queue number (ascending)
+                return (a.dailyQueueNumber || 0) - (b.dailyQueueNumber || 0);
+            });
+
+            const headers = ['คิว', 'วันที่', 'ชื่อผู้ขาย', 'น้ำหนัก (กก.)', 'ราคา/หน่วย (บาท)', 'ยอดรวม (บาท)', 'ตาชั่งที่'];
             let csvContent = '\uFEFF' + headers.join(',') + '\n';
 
-            localSalesData.forEach((sale, index) => {
+            sortedData.forEach((sale) => {
                 const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
                 const row = [
-                    index + 1,
+                    sale.dailyQueueNumber || '',
                     saleDate.toLocaleDateString('th-TH'),
                     `"${sale.seller}"`,
                     sale.weight.toFixed(2),
@@ -1472,15 +1511,14 @@
                                 ...doc.data()
                             }));
                             
-                            // START: SORTING MODIFICATION (Most recent first)
                             localSalesData.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
-                            // END: SORTING MODIFICATION
-
+                            
                             renderTable(localSalesData);
                             renderDashboard();
                             renderSummary();
                             renderDailySummary();
                             renderScaleSummaries();
+                            populateReportDateSelector(); // NEW: Populate date dropdown
                         }, (error) => {
                             console.error("Error fetching data with onSnapshot: ", error);
                             showAlert(`เกิดข้อผิดพลาดในการดึงข้อมูล: ${error.message}`);
@@ -1547,11 +1585,7 @@
                 if (saleDate >= today) {
                     const scale = sale.scaleNumber || 'ไม่ระบุ';
                     if (!acc[scale]) {
-                        acc[scale] = {
-                            totalWeight: 0,
-                            totalAmount: 0,
-                            count: 0
-                        };
+                        acc[scale] = { totalWeight: 0, totalAmount: 0, count: 0 };
                     }
                     acc[scale].totalWeight += sale.weight;
                     acc[scale].totalAmount += sale.total;
@@ -1564,11 +1598,17 @@
 
             if (Object.keys(salesByScaleToday).length === 0) {
                 ui.salesSummaryByScale.innerHTML = '<div class="col-span-full text-center text-stone-500">ไม่มีข้อมูลการขายสำหรับวันนี้</div>';
+                ui.salesSummaryTodayTotal.classList.add('hidden'); // Hide total if no data
                 return;
             }
 
+            let totalWeightToday = 0;
+            let totalAmountToday = 0;
+
             for (const scale in salesByScaleToday) {
                 const summary = salesByScaleToday[scale];
+                totalWeightToday += summary.totalWeight;
+                totalAmountToday += summary.totalAmount;
                 const summaryHtml = `
                     <div class="bg-amber-100 p-3 rounded-lg text-center">
                         <p class="text-sm font-medium text-amber-800">ตาชั่งที่ ${scale}</p>
@@ -1578,6 +1618,40 @@
                 `;
                 ui.salesSummaryByScale.insertAdjacentHTML('beforeend', summaryHtml);
             }
+
+            // Update and show grand total
+            ui.summaryTodayTotalWeight.textContent = totalWeightToday.toFixed(2);
+            ui.summaryTodayTotalAmount.textContent = totalAmountToday.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            ui.salesSummaryTodayTotal.classList.remove('hidden');
+        }
+
+        /**
+        * Populates the report date dropdown with unique dates from sales data.
+        */
+        function populateReportDateSelector() {
+            const dateSet = new Set();
+            localSalesData.forEach(sale => {
+                const d = sale.date.toDate();
+                // Normalize date to YYYY-MM-DD string to get unique days
+                const dateString = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                dateSet.add(dateString);
+            });
+
+            const sortedDates = Array.from(dateSet).sort((a, b) => new Date(b) - new Date(a));
+
+            // Clear previous options but keep the first one
+            while (ui.reportDateSelect.options.length > 1) {
+                ui.reportDateSelect.remove(1);
+            }
+
+            sortedDates.forEach(dateStr => {
+                const option = document.createElement('option');
+                option.value = dateStr;
+                option.textContent = new Date(dateStr).toLocaleDateString('th-TH', {
+                    year: 'numeric', month: 'long', day: 'numeric'
+                });
+                ui.reportDateSelect.appendChild(option);
+            });
         }
 
 
@@ -1629,6 +1703,7 @@
                 const searchTerm = e.target.value.toLowerCase();
                 const filteredData = localSalesData.filter(sale =>
                     sale.seller.toLowerCase().includes(searchTerm) ||
+                    (sale.dailyQueueNumber && sale.dailyQueueNumber.toString().includes(searchTerm)) ||
                     sale.date.toDate().toLocaleDateString('th-TH').includes(searchTerm)
                 );
                 renderTable(filteredData);
@@ -1638,7 +1713,6 @@
             ui.deleteAllWeighingsBtn.addEventListener('click', deleteAllTodaysWeighings);
 
             ui.receiptDateInput.valueAsDate = new Date();
-            ui.reportDateInput.valueAsDate = new Date();
             updateDateDisplay();
 
             initApp();
