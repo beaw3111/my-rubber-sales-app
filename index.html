@@ -7,6 +7,7 @@
     <title>ระบบบันทึกการขายยางก้อนถ้วย</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
@@ -99,7 +100,7 @@
                             <label for="receipt-date" class="block text-sm font-medium text-stone-600 mb-1">วันที่ <span id="date-display" class="font-normal text-stone-500 ml-2"></span></label>
                             <input type="date" id="receipt-date" class="w-full p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500">
                         </div>
-                        
+
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-stone-600 mb-1">น้ำหนัก (กก.) - ใส่ได้สูงสุด 10 รายการ</label>
                             <div id="weight-inputs-container" class="grid grid-cols-2 sm:grid-cols-5 gap-4">
@@ -115,7 +116,7 @@
                                 <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 10">
                             </div>
                         </div>
-                        
+
                         <div class="md:col-span-2">
                             <div class="relative">
                                 <label for="price-per-kg" class="block text-sm font-medium text-stone-600 mb-1">ราคาต่อหน่วย (บาท/กก.)</label>
@@ -125,7 +126,7 @@
                                 </button>
                             </div>
                         </div>
-                        
+
                         <div class="md:col-span-2 bg-stone-200 p-4 rounded-lg space-y-3">
                             <div class="flex justify-between items-center">
                                 <span class="font-medium text-stone-600">น้ำหนักรวม (กก.):</span>
@@ -153,23 +154,23 @@
                     <div class="border-t pt-4 mt-8">
                         <h3 class="text-lg font-semibold text-stone-700">สรุปยอดขายแยกตามตาชั่ง (วันนี้)</h3>
                         <div id="sales-summary-by-scale" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-                            </div>
+                        </div>
                         <div id="sales-summary-today-total" class="mt-4 p-4 bg-amber-200 rounded-lg text-center hidden">
-                             <h4 class="text-md font-bold text-amber-800">ยอดรวม (วันนี้)</h4>
-                             <div class="flex justify-center gap-x-6 gap-y-2 flex-wrap mt-2">
-                                 <div>
-                                     <span class="text-sm text-amber-700">น้ำหนักรวม: </span>
-                                     <span id="summary-today-total-weight" class="font-bold text-amber-900">0.00</span>
-                                     <span class="text-sm text-amber-700"> กก.</span>
-                                 </div>
-                                 <div>
-                                     <span class="text-sm text-amber-700">ยอดเงินรวม: </span>
-                                     <span id="summary-today-total-amount" class="font-bold text-amber-900">0.00</span>
-                                     <span class="text-sm text-amber-700"> บาท</span>
-                                 </div>
-                             </div>
+                            <h4 class="text-md font-bold text-amber-800">ยอดรวม (วันนี้)</h4>
+                            <div class="flex justify-center gap-x-6 gap-y-2 flex-wrap mt-2">
+                                <div>
+                                    <span class="text-sm text-amber-700">น้ำหนักรวม: </span>
+                                    <span id="summary-today-total-weight" class="font-bold text-amber-900">0.00</span>
+                                    <span class="text-sm text-amber-700"> กก.</span>
+                                </div>
+                                <div>
+                                    <span class="text-sm text-amber-700">ยอดเงินรวม: </span>
+                                    <span id="summary-today-total-amount" class="font-bold text-amber-900">0.00</span>
+                                    <span class="text-sm text-amber-700"> บาท</span>
+                                </div>
+                            </div>
                         </div>
-                        </div>
+                    </div>
 
                 </section>
             </div>
@@ -180,7 +181,7 @@
                         <input type="text" id="search-box" class="mt-3 sm:mt-0 w-full sm:w-64 p-2 border border-stone-300 rounded-md shadow-sm" placeholder="🔍 ค้นหาตามชื่อผู้ขาย...">
                     </div>
                     <p class="text-sm text-stone-500 mt-2 mb-4">ข้อมูลการขายทั้งหมดที่เคยบันทึกไว้จะแสดงในตารางนี้ (เรียงตามล่าสุด) คุณสามารถค้นหาข้อมูลตามชื่อผู้ขาย แก้ไขรายการที่ผิดพลาด หรือลบรายการที่ไม่ต้องการได้</p>
-                    
+
                     <div class="border-t pt-4 mt-6">
                         <h3 class="text-lg font-semibold text-stone-700">เครื่องมือรายงาน</h3>
                         <div class="flex items-center gap-4 mt-2 flex-wrap">
@@ -221,9 +222,9 @@
                         <button id="print-dashboard-btn" class="bg-sky-600 text-white font-bold py-1 px-3 rounded-lg shadow-md hover:bg-sky-700 no-print">🖨️ พิมพ์</button>
                     </div>
                     <p class="text-sm text-stone-500 mt-2 mb-4">แดชบอร์ดนี้จะสรุปข้อมูลการขายทั้งหมดในรูปแบบกราฟ ช่วยให้เห็นภาพรวมและแนวโน้มต่างๆ ได้อย่างรวดเร็ว โดยข้อมูลจะอัปเดตอัตโนมัติทุกครั้งที่มีการบันทึก</p>
-                    
+
                     <div class="border-b pb-4 mb-6">
-                         <h3 class="font-bold text-center mb-2 text-stone-700">สรุปยอดรวมทั้งหมด (All-Time)</h3>
+                        <h3 class="font-bold text-center mb-2 text-stone-700">สรุปยอดรวมทั้งหมด (All-Time)</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div class="bg-stone-200 p-4 rounded-lg text-center">
                                 <p class="text-sm font-medium text-stone-600">จำนวนผู้ขายทั้งหมด</p>
@@ -690,7 +691,20 @@
                 const parseThaiDate = (dateString) => {
                     const parts = dateString.split(' ');
                     const day = parseInt(parts[0]);
-                    const monthMap = { 'ม.ค.': 0, 'ก.พ.': 1, 'มี.ค.': 2, 'เม.ย.': 3, 'พ.ค.': 4, 'มิ.ย.': 5, 'ก.ค.': 6, 'ส.ค.': 7, 'ก.ย.': 8, 'ต.ค.': 9, 'พ.ย.': 10, 'ธ.ค.': 11 };
+                    const monthMap = {
+                        'ม.ค.': 0,
+                        'ก.พ.': 1,
+                        'มี.ค.': 2,
+                        'เม.ย.': 3,
+                        'พ.ค.': 4,
+                        'มิ.ย.': 5,
+                        'ก.ค.': 6,
+                        'ส.ค.': 7,
+                        'ก.ย.': 8,
+                        'ต.ค.': 9,
+                        'พ.ย.': 10,
+                        'ธ.ค.': 11
+                    };
                     const month = monthMap[parts[1]];
                     const year = parseInt(parts[2]) + 2500 - 543;
                     return new Date(year, month, day);
@@ -737,7 +751,7 @@
          */
         function createPrintableReceipt(sale) {
             const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
-            
+
             const generateSingleReceiptHTML = (title) => `
                 <div class="w-1/2 p-4 border border-dashed border-stone-400 h-full flex flex-col text-xs">
                     <div class="text-center mb-4">
@@ -795,7 +809,7 @@
                     </div>
                 </div>
             `;
-            
+
             ui.printArea.innerHTML = `
                 <div class="flex gap-4">
                     ${generateSingleReceiptHTML('ใบเสร็จรับเงิน ต้นฉบับ')}
@@ -828,7 +842,7 @@
             const salesForDay = localSalesData.filter(sale => {
                 const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
                 return saleDate >= reportStart && saleDate <= reportEnd;
-            }).sort((a,b) => (a.dailyQueueNumber || 0) - (b.dailyQueueNumber || 0)); // Sort by queue number
+            }).sort((a, b) => (a.dailyQueueNumber || 0) - (b.dailyQueueNumber || 0)); // Sort by queue number
 
             if (salesForDay.length === 0) {
                 showAlert(`ไม่พบข้อมูลการขายในวันที่ ${formattedDate}`);
@@ -886,19 +900,19 @@
             ui.scaleNumberInput.value = '';
             const weightInputs = ui.weightInputsContainer.querySelectorAll('.weight-input');
             weightInputs.forEach(input => input.value = '');
-            
+
             if (!isPriceLocked) {
                 ui.pricePerKgInput.value = '';
             }
-            
+
             editingId = null;
             ui.saveButton.textContent = 'บันทึกและพิมพ์ใบเสร็จ';
             ui.cancelEditButton.classList.add('hidden');
             calculateTotals();
         }
-        
+
         function togglePriceLock() {
-            isPriceLocked = !isPriceLocked; 
+            isPriceLocked = !isPriceLocked;
 
             if (isPriceLocked) {
                 ui.pricePerKgInput.readOnly = true;
@@ -974,7 +988,7 @@
                     // Get queue number for the specific day of the new record
                     const recordDateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
                     const recordDateEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
-                    
+
                     const salesOnDate = localSalesData.filter(sale => {
                         const d = sale.date.toDate();
                         return d >= recordDateStart && d <= recordDateEnd;
@@ -993,7 +1007,9 @@
 
                     const docRef = await addDoc(salesCollectionRef, saleData);
                     showAlert('บันทึกข้อมูลสำเร็จ');
-                    createPrintableReceipt({ ...saleData, id: docRef.id });
+                    createPrintableReceipt({ ...saleData,
+                        id: docRef.id
+                    });
                 }
                 clearForm();
             } catch (error) {
@@ -1038,7 +1054,10 @@
                 calculateTotals();
                 ui.saveButton.textContent = 'อัปเดตข้อมูล';
                 ui.cancelEditButton.classList.remove('hidden');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
             } else if (target.classList.contains('reprint-btn')) {
                 createPrintableReceipt(saleToProcess);
             }
@@ -1139,7 +1158,7 @@
         }
 
         /**
-         * Exports the current sales data to a CSV file.
+         * Exports the current sales data to an XLSX file.
          */
         function exportToExcel() {
             if (localSalesData.length === 0) {
@@ -1151,47 +1170,85 @@
             const sortedData = [...localSalesData].sort((a, b) => {
                 const dateA = a.date.toDate();
                 const dateB = b.date.toDate();
-                
+
                 // Compare by date first (descending)
                 if (dateB.getTime() !== dateA.getTime()) {
                     return dateB.getTime() - dateA.getTime();
                 }
-                
+
                 // If dates are the same, sort by queue number (ascending)
                 return (a.dailyQueueNumber || 0) - (b.dailyQueueNumber || 0);
             });
 
             const headers = ['คิว', 'วันที่', 'ชื่อผู้ขาย', 'น้ำหนัก (กก.)', 'ราคา/หน่วย (บาท)', 'ยอดรวม (บาท)', 'ตาชั่งที่'];
-            let csvContent = '\uFEFF' + headers.join(',') + '\n';
 
+            // Prepare data for SheetJS, starting with headers
+            const exportData = [headers];
+
+            // Add data rows
             sortedData.forEach((sale) => {
                 const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
                 const row = [
                     sale.dailyQueueNumber || '',
                     saleDate.toLocaleDateString('th-TH'),
-                    `"${sale.seller}"`,
-                    sale.weight.toFixed(2),
-                    sale.price.toFixed(2),
-                    sale.total.toFixed(2),
+                    sale.seller,
+                    sale.weight,
+                    sale.price,
+                    sale.total,
                     sale.scaleNumber || ''
                 ];
-                csvContent += row.join(',') + '\n';
+                exportData.push(row);
             });
 
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            if (link.download !== undefined) {
-                const url = URL.createObjectURL(blob);
-                const today = new Date().toISOString().slice(0, 10);
-                link.setAttribute('href', url);
-                link.setAttribute('download', `sales-report-${today}.csv`);
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+            // Create a new workbook and a worksheet
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(exportData);
+
+            // Set column widths for better readability
+            ws['!cols'] = [{
+                wch: 5
+            }, // คิว
+                {
+                    wch: 15
+                }, // วันที่
+                {
+                    wch: 25
+                }, // ชื่อผู้ขาย
+                {
+                    wch: 15
+                }, // น้ำหนัก (กก.)
+                {
+                    wch: 15
+                }, // ราคา/หน่วย (บาท)
+                {
+                    wch: 15
+                }, // ยอดรวม (บาท)
+                {
+                    wch: 10
+                } // ตาชั่งที่
+            ];
+            
+            // Format number columns (D, E, F) to have 2 decimal places
+            for (let R = 1; R < exportData.length; ++R) {
+                for (let C of[3, 4, 5]) { // Columns D, E, F
+                    const cell_address = {c: C, r: R};
+                    const cell_ref = XLSX.utils.encode_cell(cell_address);
+                    if (ws[cell_ref]) {
+                        ws[cell_ref].t = 'n'; // Set type to number
+                        ws[cell_ref].z = '#,##0.00'; // Set number format
+                    }
+                }
             }
+
+
+            // Append the worksheet to the workbook
+            XLSX.utils.book_append_sheet(wb, ws, 'SalesData');
+
+            // Generate the filename and trigger the download
+            const today = new Date().toISOString().slice(0, 10);
+            XLSX.writeFile(wb, `sales-report-${today}.xlsx`);
         }
-        
+
         /**
          * Saves a new weighing record or updates an existing one to Firestore.
          * @param {Event} event - The click event from the save button.
@@ -1510,9 +1567,9 @@
                                 id: doc.id,
                                 ...doc.data()
                             }));
-                            
+
                             localSalesData.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
-                            
+
                             renderTable(localSalesData);
                             renderDashboard();
                             renderSummary();
@@ -1585,7 +1642,11 @@
                 if (saleDate >= today) {
                     const scale = sale.scaleNumber || 'ไม่ระบุ';
                     if (!acc[scale]) {
-                        acc[scale] = { totalWeight: 0, totalAmount: 0, count: 0 };
+                        acc[scale] = {
+                            totalWeight: 0,
+                            totalAmount: 0,
+                            count: 0
+                        };
                     }
                     acc[scale].totalWeight += sale.weight;
                     acc[scale].totalAmount += sale.total;
@@ -1621,13 +1682,16 @@
 
             // Update and show grand total
             ui.summaryTodayTotalWeight.textContent = totalWeightToday.toFixed(2);
-            ui.summaryTodayTotalAmount.textContent = totalAmountToday.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            ui.summaryTodayTotalAmount.textContent = totalAmountToday.toLocaleString('th-TH', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
             ui.salesSummaryTodayTotal.classList.remove('hidden');
         }
 
         /**
-        * Populates the report date dropdown with unique dates from sales data.
-        */
+         * Populates the report date dropdown with unique dates from sales data.
+         */
         function populateReportDateSelector() {
             const dateSet = new Set();
             localSalesData.forEach(sale => {
@@ -1648,7 +1712,9 @@
                 const option = document.createElement('option');
                 option.value = dateStr;
                 option.textContent = new Date(dateStr).toLocaleDateString('th-TH', {
-                    year: 'numeric', month: 'long', day: 'numeric'
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
                 });
                 ui.reportDateSelect.appendChild(option);
             });
@@ -1681,13 +1747,13 @@
 
             ui.saveButton.addEventListener('click', handleSave);
             ui.cancelEditButton.addEventListener('click', clearForm);
-            
+
             ui.priceLockBtn.addEventListener('click', togglePriceLock);
 
             ui.salesTableBody.addEventListener('click', handleTableClick);
 
             ui.printReportBtn.addEventListener('click', createDailySummaryReport);
-            
+
             ui.exportExcelBtn.addEventListener('click', exportToExcel);
 
             if (ui.printDashboardBtn) {
