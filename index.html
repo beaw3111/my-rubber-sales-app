@@ -79,7 +79,7 @@
             <div class="space-y-4">
                 <div>
                     <label for="username-input" class="block text-sm font-medium text-stone-600">ชื่อผู้ใช้</label>
-                    <input type="text" id="username-input" class="mt-1 w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500">
+                    <input type="text" id="username-input" value="admin" class="mt-1 w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500">
                 </div>
                 <div>
                     <label for="password-input" class="block text-sm font-medium text-stone-600">รหัสผ่าน</label>
@@ -88,6 +88,11 @@
                 <p id="login-error" class="text-sm text-red-600 text-center hidden"></p>
                 <button id="login-button" class="w-full bg-amber-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-amber-700 transition-colors">
                     เข้าสู่ระบบ
+                </button>
+            </div>
+            <div class="text-center mt-4">
+                <button id="change-password-btn" class="text-sm text-stone-500 hover:text-amber-600 underline">
+                    เปลี่ยนรหัสผ่าน
                 </button>
             </div>
         </div>
@@ -357,7 +362,7 @@
             <div class="p-6">
                 <div class="text-center">
                     <h3 id="modal-title" class="text-lg leading-6 font-bold text-stone-900"></h3>
-                    <div class="mt-2">
+                    <div class="mt-2" id="modal-message-container">
                         <p id="modal-message" class="text-sm text-stone-500"></p>
                     </div>
                 </div>
@@ -377,7 +382,6 @@
         import {
             getAuth,
             signInAnonymously,
-            signInWithCustomToken,
             onAuthStateChanged
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import {
@@ -409,19 +413,22 @@
         // Application ID (provided by the environment or a default)
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'cup-rubber-sales-app';
 
+        // --- NEW: Password Management ---
+        let currentPassword = localStorage.getItem('customPassword') || 'as54321';
+
         // Global variables
         let localSalesData = [];
-        let localWeighingData = []; // NEW: To store all weighing records for history
+        let localWeighingData = [];
         let dailyStatsChart;
         let editingId = null;
         let editingWeighingId = null;
         let db, auth, userId, salesCollectionRef, weighingsCollectionRef;
         let unsubscribeSales = null;
-        let unsubscribeAllWeighings = null; // NEW: Listener for all weighings
+        let unsubscribeAllWeighings = null;
         let unsubscribeWeighings = {};
         let dailyWeighingData = {};
         let isPriceLocked = false;
-        let isAppInitialized = false; // Flag to check if Firebase is initialized
+        let isAppInitialized = false;
 
         // UI elements mapping
         const ui = {
@@ -432,6 +439,7 @@
             usernameInput: document.getElementById('username-input'),
             passwordInput: document.getElementById('password-input'),
             loginError: document.getElementById('login-error'),
+            changePasswordBtn: document.getElementById('change-password-btn'),
             weighingHistoryBody: document.getElementById('weighing-history-body'),
             tabs: document.getElementById('tabs'),
             tabContents: document.querySelectorAll('.tab-content'),
@@ -458,6 +466,7 @@
             dashboardSection: document.getElementById('dashboard'),
             modal: document.getElementById('modal'),
             modalTitle: document.getElementById('modal-title'),
+            modalMessageContainer: document.getElementById('modal-message-container'),
             modalMessage: document.getElementById('modal-message'),
             modalActions: document.getElementById('modal-actions'),
             summaryTotalSellers: document.getElementById('summary-total-sellers'),
@@ -490,18 +499,17 @@
 
         function showModal(title, message, buttons) {
             ui.modalTitle.textContent = title;
-            ui.modalMessage.innerHTML = message;
+            ui.modalMessageContainer.innerHTML = message; // Use container for complex HTML
             ui.modalActions.innerHTML = '';
             buttons.forEach(btn => {
                 const buttonEl = document.createElement('button');
                 buttonEl.textContent = btn.text;
                 buttonEl.className = btn.classes;
                 buttonEl.onclick = () => {
-                    // Only hide modal if it's NOT a special case (like re-showing it on error)
-                    if(!btn.noHide) {
-                       hideModal();
+                    const shouldHide = btn.onClick ? btn.onClick() : true;
+                    if(shouldHide !== false) { // handler can return false to prevent auto-hide
+                        hideModal();
                     }
-                    if (btn.onClick) btn.onClick();
                 };
                 ui.modalActions.appendChild(buttonEl);
             });
@@ -519,14 +527,16 @@
         }
 
         function showAlert(message) {
-            showModal('แจ้งเตือน', message, [{
+            showModal('แจ้งเตือน', `<p class="text-sm text-stone-500">${message}</p>`, [{
                 text: 'ตกลง',
                 classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-amber-600 text-base font-medium text-white hover:bg-amber-700 sm:w-auto sm:text-sm'
             }]);
         }
+        
+        // ... (The rest of your functions: showConfirm, bahttext, etc., remain the same) ...
 
         function showConfirm(message, onConfirm) {
-            showModal('ยืนยันการดำเนินการ', message, [{
+            showModal('ยืนยันการดำเนินการ', `<p class="text-sm text-stone-500">${message}</p>`, [{
                 text: 'ยืนยัน',
                 classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:ml-3 sm:w-auto sm:text-sm',
                 onClick: onConfirm
@@ -635,32 +645,8 @@
             });
         }
 
-        // --- Dashboard and History Rendering ---
-
         function renderDashboard() {
             renderDailyStatsChart();
-        }
-
-        function parseThaiDate(dateString) {
-            const parts = dateString.split(' ');
-            const day = parseInt(parts[0]);
-            const monthMap = {
-                'ม.ค.': 0,
-                'ก.พ.': 1,
-                'มี.ค.': 2,
-                'เม.ย.': 3,
-                'พ.ค.': 4,
-                'มิ.ย.': 5,
-                'ก.ค.': 6,
-                'ส.ค.': 7,
-                'ก.ย.': 8,
-                'ต.ค.': 9,
-                'พ.ย.': 10,
-                'ธ.ค.': 11
-            };
-            const month = monthMap[parts[1]];
-            const year = parseInt(parts[2]) - 543;
-            return new Date(year, month, day);
         }
 
         function renderDailyStatsChart() {
@@ -771,15 +757,9 @@
                                 }
                             },
                             tooltip: {
-                                titleFont: {
-                                    family: "'Sarabun', sans-serif"
-                                },
-                                bodyFont: {
-                                    family: "'Sarabun', sans-serif"
-                                },
-                                footerFont: {
-                                    family: "'Sarabun', sans-serif"
-                                },
+                                titleFont: { family: "'Sarabun', sans-serif" },
+                                bodyFont: { family: "'Sarabun', sans-serif" },
+                                footerFont: { family: "'Sarabun', sans-serif" },
                             }
                         }
                     }
@@ -787,16 +767,12 @@
             }
         }
         
-        /**
-         * MODIFIED: Renders the historical table for weighing data, including the calculated average weight.
-         */
         function renderWeighingHistory() {
             const historyBody = ui.weighingHistoryBody;
             if (!historyBody) return;
 
-            // 1. (MODIFIED) Pre-calculate total sales weight for each day from localSalesData
             const salesWeightByDay = localSalesData.reduce((acc, sale) => {
-                const day = sale.date.toDate().toISOString().split('T')[0]; // Key: 'YYYY-MM-DD'
+                const day = sale.date.toDate().toISOString().split('T')[0];
                 if (!acc[day]) {
                     acc[day] = 0;
                 }
@@ -804,7 +780,6 @@
                 return acc;
             }, {});
 
-            // 2. Aggregate weighing data (bag counts) by day
             const statsByDay = localWeighingData.reduce((acc, entry) => {
                 const day = entry.timestamp.toDate().toISOString().split('T')[0];
                 if (!acc[day]) {
@@ -815,34 +790,23 @@
                 return acc;
             }, {});
 
-            // 3. Sort days and prepare rows
-            const sortedDays = Object.keys(statsByDay).sort((a, b) => new Date(b) - new Date(a)); // Newest first
+            const sortedDays = Object.keys(statsByDay).sort((a, b) => new Date(b) - new Date(a));
 
-            historyBody.innerHTML = ''; // Clear previous data
+            historyBody.innerHTML = '';
             if (sortedDays.length === 0) {
                 historyBody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-stone-400">ยังไม่มีข้อมูลย้อนหลัง</td></tr>';
                 return;
             }
 
-            // 4. Create and append table rows with the new calculation
             sortedDays.forEach(day => {
                 const stats = statsByDay[day];
-
-                // --- NEW CALCULATION LOGIC ---
-                // Get the next day's date string ('YYYY-MM-DD')
                 const currentDate = new Date(day);
                 currentDate.setDate(currentDate.getDate() + 1);
                 const nextDayKey = currentDate.toISOString().split('T')[0];
-                
-                // Get the total weight from the pre-calculated sales data of the next day
                 const nextDayWeight = salesWeightByDay[nextDayKey] || 0;
-
-                // Calculate the average weight: (Next day's weight) / (Current day's bags)
                 const averageWeight = (nextDayWeight > 0 && stats.totalBags > 0) 
                                       ? (nextDayWeight / stats.totalBags) 
                                       : 0;
-                // --- END OF NEW LOGIC ---
-
                 const formattedDate = new Date(day).toLocaleDateString('th-TH', {
                     year: 'numeric', month: 'long', day: 'numeric'
                 });
@@ -858,12 +822,11 @@
             });
         }
 
-
         // --- Other Functions ---
         
         function createPrintableReceipt(sale) {
             const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
-            const generateSingleReceiptHTML = (title, isCopy) => `
+            const generateSingleReceiptHTML = (title) => `
                 <div class="w-1/2 p-4 flex flex-col text-xs" style="border: 2px dashed #9ca3af; height: 100vh;">
                     <div class="text-center mb-4">
                         <h2 class="text-base font-bold">${title}</h2>
@@ -903,6 +866,8 @@
             ui.printArea.innerHTML = `<div class="flex gap-0">${generateSingleReceiptHTML('ใบเสร็จรับเงิน (ต้นฉบับ)')}${generateSingleReceiptHTML('ใบเสร็จรับเงิน (สำเนา)')}</div>`;
             window.print();
         }
+
+        // ... (The rest of your functions: createDailySummaryReport, clearForm, etc. remain the same) ...
 
         function createDailySummaryReport() {
             const reportDateStr = ui.reportDateSelect.value;
@@ -1163,7 +1128,7 @@
                             </button>
                          </div>
                     </div>
-                    </section>
+                </section>
             `;
         }
 
@@ -1172,42 +1137,31 @@
                 const tabContent = document.getElementById(`tab-weighing-${i}`);
                 if (tabContent) {
                     tabContent.innerHTML = createWeighingStationHTML(i);
-                    
-                    // Existing Listeners
                     document.getElementById(`save-weighing-${i}`).addEventListener('click', saveWeighing);
                     document.getElementById(`weighing-table-body-${i}`).addEventListener('click', handleWeighingTableClick);
-                    
-                    // ========== NEW LISTENERS ==========
                     document.getElementById(`print-weighing-history-${i}`).addEventListener('click', (e) => {
                         printWeighingHistory(e.currentTarget.dataset.scale);
                     });
                     document.getElementById(`export-weighing-history-${i}`).addEventListener('click', (e) => {
                         exportWeighingHistoryToXLSX(e.currentTarget.dataset.scale);
                     });
-                    // ========== END OF NEW LISTENERS ==========
                 }
             }
         }
         
-        /**
-         * MODIFIED: Shows a modal to select a date before printing the weighing history for a specific scale.
-         */
         function printWeighingHistory(scaleId) {
             if (!localWeighingData) return showAlert('ข้อมูลการวางยางยังไม่ถูกโหลด');
 
-            // 1. Filter all records for the specific scale
             const scaleData = localWeighingData.filter(record => record.scaleId == scaleId);
 
             if (scaleData.length === 0) {
                 return showAlert(`ไม่พบข้อมูลการวางยางย้อนหลังสำหรับตาชั่งที่ ${scaleId}`);
             }
 
-            // 2. Get a unique, sorted list of dates for the dropdown
             const uniqueDates = Array.from(
                 new Set(scaleData.map(r => r.timestamp.toDate().toISOString().split('T')[0]))
-            ).sort((a, b) => new Date(b) - new Date(a)); // Sort newest first
+            ).sort((a, b) => new Date(b) - new Date(a));
 
-            // 3. Create the HTML for the date selection dropdown
             let modalContentHTML = `
                 <div class="space-y-2">
                     <label for="modal-date-select" class="block text-sm font-medium text-stone-700">กรุณาเลือกวันที่ที่ต้องการพิมพ์:</label>
@@ -1222,28 +1176,24 @@
                 </div>
             `;
 
-            // 4. Show the modal with the date selector
             showModal(`พิมพ์รายงานย้อนหลัง (ตาชั่งที่ ${scaleId})`, modalContentHTML, [
                 {
                     text: '🖨️ พิมพ์รายงาน',
                     classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-sky-600 text-base font-medium text-white hover:bg-sky-700 sm:ml-3 sm:w-auto sm:text-sm',
                     onClick: () => {
-                        // 5. This code runs when the user clicks "Print" in the modal
                         const selectedDate = document.getElementById('modal-date-select').value;
                         if (!selectedDate) {
-                            // Use a separate alert that doesn't close the main modal
-                            showAlert('กรุณาเลือกวันที่ก่อน');
-                            // Re-show the main modal by calling the function again, but we need to let the old one close first.
-                            setTimeout(() => printWeighingHistory(scaleId), 350); 
-                            return;
+                             setTimeout(() => {
+                                showAlert('กรุณาเลือกวันที่ก่อน');
+                                // Re-show the main modal
+                                setTimeout(() => printWeighingHistory(scaleId), 350);
+                            }, 10);
+                            return false; // Prevent modal from closing
                         }
 
-                        hideModal(); // Explicitly hide the selection modal
-
-                        // Filter the data again for the selected date and sort by time
                         const reportData = scaleData
                             .filter(record => record.timestamp.toDate().toISOString().split('T')[0] === selectedDate)
-                            .sort((a, b) => a.timestamp.toDate() - b.timestamp.toDate()); // Sort oldest first for daily report
+                            .sort((a, b) => a.timestamp.toDate() - b.timestamp.toDate());
 
                         const formattedPrintDate = new Date(selectedDate).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
 
@@ -1278,20 +1228,19 @@
                             </div>
                         `;
                         ui.printArea.innerHTML = reportHTML;
-                        window.print();
+                        setTimeout(() => window.print(), 100); // Add a small delay for rendering
+                        return true; // Allow modal to close
                     }
                 },
                 {
                     text: 'ยกเลิก',
-                    classes: 'mt-3 w-full inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 sm:mt-0 sm:w-auto sm:text-sm',
-                    onClick: () => hideModal()
+                    classes: 'mt-3 w-full inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 sm:mt-0 sm:w-auto sm:text-sm'
                 }
             ]);
         }
+        
+        // ... (The rest of your functions: exportWeighingHistoryToXLSX, exportToExcel, etc. remain the same) ...
 
-        /**
-         * NEW: Exports all historical weighing data for a specific scale to an XLSX file.
-         */
         function exportWeighingHistoryToXLSX(scaleId) {
             if (!localWeighingData) return showAlert('ข้อมูลการวางยางยังไม่ถูกโหลด');
 
@@ -1516,7 +1465,7 @@
         }
         
         async function initializeFirebaseAndAuth() {
-            if (isAppInitialized) return; // Prevent re-initialization
+            if (isAppInitialized) return; 
             
             if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
                 return showAlert('การตั้งค่า Firebase ไม่ถูกต้อง ไม่สามารถเชื่อมต่อฐานข้อมูลได้');
@@ -1533,35 +1482,28 @@
                         salesCollectionRef = collection(db, "artifacts", appId, "public", "data", "sales");
                         weighingsCollectionRef = collection(db, "artifacts", appId, "public", "data", "weighings");
 
-                        // Listener for sales data
                         if (unsubscribeSales) unsubscribeSales();
                         unsubscribeSales = onSnapshot(query(salesCollectionRef), (snapshot) => {
                             localSalesData = snapshot.docs.map(doc => ({
                                 id: doc.id, ...doc.data() }));
                             localSalesData.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
-                            ui.searchBox.dispatchEvent(new Event('input'));
+                            if(document.getElementById('search-box')) ui.searchBox.dispatchEvent(new Event('input'));
                             renderDashboard();
                             renderSummary();
                             renderScaleSummaries();
                             populateReportDateSelector();
-                        }, (error) => {
-                            showAlert(`เกิดข้อผิดพลาดในการดึงข้อมูลการขาย: ${error.message}`);
                         });
 
-                        // Listener for ALL weighing data (for history)
                         if (unsubscribeAllWeighings) unsubscribeAllWeighings();
                         unsubscribeAllWeighings = onSnapshot(query(weighingsCollectionRef), (snapshot) => {
                             localWeighingData = snapshot.docs.map(doc => ({
                                 id: doc.id, ...doc.data() }));
                             renderWeighingHistory();
-                        }, (error) => {
-                            showAlert(`เกิดข้อผิดพลาดในการดึงข้อมูลวางยาง: ${error.message}`);
                         });
 
                         setupWeighingListeners();
-                        isAppInitialized = true; // Set flag to true after setup
+                        isAppInitialized = true;
                     } else if (!user) {
-                        // Reset if user signs out
                         isAppInitialized = false;
                         if(unsubscribeSales) unsubscribeSales();
                         if(unsubscribeAllWeighings) unsubscribeAllWeighings();
@@ -1569,7 +1511,6 @@
                     }
                 });
                 
-                // Try to sign in anonymously if no user is found
                 if (!auth.currentUser) {
                     await signInAnonymously(auth);
                 }
@@ -1671,6 +1612,66 @@
             });
             ui.reportDateSelect.value = currentValue;
         }
+        
+        // --- NEW: Change Password Modal Logic ---
+        function promptChangePassword() {
+            const modalContentHTML = `
+                <div class="space-y-4 text-left">
+                    <div>
+                        <label for="old-password-input" class="block text-sm font-medium text-stone-600">รหัสผ่านเก่า</label>
+                        <input type="password" id="old-password-input" class="mt-1 w-full p-3 border border-stone-300 rounded-lg shadow-sm">
+                    </div>
+                    <div>
+                        <label for="new-password-input" class="block text-sm font-medium text-stone-600">รหัสผ่านใหม่</label>
+                        <input type="password" id="new-password-input" class="mt-1 w-full p-3 border border-stone-300 rounded-lg shadow-sm">
+                    </div>
+                    <div>
+                        <label for="confirm-password-input" class="block text-sm font-medium text-stone-600">ยืนยันรหัสผ่านใหม่</label>
+                        <input type="password" id="confirm-password-input" class="mt-1 w-full p-3 border border-stone-300 rounded-lg shadow-sm">
+                    </div>
+                    <p id="change-password-error" class="text-sm text-red-600 text-center hidden"></p>
+                </div>
+            `;
+            
+            showModal('เปลี่ยนรหัสผ่าน', modalContentHTML, [
+                {
+                    text: 'ยืนยันการเปลี่ยนแปลง',
+                    classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-amber-600 text-base font-medium text-white hover:bg-amber-700 sm:ml-3 sm:w-auto sm:text-sm',
+                    onClick: () => {
+                        const oldPassword = document.getElementById('old-password-input').value;
+                        const newPassword = document.getElementById('new-password-input').value;
+                        const confirmPassword = document.getElementById('confirm-password-input').value;
+                        const errorEl = document.getElementById('change-password-error');
+                        
+                        if (oldPassword !== currentPassword) {
+                            errorEl.textContent = 'รหัสผ่านเก่าไม่ถูกต้อง';
+                            errorEl.classList.remove('hidden');
+                            return false; // Prevent modal from closing
+                        }
+                        if (newPassword.length < 4) {
+                             errorEl.textContent = 'รหัสผ่านใหม่ต้องมีอย่างน้อย 4 ตัวอักษร';
+                             errorEl.classList.remove('hidden');
+                             return false;
+                        }
+                        if (newPassword !== confirmPassword) {
+                            errorEl.textContent = 'รหัสผ่านใหม่และการยืนยันไม่ตรงกัน';
+                            errorEl.classList.remove('hidden');
+                            return false;
+                        }
+
+                        // Success
+                        localStorage.setItem('customPassword', newPassword);
+                        currentPassword = newPassword;
+                        showAlert('เปลี่ยนรหัสผ่านสำเร็จแล้ว');
+                        return true; // Allow modal to close
+                    }
+                },
+                {
+                    text: 'ยกเลิก',
+                    classes: 'mt-3 w-full inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 sm:mt-0 sm:w-auto sm:text-sm'
+                }
+            ]);
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
 
@@ -1679,13 +1680,15 @@
                  const username = ui.usernameInput.value.trim();
                  const password = ui.passwordInput.value.trim();
 
-                 if (username === 'admin' && password === 'as54321') {
+                 if (username === 'admin' && password === currentPassword) {
                     ui.loginScreen.classList.add('hidden');
                     ui.appContainer.classList.remove('hidden');
                     sessionStorage.setItem('isLoggedIn', 'true');
                     ui.loginError.classList.add('hidden');
                     ui.passwordInput.value = '';
-                    initializeFirebaseAndAuth(); // Initialize the main app after successful login
+                    if (!isAppInitialized) {
+                       initializeFirebaseAndAuth();
+                    }
                  } else {
                     ui.loginError.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
                     ui.loginError.classList.remove('hidden');
@@ -1712,8 +1715,10 @@
 
             ui.logoutButton.addEventListener('click', () => {
                 sessionStorage.removeItem('isLoggedIn');
-                window.location.reload(); // Simple way to reset state
+                window.location.reload();
             });
+            
+            ui.changePasswordBtn.addEventListener('click', promptChangePassword);
 
             // --- Main App Setup ---
             renderWeighingStations();
@@ -1760,7 +1765,6 @@
 
             ui.receiptDateInput.valueAsDate = new Date();
             updateDateDisplay();
-            // initApp is now called after successful login
         });
     </script>
 </body>
