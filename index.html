@@ -1115,7 +1115,19 @@
                             </tbody>
                         </table>
                     </div>
-                </section>
+
+                    <div class="border-t mt-8 pt-6">
+                         <h3 class="text-lg font-semibold text-stone-700 mb-3">เครื่องมือย้อนหลัง (สำหรับตาชั่งที่ ${scaleId})</h3>
+                         <div class="flex items-center gap-4 flex-wrap">
+                            <button id="print-weighing-history-${scaleId}" data-scale="${scaleId}" class="bg-sky-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-sky-700 transition-colors">
+                                🖨️ เรียกข้อมูลย้อนหลังเพื่อปริ้น
+                            </button>
+                            <button id="export-weighing-history-${scaleId}" data-scale="${scaleId}" class="bg-emerald-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-emerald-700 transition-colors">
+                                📄 แปลงไฟล์เป็น .xlsx
+                            </button>
+                         </div>
+                    </div>
+                    </section>
             `;
         }
 
@@ -1124,11 +1136,112 @@
                 const tabContent = document.getElementById(`tab-weighing-${i}`);
                 if (tabContent) {
                     tabContent.innerHTML = createWeighingStationHTML(i);
+                    
+                    // Existing Listeners
                     document.getElementById(`save-weighing-${i}`).addEventListener('click', saveWeighing);
                     document.getElementById(`weighing-table-body-${i}`).addEventListener('click', handleWeighingTableClick);
+                    
+                    // ========== NEW LISTENERS ==========
+                    document.getElementById(`print-weighing-history-${i}`).addEventListener('click', (e) => {
+                        printWeighingHistory(e.currentTarget.dataset.scale);
+                    });
+                    document.getElementById(`export-weighing-history-${i}`).addEventListener('click', (e) => {
+                        exportWeighingHistoryToXLSX(e.currentTarget.dataset.scale);
+                    });
+                    // ========== END OF NEW LISTENERS ==========
                 }
             }
         }
+        
+        /**
+         * NEW: Creates a printable report of all historical weighing data for a specific scale.
+         */
+        function printWeighingHistory(scaleId) {
+            if (!localWeighingData) return showAlert('ข้อมูลการวางยางยังไม่ถูกโหลด');
+
+            const scaleData = localWeighingData
+                .filter(record => record.scaleId == scaleId)
+                .sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
+            
+            if (scaleData.length === 0) {
+                return showAlert(`ไม่พบข้อมูลการวางยางย้อนหลังสำหรับตาชั่งที่ ${scaleId}`);
+            }
+
+            const reportDate = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+
+            const tableRows = scaleData.map(record => {
+                const timestamp = record.timestamp.toDate();
+                return `
+                    <tr class="border-b">
+                        <td class="px-2 py-2">${timestamp.toLocaleDateString('th-TH')}</td>
+                        <td class="px-2 py-2">${timestamp.toLocaleTimeString('th-TH')}</td>
+                        <td class="px-2 py-2">${record.sellerName}</td>
+                        <td class="px-2 py-2 text-right">${record.bags}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            const reportHTML = `
+                <div class="p-8 bg-white text-black">
+                    <div class="text-center mb-6">
+                        <h2 class="text-xl font-bold">รายงานการรับวางยางย้อนหลัง (ตาชั่งที่ ${scaleId})</h2>
+                        <h3 class="text-lg">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</h3>
+                        <p>พิมพ์ ณ วันที่ ${reportDate}</p>
+                    </div>
+                    <table class="w-full text-sm border-collapse border border-black">
+                        <thead class="bg-stone-200">
+                            <tr class="border-b-2 border-black">
+                                <th class="px-2 py-2 border-r border-black">วันที่</th>
+                                <th class="px-2 py-2 border-r border-black">เวลา</th>
+                                <th class="px-2 py-2 border-r border-black">ชื่อผู้ขาย</th>
+                                <th class="px-2 py-2 border-r border-black">จำนวนถุง</th>
+                            </tr>
+                        </thead>
+                        <tbody>${tableRows}</tbody>
+                    </table>
+                </div>
+            `;
+            ui.printArea.innerHTML = reportHTML;
+            window.print();
+        }
+
+
+        /**
+         * NEW: Exports all historical weighing data for a specific scale to an XLSX file.
+         */
+        function exportWeighingHistoryToXLSX(scaleId) {
+            if (!localWeighingData) return showAlert('ข้อมูลการวางยางยังไม่ถูกโหลด');
+
+            const scaleData = localWeighingData
+                .filter(record => record.scaleId == scaleId)
+                .sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
+                
+            if (scaleData.length === 0) {
+                return showAlert(`ไม่พบข้อมูลการวางยางย้อนหลังสำหรับตาชั่งที่ ${scaleId} เพื่อ Export`);
+            }
+
+            const headers = ['วันที่', 'เวลา', 'ชื่อผู้ขาย', 'จำนวนถุง'];
+            const exportData = [headers];
+
+            scaleData.forEach(record => {
+                const timestamp = record.timestamp.toDate();
+                exportData.push([
+                    timestamp.toLocaleDateString('th-TH'),
+                    timestamp.toLocaleTimeString('th-TH'),
+                    record.sellerName,
+                    record.bags
+                ]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(exportData);
+            ws['!cols'] = [{ wch: 15 }, { wch: 15 }, { wch: 30 }, { wch: 15 }];
+            
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, `ประวัติตาชั่งที่ ${scaleId}`);
+
+            XLSX.writeFile(wb, `weighing-history-scale-${scaleId}.xlsx`);
+        }
+
 
         function exportToExcel() {
             if (localSalesData.length === 0) return showAlert('ไม่มีข้อมูลการขายสำหรับ Export');
