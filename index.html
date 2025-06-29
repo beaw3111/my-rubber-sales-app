@@ -93,10 +93,10 @@
 
         <main>
             <div id="tab-receipt" class="tab-content">
-                 <section id="receipt-generator" class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                <section id="receipt-generator" class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
                     <h2 class="text-2xl font-bold mb-2 border-b pb-3 text-stone-800">1. กรอกข้อมูลเพื่อออกใบเสร็จ</h2>
                     <p class="text-sm text-stone-500 mt-2 mb-6">ส่วนนี้คือศูนย์กลางการทำงาน สำหรับบันทึกข้อมูลการขาย ระบบจะคำนวณยอดรวมให้อัตโนมัติ และเมื่อบันทึกข้อมูลแล้วจะสร้างใบเสร็จสำหรับพิมพ์ได้ทันที</p>
-                    
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
                         <div>
                             <label for="seller-name" class="block text-sm font-medium text-stone-700 mb-1">ชื่อ-สกุล ผู้ขาย</label>
@@ -164,7 +164,7 @@
                     <div class="border-t pt-6 mt-8">
                         <h3 class="text-xl font-semibold text-stone-700 mb-4">สรุปยอดขายแยกตามตาชั่ง (วันนี้)</h3>
                         <div id="sales-summary-by-scale" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                            </div>
+                        </div>
                         <div id="sales-summary-today-total" class="mt-6 p-4 bg-amber-200 rounded-lg text-center hidden shadow">
                             <h4 class="text-lg font-bold text-amber-800">ยอดรวมทั้งหมด (วันนี้)</h4>
                             <div class="flex justify-center gap-x-8 gap-y-2 flex-wrap mt-2">
@@ -225,7 +225,7 @@
                     </div>
                 </section>
             </div>
-            
+
             <div id="tab-dashboard" class="tab-content">
                 <section id="dashboard" class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
                     <div class="flex justify-between items-center mb-2 border-b pb-3 no-print">
@@ -262,12 +262,12 @@
                     </div>
                 </section>
             </div>
-            
+
             <div id="tab-weighing-1" class="tab-content"></div>
             <div id="tab-weighing-2" class="tab-content"></div>
             <div id="tab-weighing-3" class="tab-content"></div>
             <div id="tab-weighing-4" class="tab-content"></div>
-            
+
             <div id="tab-weighing-summary" class="tab-content">
                 <section class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
                     <h2 class="text-2xl font-bold mb-6 border-b pb-3 text-stone-800">8. สรุปผลรวมตาชั่งทั้งหมด (สำหรับวันนี้)</h2>
@@ -290,21 +290,22 @@
                         <div class="border-t pt-8 mt-8">
                             <h3 class="text-xl font-semibold text-stone-700 mb-4">สถิติการรับวางยางย้อนหลัง</h3>
                              <div class="overflow-x-auto rounded-lg border">
-                                <table class="w-full text-sm text-left text-stone-600">
-                                    <thead class="text-xs text-stone-700 uppercase bg-stone-200">
-                                        <tr>
-                                            <th scope="col" class="px-6 py-3">วันที่</th>
-                                            <th scope="col" class="px-6 py-3 text-center">จำนวนรายการ</th>
-                                            <th scope="col" class="px-6 py-3 text-center">จำนวนถุงทั้งหมด</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="weighing-history-body">
-                                        <tr>
-                                            <td colspan="3" class="px-6 py-8 text-center text-stone-400">กำลังโหลดข้อมูล...</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
+                                 <table class="w-full text-sm text-left text-stone-600">
+                                     <thead class="text-xs text-stone-700 uppercase bg-stone-200">
+                                         <tr>
+                                             <th scope="col" class="px-6 py-3">วันที่</th>
+                                             <th scope="col" class="px-6 py-3 text-center">จำนวนรายการ</th>
+                                             <th scope="col" class="px-6 py-3 text-center">จำนวนถุงทั้งหมด</th>
+                                             <th scope="col" class="px-6 py-3 text-center">ค่าเฉลี่ยน้ำหนัก/ถุง (กก.)</th>
+                                         </tr>
+                                     </thead>
+                                     <tbody id="weighing-history-body">
+                                         <tr>
+                                             <td colspan="4" class="px-6 py-8 text-center text-stone-400">กำลังโหลดข้อมูล...</td>
+                                         </tr>
+                                     </tbody>
+                                 </table>
+                             </div>
                         </div>
 
 
@@ -324,7 +325,7 @@
     </div>
 
     <div id="print-area" class="bg-white"></div>
-    
+
     <div id="modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-300 no-print" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="modal-content bg-white rounded-xl shadow-2xl w-full max-w-md transform scale-95 transition-transform duration-300">
             <div class="p-6">
@@ -339,9 +340,9 @@
                 </div>
         </div>
     </div>
-    
+
     <script type="module">
-       import {
+        import {
             initializeApp
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import {
@@ -386,18 +387,17 @@
         let localSalesData = [];
         let localWeighingData = []; // NEW: To store all weighing records for history
         let dailyStatsChart;
-        let editingId = null; 
+        let editingId = null;
         let editingWeighingId = null;
         let db, auth, userId, salesCollectionRef, weighingsCollectionRef;
         let unsubscribeSales = null;
         let unsubscribeAllWeighings = null; // NEW: Listener for all weighings
         let unsubscribeWeighings = {};
-        let dailyWeighingData = {}; 
+        let dailyWeighingData = {};
         let isPriceLocked = false;
 
         // UI elements mapping
         const ui = {
-            // ... (all previous ui elements)
             weighingHistoryBody: document.getElementById('weighing-history-body'), // NEW
             appContainer: document.getElementById('app'),
             tabs: document.getElementById('tabs'),
@@ -437,12 +437,10 @@
             salesSummaryByScale: document.getElementById('sales-summary-by-scale'),
             salesSummaryTodayTotal: document.getElementById('sales-summary-today-total'),
             summaryTodayTotalWeight: document.getElementById('summary-today-total-weight'),
-            summaryTodayTotalAmount: document.getElementById('summary-today-total-amount'), 
+            summaryTodayTotalAmount: document.getElementById('summary-today-total-amount'),
         };
-        
-        // --- Core Application Logic (mostly unchanged) ---
-        // switchToTab, showModal, hideModal, showAlert, showConfirm, bahttext, calculateTotals, renderTable, renderSummary
-        // All these functions remain the same as the previous version.
+
+        // --- Core Application Logic ---
 
         function switchToTab(targetTabId) {
             ui.tabs.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -501,12 +499,13 @@
                 classes: 'mt-3 w-full inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 sm:mt-0 sm:w-auto sm:text-sm'
             }]);
         }
-        
+
         function bahttext(number) {
             number = Number(number).toFixed(2);
-            let [integer, fraction] = number.split('.');
+            let [integer,
+                fraction] = number.split('.');
             if (parseInt(integer) === 0 && parseInt(fraction) === 0) {
-                 return 'ศูนย์บาทถ้วน';
+                return 'ศูนย์บาทถ้วน';
             }
             const t = ['', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า'];
             const r = ['', 'สิบ', 'ร้อย', 'พัน', 'หมื่น', 'แสน', 'ล้าน'];
@@ -519,7 +518,7 @@
                     if (d > 0) {
                         if (p === 1 && d === 2) s += 'ยี่';
                         else if (p === 1 && d === 1) s += '';
-                        else if (p === 0 && d === 1 && s.length > 0 && n.length > 1 && n.charAt(n.length-2) !== '0') s += 'เอ็ด';
+                        else if (p === 0 && d === 1 && s.length > 0 && n.length > 1 && n.charAt(n.length - 2) !== '0') s += 'เอ็ด';
                         else s += t[d];
                         s += r[p];
                     }
@@ -533,7 +532,7 @@
             if (!fracText && intText) fracText = 'ถ้วน';
             return intText + fracText;
         }
-        
+
         function calculateTotals() {
             let totalWeight = 0;
             const weightInputs = ui.weightInputsContainer.querySelectorAll('.weight-input');
@@ -543,10 +542,13 @@
             const pricePerKg = parseFloat(ui.pricePerKgInput.value) || 0;
             const totalAmount = totalWeight * pricePerKg;
             ui.totalWeightEl.textContent = totalWeight.toFixed(2);
-            ui.totalAmountEl.textContent = totalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            ui.totalAmountEl.textContent = totalAmount.toLocaleString('th-TH', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
             ui.totalAmountTextEl.textContent = bahttext(totalAmount);
         }
-        
+
         function renderTable(dataToRender) {
             ui.salesTableBody.innerHTML = '';
             if (dataToRender.length === 0) {
@@ -575,7 +577,7 @@
                 ui.salesTableBody.appendChild(row);
             });
         }
-        
+
         function renderSummary() {
             if (!localSalesData || localSalesData.length === 0) {
                 ui.summaryTotalSellers.textContent = '0';
@@ -587,30 +589,52 @@
             const totalWeight = localSalesData.reduce((acc, sale) => acc + sale.weight, 0);
             const totalPrice = localSalesData.reduce((acc, sale) => acc + sale.total, 0);
             ui.summaryTotalSellers.textContent = totalSellers.toLocaleString('th-TH');
-            ui.summaryTotalWeight.textContent = totalWeight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            ui.summaryTotalPrice.textContent = totalPrice.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            ui.summaryTotalWeight.textContent = totalWeight.toLocaleString('th-TH', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            ui.summaryTotalPrice.textContent = totalPrice.toLocaleString('th-TH', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
         }
-        
+
         // --- Dashboard and History Rendering ---
-        
+
         function renderDashboard() {
             renderDailyStatsChart();
         }
-        
+
         function parseThaiDate(dateString) {
-             const parts = dateString.split(' ');
-             const day = parseInt(parts[0]);
-             const monthMap = { 'ม.ค.': 0, 'ก.พ.': 1, 'มี.ค.': 2, 'เม.ย.': 3, 'พ.ค.': 4, 'มิ.ย.': 5, 'ก.ค.': 6, 'ส.ค.': 7, 'ก.ย.': 8, 'ต.ค.': 9, 'พ.ย.': 10, 'ธ.ค.': 11 };
-             const month = monthMap[parts[1]];
-             const year = parseInt(parts[2]) - 543;
-             return new Date(year, month, day);
+            const parts = dateString.split(' ');
+            const day = parseInt(parts[0]);
+            const monthMap = {
+                'ม.ค.': 0,
+                'ก.พ.': 1,
+                'มี.ค.': 2,
+                'เม.ย.': 3,
+                'พ.ค.': 4,
+                'มิ.ย.': 5,
+                'ก.ค.': 6,
+                'ส.ค.': 7,
+                'ก.ย.': 8,
+                'ต.ค.': 9,
+                'พ.ย.': 10,
+                'ธ.ค.': 11
+            };
+            const month = monthMap[parts[1]];
+            const year = parseInt(parts[2]) - 543;
+            return new Date(year, month, day);
         }
 
         function renderDailyStatsChart() {
             const statsByDay = localSalesData.reduce((acc, sale) => {
                 const day = sale.date.toDate().toISOString().split('T')[0];
                 if (!acc[day]) {
-                    acc[day] = { totalWeight: 0, totalValue: 0 };
+                    acc[day] = {
+                        totalWeight: 0,
+                        totalValue: 0
+                    };
                 }
                 acc[day].totalWeight += sale.weight;
                 acc[day].totalValue += sale.total;
@@ -618,7 +642,11 @@
             }, {});
 
             const sortedDays = Object.keys(statsByDay).sort((a, b) => new Date(a) - new Date(b));
-            const labels = sortedDays.map(day => new Date(day).toLocaleDateString('th-TH', { year: '2-digit', month: 'short', day: 'numeric' }));
+            const labels = sortedDays.map(day => new Date(day).toLocaleDateString('th-TH', {
+                year: '2-digit',
+                month: 'short',
+                day: 'numeric'
+            }));
             const weightData = sortedDays.map(day => statsByDay[day].totalWeight);
             const priceData = sortedDays.map(day => {
                 const stats = statsByDay[day];
@@ -634,53 +662,88 @@
                 dailyStatsChart = new Chart(canvas.getContext('2d'), {
                     data: {
                         labels: labels,
-                        datasets: [
-                            {
-                                type: 'bar',
-                                label: 'ปริมาณยาง (กก.)',
-                                data: weightData,
-                                backgroundColor: 'rgba(217, 119, 6, 0.6)',
-                                borderColor: 'rgb(217, 119, 6)',
-                                yAxisID: 'yWeight',
-                            },
-                            {
-                                type: 'line',
-                                label: 'ราคาเฉลี่ย (บาท)',
-                                data: priceData,
-                                fill: false,
-                                backgroundColor: 'rgba(54, 162, 235, 1)',
-                                borderColor: 'rgba(54, 162, 235, 1)',
-                                tension: 0.1,
-                                yAxisID: 'yPrice',
-                            }
-                        ]
+                        datasets: [{
+                            type: 'bar',
+                            label: 'ปริมาณยาง (กก.)',
+                            data: weightData,
+                            backgroundColor: 'rgba(217, 119, 6, 0.6)',
+                            borderColor: 'rgb(217, 119, 6)',
+                            yAxisID: 'yWeight',
+                        }, {
+                            type: 'line',
+                            label: 'ราคาเฉลี่ย (บาท)',
+                            data: priceData,
+                            fill: false,
+                            backgroundColor: 'rgba(54, 162, 235, 1)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            tension: 0.1,
+                            yAxisID: 'yPrice',
+                        }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
                         scales: {
-                            x: { ticks: { font: { family: "'Sarabun', sans-serif" }}},
+                            x: {
+                                ticks: {
+                                    font: {
+                                        family: "'Sarabun', sans-serif"
+                                    }
+                                }
+                            },
                             yWeight: {
                                 type: 'linear',
                                 display: true,
                                 position: 'left',
-                                title: { display: true, text: 'ปริมาณ (กก.)', font: { family: "'Sarabun', sans-serif", size: 14 }}
+                                title: {
+                                    display: true,
+                                    text: 'ปริมาณ (กก.)',
+                                    font: {
+                                        family: "'Sarabun', sans-serif",
+                                        size: 14
+                                    }
+                                }
                             },
                             yPrice: {
                                 type: 'linear',
                                 display: true,
                                 position: 'right',
-                                title: { display: true, text: 'ราคาเฉลี่ย (บาท)', font: { family: "'Sarabun', sans-serif", size: 14 }},
-                                grid: { drawOnChartArea: false }
+                                title: {
+                                    display: true,
+                                    text: 'ราคาเฉลี่ย (บาท)',
+                                    font: {
+                                        family: "'Sarabun', sans-serif",
+                                        size: 14
+                                    }
+                                },
+                                grid: {
+                                    drawOnChartArea: false
+                                }
                             }
                         },
                         plugins: {
-                            legend: { position: 'top', labels: { font: { family: "'Sarabun', sans-serif" }}},
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    font: {
+                                        family: "'Sarabun', sans-serif"
+                                    }
+                                }
+                            },
                             tooltip: {
-                                titleFont: { family: "'Sarabun', sans-serif" },
-                                bodyFont: { family: "'Sarabun', sans-serif" },
-                                footerFont: { family: "'Sarabun', sans-serif" },
+                                titleFont: {
+                                    family: "'Sarabun', sans-serif"
+                                },
+                                bodyFont: {
+                                    family: "'Sarabun', sans-serif"
+                                },
+                                footerFont: {
+                                    family: "'Sarabun', sans-serif"
+                                },
                             }
                         }
                     }
@@ -689,13 +752,23 @@
         }
         
         /**
-         * NEW: Renders the historical table for weighing data.
+         * MODIFIED: Renders the historical table for weighing data, including the calculated average weight.
          */
         function renderWeighingHistory() {
             const historyBody = ui.weighingHistoryBody;
             if (!historyBody) return;
 
-            // 1. Aggregate weighing data by day
+            // 1. (MODIFIED) Pre-calculate total sales weight for each day from localSalesData
+            const salesWeightByDay = localSalesData.reduce((acc, sale) => {
+                const day = sale.date.toDate().toISOString().split('T')[0]; // Key: 'YYYY-MM-DD'
+                if (!acc[day]) {
+                    acc[day] = 0;
+                }
+                acc[day] += sale.weight;
+                return acc;
+            }, {});
+
+            // 2. Aggregate weighing data (bag counts) by day
             const statsByDay = localWeighingData.reduce((acc, entry) => {
                 const day = entry.timestamp.toDate().toISOString().split('T')[0];
                 if (!acc[day]) {
@@ -706,18 +779,34 @@
                 return acc;
             }, {});
 
-            // 2. Sort days and prepare rows
+            // 3. Sort days and prepare rows
             const sortedDays = Object.keys(statsByDay).sort((a, b) => new Date(b) - new Date(a)); // Newest first
 
             historyBody.innerHTML = ''; // Clear previous data
             if (sortedDays.length === 0) {
-                historyBody.innerHTML = '<tr><td colspan="3" class="px-6 py-8 text-center text-stone-400">ยังไม่มีข้อมูลย้อนหลัง</td></tr>';
+                historyBody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-stone-400">ยังไม่มีข้อมูลย้อนหลัง</td></tr>';
                 return;
             }
 
-            // 3. Create and append table rows
+            // 4. Create and append table rows with the new calculation
             sortedDays.forEach(day => {
                 const stats = statsByDay[day];
+
+                // --- NEW CALCULATION LOGIC ---
+                // Get the next day's date string ('YYYY-MM-DD')
+                const currentDate = new Date(day);
+                currentDate.setDate(currentDate.getDate() + 1);
+                const nextDayKey = currentDate.toISOString().split('T')[0];
+                
+                // Get the total weight from the pre-calculated sales data of the next day
+                const nextDayWeight = salesWeightByDay[nextDayKey] || 0;
+
+                // Calculate the average weight: (Next day's weight) / (Current day's bags)
+                const averageWeight = (nextDayWeight > 0 && stats.totalBags > 0) 
+                                      ? (nextDayWeight / stats.totalBags) 
+                                      : 0;
+                // --- END OF NEW LOGIC ---
+
                 const formattedDate = new Date(day).toLocaleDateString('th-TH', {
                     year: 'numeric', month: 'long', day: 'numeric'
                 });
@@ -727,16 +816,14 @@
                     <td class="px-6 py-4 font-medium text-stone-900">${formattedDate}</td>
                     <td class="px-6 py-4 text-center">${stats.recordCount.toLocaleString('th-TH')}</td>
                     <td class="px-6 py-4 text-center font-bold text-amber-700">${stats.totalBags.toLocaleString('th-TH')}</td>
+                    <td class="px-6 py-4 text-center font-semibold text-blue-600">${averageWeight.toFixed(2)}</td>
                 `;
                 historyBody.appendChild(row);
             });
         }
 
-        
-        // --- Other Functions (Unchanged) ---
-        // createPrintableReceipt, createDailySummaryReport, clearForm, togglePriceLock, handleSave, handleTableClick, updateDateDisplay
-        // createWeighingStationHTML, renderWeighingStations, exportToExcel, saveWeighing, calculateSummaryTotalWeight, etc.
-        // All these functions remain the same as the previous version.
+
+        // --- Other Functions ---
         
         function createPrintableReceipt(sale) {
             const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
@@ -759,11 +846,11 @@
                         </thead>
                         <tbody class="border-b border-dotted border-stone-400">
                              <tr>
-                                <td class="py-2 align-top">
-                                    ค่ายางก้อนถ้วย
-                                    <span class="block text-xs text-stone-600">น้ำหนัก: ${sale.weight.toFixed(2)} กก. @ ${sale.price.toFixed(2)} บาท/กก.</span>
-                                </td>
-                                <td class="text-right align-top pt-2">${sale.total.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                 <td class="py-2 align-top">
+                                     ค่ายางก้อนถ้วย
+                                     <span class="block text-xs text-stone-600">น้ำหนัก: ${sale.weight.toFixed(2)} กก. @ ${sale.price.toFixed(2)} บาท/กก.</span>
+                                 </td>
+                                 <td class="text-right align-top pt-2">${sale.total.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                              </tr>
                         </tbody>
                         <tfoot>
@@ -788,7 +875,11 @@
                 return;
             }
             const reportDate = new Date(reportDateStr);
-            const formattedDate = reportDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+            const formattedDate = reportDate.toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
             const reportStart = new Date(reportDate.getFullYear(), reportDate.getMonth(), reportDate.getDate());
             const reportEnd = new Date(reportDate.getFullYear(), reportDate.getMonth(), reportDate.getDate(), 23, 59, 59, 999);
 
@@ -801,7 +892,7 @@
                 showAlert(`ไม่พบข้อมูลการขายในวันที่ ${formattedDate}`);
                 return;
             }
-            
+
             const totalWeight = salesForDay.reduce((sum, sale) => sum + sale.weight, 0);
             const totalAmount = salesForDay.reduce((sum, sale) => sum + sale.total, 0);
 
@@ -838,11 +929,11 @@
                         <tbody>${tableRows}</tbody>
                         <tfoot class="font-bold bg-stone-200">
                            <tr class="border-t-2 border-black">
-                              <td class="px-2 py-2 text-right" colspan="2">รวมทั้งสิ้น</td>
-                              <td class="px-2 py-2 text-right">${totalWeight.toFixed(2)}</td>
-                              <td class="px-2 py-2 text-right"></td>
-                              <td class="px-2 py-2 text-right">${totalAmount.toFixed(2)}</td>
-                              <td class="px-2 py-2" colspan="2"></td>
+                               <td class="px-2 py-2 text-right" colspan="2">รวมทั้งสิ้น</td>
+                               <td class="px-2 py-2 text-right">${totalWeight.toFixed(2)}</td>
+                               <td class="px-2 py-2 text-right"></td>
+                               <td class="px-2 py-2 text-right">${totalAmount.toFixed(2)}</td>
+                               <td class="px-2 py-2" colspan="2"></td>
                            </tr>
                         </tfoot>
                     </table>
@@ -902,7 +993,17 @@
                 return showAlert('ยอดรวมต้องมากกว่า 0 บาท');
             }
 
-            const saleData = { seller, date, scaleNumber, weight, weights: weightInputs, price, total, timestamp: new Date(), userId };
+            const saleData = {
+                seller,
+                date,
+                scaleNumber,
+                weight,
+                weights: weightInputs,
+                price,
+                total,
+                timestamp: new Date(),
+                userId
+            };
 
             try {
                 if (editingId) {
@@ -927,7 +1028,9 @@
                     saleData.receiptId = `${year}${month}${day}-${String(nextReceiptNumber).padStart(4, '0')}`;
 
                     const docRef = await addDoc(salesCollectionRef, saleData);
-                    createPrintableReceipt({ ...saleData, id: docRef.id });
+                    createPrintableReceipt({ ...saleData,
+                        id: docRef.id
+                    });
                 }
                 clearForm();
             } catch (error) {
@@ -959,17 +1062,22 @@
                 ui.scaleNumberInput.value = saleToProcess.scaleNumber || '';
                 ui.pricePerKgInput.value = saleToProcess.price;
                 const weightInputs = ui.weightInputsContainer.querySelectorAll('.weight-input');
-                weightInputs.forEach((input, index) => { input.value = saleToProcess.weights[index] || ''; });
+                weightInputs.forEach((input, index) => {
+                    input.value = saleToProcess.weights[index] || '';
+                });
                 calculateTotals();
                 ui.saveButton.textContent = 'อัปเดตข้อมูล';
                 ui.cancelEditButton.classList.remove('hidden');
                 switchToTab('tab-receipt');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
             } else if (target.classList.contains('reprint-btn')) {
                 createPrintableReceipt(saleToProcess);
             }
         }
-        
+
         function updateDateDisplay() {
             const date = ui.receiptDateInput.valueAsDate;
             ui.dateDisplay.textContent = `(${(date || new Date()).toLocaleDateString('th-TH')})`;
@@ -1021,7 +1129,7 @@
                 }
             }
         }
-        
+
         function exportToExcel() {
             if (localSalesData.length === 0) return showAlert('ไม่มีข้อมูลการขายสำหรับ Export');
             const salesByDate = localSalesData.reduce((acc, sale) => {
@@ -1047,8 +1155,14 @@
                 ws['!cols'] = [{ wch: 5 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 10 }];
                 for (let R = 1; R < exportData.length; ++R) {
                     for (let C of [3, 4, 5]) {
-                        const cell_ref = XLSX.utils.encode_cell({ c: C, r: R });
-                        if (ws[cell_ref]) { ws[cell_ref].t = 'n'; ws[cell_ref].z = '#,##0.00'; }
+                        const cell_ref = XLSX.utils.encode_cell({
+                            c: C,
+                            r: R
+                        });
+                        if (ws[cell_ref]) {
+                            ws[cell_ref].t = 'n';
+                            ws[cell_ref].z = '#,##0.00';
+                        }
                     }
                 }
                 const dateParts = dateKey.split('-');
@@ -1071,10 +1185,19 @@
 
             try {
                 if (editingWeighingId) {
-                    await updateDoc(doc(weighingsCollectionRef, editingWeighingId), { sellerName, bags });
+                    await updateDoc(doc(weighingsCollectionRef, editingWeighingId), {
+                        sellerName,
+                        bags
+                    });
                     editingWeighingId = null;
                 } else {
-                    await addDoc(weighingsCollectionRef, { sellerName, bags, scaleId, timestamp: new Date(), userId });
+                    await addDoc(weighingsCollectionRef, {
+                        sellerName,
+                        bags,
+                        scaleId,
+                        timestamp: new Date(),
+                        userId
+                    });
                 }
                 sellerNameInput.value = '';
                 bagsInput.value = '';
@@ -1083,7 +1206,7 @@
                 showAlert(`เกิดข้อผิดพลาดในการบันทึกน้ำหนัก: ${error.message}`);
             }
         }
-        
+
         function calculateSummaryTotalWeight() {
             const totalBags = parseFloat(ui.summaryTotalBags.textContent) || 0;
             const multiplier = parseFloat(ui.summaryMultiplierWeight.value) || 0;
@@ -1110,7 +1233,9 @@
                         const querySnapshot = await getDocs(q);
                         if (querySnapshot.empty) return showAlert('ไม่พบข้อมูลการวางยางของวันนี้ให้ลบ');
                         const batch = writeBatch(db);
-                        querySnapshot.forEach(doc => { batch.delete(doc.ref); });
+                        querySnapshot.forEach(doc => {
+                            batch.delete(doc.ref);
+                        });
                         await batch.commit();
                         ui.summaryMultiplierWeight.value = '';
                         showAlert(`ลบข้อมูลการวางยางของวันนี้จำนวน ${querySnapshot.size} รายการเรียบร้อยแล้ว`);
@@ -1133,10 +1258,13 @@
                     const tableBody = document.getElementById(`weighing-table-body-${i}`);
                     if (!tableBody) return;
                     tableBody.innerHTML = '';
-                    
-                    const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                    const docs = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
                     const todaysDocs = docs.filter(data => data.timestamp.toDate() >= todayStart);
-                    
+
                     dailyWeighingData[i] = todaysDocs;
                     updateWeighingSummary();
 
@@ -1147,16 +1275,16 @@
                             const row = document.createElement('tr');
                             row.className = 'border-b odd:bg-stone-50';
                             row.innerHTML = `
-                                <td class="px-4 py-3">${data.timestamp.toDate().toLocaleTimeString('th-TH')}</td>
-                                <td class="px-4 py-3 font-medium">${data.sellerName}</td>
-                                <td class="px-4 py-3 text-right font-bold text-amber-700">${data.bags}</td>
-                                <td class="px-4 py-3 text-center">
-                                    <div class="flex items-center justify-center gap-1">
-                                        <button class="edit-weighing-btn text-blue-600 p-2 rounded-md hover:bg-blue-100" data-id="${data.id}" data-scale="${i}" title="แก้ไข">✏️</button>
-                                        <button class="delete-weighing-btn text-red-600 p-2 rounded-md hover:bg-red-100" data-id="${data.id}" title="ลบ">🗑️</button>
-                                    </div>
-                                </td>
-                            `;
+                                 <td class="px-4 py-3">${data.timestamp.toDate().toLocaleTimeString('th-TH')}</td>
+                                 <td class="px-4 py-3 font-medium">${data.sellerName}</td>
+                                 <td class="px-4 py-3 text-right font-bold text-amber-700">${data.bags}</td>
+                                 <td class="px-4 py-3 text-center">
+                                     <div class="flex items-center justify-center gap-1">
+                                         <button class="edit-weighing-btn text-blue-600 p-2 rounded-md hover:bg-blue-100" data-id="${data.id}" data-scale="${i}" title="แก้ไข">✏️</button>
+                                         <button class="delete-weighing-btn text-red-600 p-2 rounded-md hover:bg-red-100" data-id="${data.id}" title="ลบ">🗑️</button>
+                                     </div>
+                                 </td>
+                             `;
                             tableBody.appendChild(row);
                         });
                     }
@@ -1176,10 +1304,12 @@
 
             const weights = todaysDocs.map(doc => doc.data().bags);
             const weightInputs = document.querySelectorAll('#weight-inputs-container .weight-input');
-            
+
             // Clear previous weights before populating
             weightInputs.forEach(input => input.value = '');
-            weights.forEach((weight, index) => { if (index < weightInputs.length) weightInputs[index].value = weight; });
+            weights.forEach((weight, index) => {
+                if (index < weightInputs.length) weightInputs[index].value = weight;
+            });
             calculateTotals();
 
             showConfirm(`พบข้อมูลวางยาง ${weights.reduce((a,b)=>a+b,0)} ถุง ของ <strong>${sellerName}</strong><br>ต้องการล้างข้อมูลนี้หลังจากบันทึกใบเสร็จหรือไม่?`, async () => {
@@ -1188,7 +1318,7 @@
                 await batch.commit();
             });
         }
-        
+
         async function initApp() {
             if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
                 return showAlert('การตั้งค่า Firebase ไม่ถูกต้อง ไม่สามารถเชื่อมต่อฐานข้อมูลได้');
@@ -1208,9 +1338,12 @@
                         // Listener for sales data
                         if (unsubscribeSales) unsubscribeSales();
                         unsubscribeSales = onSnapshot(query(salesCollectionRef), (snapshot) => {
-                            localSalesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            localSalesData = snapshot.docs.map(doc => ({
+                                id: doc.id,
+                                ...doc.data()
+                            }));
                             localSalesData.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
-                            
+
                             ui.searchBox.dispatchEvent(new Event('input'));
                             renderDashboard();
                             renderSummary();
@@ -1219,12 +1352,15 @@
                         }, (error) => {
                             showAlert(`เกิดข้อผิดพลาดในการดึงข้อมูลการขาย: ${error.message}`);
                         });
-                        
+
                         // NEW: Listener for ALL weighing data (for history)
                         if (unsubscribeAllWeighings) unsubscribeAllWeighings();
                         unsubscribeAllWeighings = onSnapshot(query(weighingsCollectionRef), (snapshot) => {
-                             localWeighingData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                             renderWeighingHistory(); // Render the new history table
+                            localWeighingData = snapshot.docs.map(doc => ({
+                                id: doc.id,
+                                ...doc.data()
+                            }));
+                            renderWeighingHistory(); // Render the new history table
                         }, (error) => {
                             showAlert(`เกิดข้อผิดพลาดในการดึงข้อมูลวางยาง: ${error.message}`);
                         });
@@ -1233,7 +1369,7 @@
                         setupWeighingListeners();
                     } else {
                         try {
-                           if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                                 await signInWithCustomToken(auth, __initial_auth_token);
                             } else {
                                 await signInAnonymously(auth);
@@ -1270,14 +1406,18 @@
                 }
             }
         }
-        
+
         function renderScaleSummaries() {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             const salesByScaleToday = localSalesData.reduce((acc, sale) => {
                 if (sale.date.toDate() >= today) {
                     const scale = sale.scaleNumber || 'ไม่ระบุ';
-                    if (!acc[scale]) acc[scale] = { totalWeight: 0, totalAmount: 0, count: 0 };
+                    if (!acc[scale]) acc[scale] = {
+                        totalWeight: 0,
+                        totalAmount: 0,
+                        count: 0
+                    };
                     acc[scale].totalWeight += sale.weight;
                     acc[scale].totalAmount += sale.total;
                     acc[scale].count++;
@@ -1294,37 +1434,44 @@
 
             let totalWeightToday = 0;
             let totalAmountToday = 0;
-            
+
             Object.keys(salesByScaleToday).sort().forEach(scale => {
-                 const summary = salesByScaleToday[scale];
-                 totalWeightToday += summary.totalWeight;
-                 totalAmountToday += summary.totalAmount;
-                 const summaryHtml = `
-                     <div class="bg-amber-50 border border-amber-200 p-3 rounded-lg text-center shadow-sm">
-                         <p class="text-sm font-medium text-amber-800">ตาชั่งที่ ${scale}</p>
-                         <p class="text-lg font-bold text-amber-700">${summary.totalWeight.toFixed(2)} กก.</p>
-                         <p class="text-sm text-amber-600">${summary.totalAmount.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})} บาท</p>
-                     </div>
-                 `;
-                 ui.salesSummaryByScale.insertAdjacentHTML('beforeend', summaryHtml);
+                const summary = salesByScaleToday[scale];
+                totalWeightToday += summary.totalWeight;
+                totalAmountToday += summary.totalAmount;
+                const summaryHtml = `
+                    <div class="bg-amber-50 border border-amber-200 p-3 rounded-lg text-center shadow-sm">
+                        <p class="text-sm font-medium text-amber-800">ตาชั่งที่ ${scale}</p>
+                        <p class="text-lg font-bold text-amber-700">${summary.totalWeight.toFixed(2)} กก.</p>
+                        <p class="text-sm text-amber-600">${summary.totalAmount.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})} บาท</p>
+                    </div>
+                `;
+                ui.salesSummaryByScale.insertAdjacentHTML('beforeend', summaryHtml);
             });
 
             ui.summaryTodayTotalWeight.textContent = totalWeightToday.toFixed(2);
-            ui.summaryTodayTotalAmount.textContent = totalAmountToday.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            ui.summaryTodayTotalAmount.textContent = totalAmountToday.toLocaleString('th-TH', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
             ui.salesSummaryTodayTotal.classList.remove('hidden');
         }
 
         function populateReportDateSelector() {
             const dateSet = new Set(localSalesData.map(sale => sale.date.toDate().toISOString().split('T')[0]));
             const sortedDates = Array.from(dateSet).sort((a, b) => new Date(b) - new Date(a));
-            
+
             const currentValue = ui.reportDateSelect.value;
             while (ui.reportDateSelect.options.length > 1) ui.reportDateSelect.remove(1);
 
             sortedDates.forEach(dateStr => {
                 const option = document.createElement('option');
                 option.value = dateStr;
-                option.textContent = new Date(dateStr).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+                option.textContent = new Date(dateStr).toLocaleDateString('th-TH', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
                 ui.reportDateSelect.appendChild(option);
             });
             ui.reportDateSelect.value = currentValue;
@@ -1332,28 +1479,34 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             renderWeighingStations();
-            
-            ui.tabs.addEventListener('click', (e) => { if (e.target.dataset.tab) switchToTab(e.target.dataset.tab); });
+
+            ui.tabs.addEventListener('click', (e) => {
+                if (e.target.dataset.tab) switchToTab(e.target.dataset.tab);
+            });
             switchToTab('tab-receipt');
 
-            ui.sellerNameInput.addEventListener('blur', (e) => { if (e.target.value.trim()) fetchAndPopulateWeights(e.target.value.trim()); });
-            
+            ui.sellerNameInput.addEventListener('blur', (e) => {
+                if (e.target.value.trim()) fetchAndPopulateWeights(e.target.value.trim());
+            });
+
             ui.saveButton.addEventListener('click', handleSave);
             ui.cancelEditButton.addEventListener('click', clearForm);
             ui.priceLockBtn.addEventListener('click', togglePriceLock);
             ui.salesTableBody.addEventListener('click', handleTableClick);
             ui.printReportBtn.addEventListener('click', createDailySummaryReport);
             ui.exportExcelBtn.addEventListener('click', exportToExcel);
-            if(ui.printDashboardBtn) ui.printDashboardBtn.addEventListener('click', () => window.print());
+            if (ui.printDashboardBtn) ui.printDashboardBtn.addEventListener('click', () => window.print());
             ui.receiptDateInput.addEventListener('input', updateDateDisplay);
-            
+
             [...document.querySelectorAll('.weight-input'), ui.pricePerKgInput].forEach(input => input.addEventListener('input', calculateTotals));
-            
+
             ui.searchBox.addEventListener('input', (e) => {
                 const searchTerm = e.target.value.toLowerCase().trim();
                 if (!searchTerm) {
-                    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-                    const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);
+                    const todayStart = new Date();
+                    todayStart.setHours(0, 0, 0, 0);
+                    const todayEnd = new Date();
+                    todayEnd.setHours(23, 59, 59, 999);
                     renderTable(localSalesData.filter(sale => sale.date.toDate() >= todayStart && sale.date.toDate() <= todayEnd));
                 } else {
                     renderTable(localSalesData.filter(sale =>
@@ -1363,14 +1516,15 @@
                     ));
                 }
             });
-            
+
             ui.summaryMultiplierWeight.addEventListener('input', calculateSummaryTotalWeight);
             ui.deleteAllWeighingsBtn.addEventListener('click', deleteAllTodaysWeighings);
-            
+
             ui.receiptDateInput.valueAsDate = new Date();
             updateDateDisplay();
             initApp();
         });
     </script>
 </body>
+
 </html>
