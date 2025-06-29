@@ -413,6 +413,28 @@
         };
 
         /**
+         * Switches the active tab view.
+         * @param {string} targetTabId - The ID of the tab content to display (e.g., 'tab-receipt').
+         */
+        function switchToTab(targetTabId) {
+            // Remove active class from all tab buttons and content
+            ui.tabs.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            ui.tabContents.forEach(content => content.classList.remove('active'));
+
+            // Find the button corresponding to the target tab ID and activate it
+            const targetButton = document.querySelector(`.tab-btn[data-tab="${targetTabId}"]`);
+            if (targetButton) {
+                targetButton.classList.add('active');
+            }
+
+            // Find the content corresponding to the target tab ID and activate it
+            const targetContent = document.getElementById(targetTabId);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+        }
+
+        /**
          * Displays a modal dialog with a title, message, and customizable buttons.
          * @param {string} title - The title of the modal.
          * @param {string} message - The message content of the modal.
@@ -1054,6 +1076,10 @@
                 calculateTotals();
                 ui.saveButton.textContent = 'อัปเดตข้อมูล';
                 ui.cancelEditButton.classList.remove('hidden');
+                
+                // Switch to the receipt tab automatically
+                switchToTab('tab-receipt');
+                
                 window.scrollTo({
                     top: 0,
                     behavior: 'smooth'
@@ -1729,16 +1755,12 @@
 
             ui.tabs.addEventListener('click', (e) => {
                 if (e.target.dataset.tab) {
-                    const targetTab = e.target.dataset.tab;
-                    ui.tabs.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-                    ui.tabContents.forEach(content => content.classList.remove('active'));
-                    e.target.classList.add('active');
-                    document.getElementById(targetTab).classList.add('active');
+                    switchToTab(e.target.dataset.tab);
                 }
             });
 
-            document.querySelector('[data-tab="tab-receipt"]').classList.add('active');
-            document.getElementById('tab-receipt').classList.add('active');
+            // Set initial active tab
+            switchToTab('tab-receipt');
 
             ui.sellerNameInput.addEventListener('blur', (e) => {
                 const sellerName = e.target.value.trim();
