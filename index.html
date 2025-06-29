@@ -1,7 +1,5 @@
-
 <!DOCTYPE html>
 <html lang="th">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,42 +16,34 @@
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
-
         .chart-container {
             position: relative;
             height: 400px;
             width: 100%;
         }
-
         .tab-btn {
             transition: all 0.3s ease-in-out;
         }
-
         .tab-btn.active {
             border-color: #d97706;
             background-color: #fffbeb;
             color: #b45309;
             font-weight: 700;
         }
-
         .tab-content {
             display: none;
         }
-
         .tab-content.active {
             display: block;
         }
-
         @media print {
             body * {
                 visibility: hidden;
             }
-
             #print-area,
             #print-area * {
                 visibility: visible;
             }
-
             #print-area {
                 position: absolute;
                 left: 0;
@@ -63,16 +53,25 @@
                 padding: 0;
                 margin: 0;
             }
-
             .no-print {
                 display: none !important;
+            }
+            /* CSS เพิ่มเติมสำหรับลายน้ำ */
+            .watermark {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%) rotate(-45deg);
+                font-size: 3em; /* ปรับขนาดตามต้องการ */
+                color: rgba(0, 0, 0, 0.1); /* สีเทาอ่อน, โปร่งแสง */
+                pointer-events: none; /* ทำให้ไม่บล็อกการคลิกที่เนื้อหาด้านล่าง */
+                white-space: nowrap;
+                z-index: 10;
             }
         }
     </style>
 </head>
-
 <body class="bg-stone-100 text-stone-800">
-
     <div id="login-screen" class="min-h-screen flex items-center justify-center">
         <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm">
             <h2 class="text-2xl font-bold text-center text-stone-800 mb-2">ระบบจัดการขายยางก้อนถ้วย</h2>
@@ -98,13 +97,11 @@
             </div>
         </div>
     </div>
-    
     <div id="app" class="container mx-auto max-w-7xl p-4 sm:p-6 lg:p-8 hidden">
         <header class="relative mb-10 text-center">
             <h1 class="text-4xl font-bold text-stone-900">ระบบจัดการขายยางก้อนถ้วย</h1>
             <p class="text-xl font-semibold text-stone-700 mt-2">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</p>
             <p class="text-stone-600 mt-2">ออกใบเสร็จ บันทึกข้อมูล และดูสรุปยอดขายในที่เดียว</p>
-            
             <button id="logout-button" class="absolute top-0 right-0 bg-red-500 text-white font-semibold py-2 px-4 rounded-lg shadow hover:bg-red-600 transition-colors no-print">
                 ออกจากระบบ
             </button>
@@ -340,7 +337,6 @@
                              </div>
                         </div>
 
-
                         <div class="border-t pt-8 mt-8">
                             <div class="bg-red-50 border border-red-200 p-6 rounded-xl">
                                 <h3 class="text-lg font-semibold text-red-800">จัดการข้อมูล (การกระทำนี้มีความเสี่ยง)</h3>
@@ -355,9 +351,7 @@
             </div>
         </main>
     </div>
-
     <div id="print-area" class="bg-white"></div>
-
     <div id="modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-300 no-print" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="modal-content bg-white rounded-xl shadow-2xl w-full max-w-md transform scale-95 transition-transform duration-300">
             <div class="p-6">
@@ -372,7 +366,6 @@
                 </div>
         </div>
     </div>
-
     <script type="module">
         import {
             initializeApp
@@ -482,9 +475,7 @@
             summaryTodayTotalWeight: document.getElementById('summary-today-total-weight'),
             summaryTodayTotalAmount: document.getElementById('summary-today-total-amount'),
         };
-
         // --- Core Application Logic ---
-
         function switchToTab(targetTabId) {
             ui.tabs.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             ui.tabContents.forEach(content => content.classList.remove('active'));
@@ -497,7 +488,6 @@
                 targetContent.classList.add('active');
             }
         }
-
         function showModal(title, message, buttons) {
             ui.modalTitle.textContent = title;
             ui.modalMessageContainer.innerHTML = message; // Use container for complex HTML
@@ -520,22 +510,18 @@
                 ui.modal.querySelector('.modal-content').classList.remove('scale-95');
             }, 10);
         }
-
         function hideModal() {
             ui.modal.classList.add('opacity-0');
             ui.modal.querySelector('.modal-content').classList.add('scale-95');
             setTimeout(() => ui.modal.classList.add('hidden'), 300);
         }
-
         function showAlert(message) {
             showModal('แจ้งเตือน', `<p class="text-sm text-stone-500">${message}</p>`, [{
                 text: 'ตกลง',
                 classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-amber-600 text-base font-medium text-white hover:bg-amber-700 sm:w-auto sm:text-sm'
             }]);
         }
-        
         // ... (The rest of your functions: showConfirm, bahttext, etc., remain the same) ...
-
         function showConfirm(message, onConfirm) {
             showModal('ยืนยันการดำเนินการ', `<p class="text-sm text-stone-500">${message}</p>`, [{
                 text: 'ยืนยัน',
@@ -546,7 +532,6 @@
                 classes: 'mt-3 w-full inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 sm:mt-0 sm:w-auto sm:text-sm'
             }]);
         }
-
         function bahttext(number) {
             number = Number(number).toFixed(2);
             let [integer,
@@ -579,7 +564,6 @@
             if (!fracText && intText) fracText = 'ถ้วน';
             return intText + fracText;
         }
-
         function calculateTotals() {
             let totalWeight = 0;
             const weightInputs = ui.weightInputsContainer.querySelectorAll('.weight-input');
@@ -595,7 +579,6 @@
             });
             ui.totalAmountTextEl.textContent = bahttext(totalAmount);
         }
-
         function renderTable(dataToRender) {
             ui.salesTableBody.innerHTML = '';
             if (dataToRender.length === 0) {
@@ -624,7 +607,6 @@
                 ui.salesTableBody.appendChild(row);
             });
         }
-
         function renderSummary() {
             if (!localSalesData || localSalesData.length === 0) {
                 ui.summaryTotalSellers.textContent = '0';
@@ -645,11 +627,9 @@
                 maximumFractionDigits: 2
             });
         }
-
         function renderDashboard() {
             renderDailyStatsChart();
         }
-
         function renderDailyStatsChart() {
             const statsByDay = localSalesData.reduce((acc, sale) => {
                 const day = sale.date.toDate().toISOString().split('T')[0];
@@ -767,7 +747,6 @@
                 });
             }
         }
-        
         function renderWeighingHistory() {
             const historyBody = ui.weighingHistoryBody;
             if (!historyBody) return;
@@ -805,9 +784,9 @@
                 currentDate.setDate(currentDate.getDate() + 1);
                 const nextDayKey = currentDate.toISOString().split('T')[0];
                 const nextDayWeight = salesWeightByDay[nextDayKey] || 0;
-                const averageWeight = (nextDayWeight > 0 && stats.totalBags > 0) 
-                                      ? (nextDayWeight / stats.totalBags) 
-                                      : 0;
+                const averageWeight = (nextDayWeight > 0 && stats.totalBags > 0)
+                                       ? (nextDayWeight / stats.totalBags)
+                                       : 0;
                 const formattedDate = new Date(day).toLocaleDateString('th-TH', {
                     year: 'numeric', month: 'long', day: 'numeric'
                 });
@@ -822,13 +801,13 @@
                 historyBody.appendChild(row);
             });
         }
-
         // --- Other Functions ---
-        
         function createPrintableReceipt(sale) {
             const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
-            const generateSingleReceiptHTML = (title) => `
-                <div class="w-1/2 p-4 flex flex-col text-xs" style="border: 2px dashed #9ca3af; height: 100vh;">
+            // ฟังก์ชันย่อยสำหรับสร้าง HTML ของใบเสร็จหนึ่งใบ
+            const generateSingleReceiptHTML = (title, isCopy = false) => `
+                <div class="w-1/2 p-4 flex flex-col text-xs relative" style="border: 2px dashed #9ca3af; height: 100vh;">
+                    ${isCopy ? '<div class="watermark">สำเนา</div>' : ''}
                     <div class="text-center mb-4">
                         <h2 class="text-base font-bold">${title}</h2>
                         <h3 class="text-sm font-semibold mt-1">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</h3>
@@ -857,18 +836,16 @@
                             <tr class="font-bold"><td class="py-2 text-base">รวมเป็นเงิน</td><td class="text-right text-xl">${sale.total.toLocaleString('th-TH', { maximumFractionDigits: 0 })}</td></tr>
                         </tfoot>
                     </table>
-                     <div class="flex-grow"></div>
-                    <div class="flex justify-around text-center mt-12">
-                         <div><p class="pb-1">........................................</p><p>(ผู้รับเงิน)</p></div>
+                    <div class="flex-grow"></div>
+                    <div class="flex justify-center text-center mt-12">
                          <div><p class="pb-1">........................................</p><p>(ผู้จ่ายเงิน)</p></div>
                     </div>
                 </div>`;
-            ui.printArea.innerHTML = `<div class="flex gap-0">${generateSingleReceiptHTML('ใบเสร็จรับเงิน (ต้นฉบับ)')}${generateSingleReceiptHTML('ใบเสร็จรับเงิน (สำเนา)')}</div>`;
+            // สร้างใบเสร็จต้นฉบับและสำเนา
+            ui.printArea.innerHTML = `<div class="flex gap-0">${generateSingleReceiptHTML('ใบเสร็จรับเงิน (ต้นฉบับ)')}${generateSingleReceiptHTML('ใบเสร็จรับเงิน (สำเนา)', true)}</div>`;
             window.print();
         }
-
         // ... (The rest of your functions: createDailySummaryReport, clearForm, etc. remain the same) ...
-
         function createDailySummaryReport() {
             const reportDateStr = ui.reportDateSelect.value;
             if (!reportDateStr) {
@@ -903,7 +880,7 @@
                     <td class="px-2 py-2">${sale.seller}</td>
                     <td class="px-2 py-2 text-right">${sale.weight.toFixed(2)}</td>
                     <td class="px-2 py-2 text-right">${sale.price.toFixed(2)}</td>
-                    <td class="px-2 py-2 text-right">${totalAmount.toLocaleString('th-TH', { maximumFractionDigits: 0 })}</td>
+                    <td class="px-2 py-2 text-right">${sale.total.toFixed(2)}</td>
                     <td class="px-2 py-2 text-center">${sale.scaleNumber || ''}</td>
                     <td class="px-2 py-2 border-l"></td>
                 </tr>
@@ -933,17 +910,15 @@
                                <td class="px-2 py-2 text-right" colspan="2">รวมทั้งสิ้น</td>
                                <td class="px-2 py-2 text-right">${totalWeight.toFixed(2)}</td>
                                <td class="px-2 py-2 text-right"></td>
-                               <td class="px-2 py-2 text-right">${totalAmount.toLocaleString('th-TH', { maximumFractionDigits: 0 })}</td>
+                               <td class="px-2 py-2 text-right">${totalAmount.toFixed(2)}</td>
                                <td class="px-2 py-2" colspan="2"></td>
                            </tr>
                         </tfoot>
                     </table>
-                </div>
-            `;
+                </div>`;
             ui.printArea.innerHTML = reportHTML;
             window.print();
         }
-
         function clearForm() {
             ui.sellerNameInput.value = '';
             ui.scaleNumberInput.value = '';
@@ -956,7 +931,6 @@
             ui.cancelEditButton.classList.add('hidden');
             calculateTotals();
         }
-
         function togglePriceLock() {
             isPriceLocked = !isPriceLocked;
             if (isPriceLocked) {
@@ -976,7 +950,6 @@
                 ui.pricePerKgInput.focus();
             }
         }
-
         async function handleSave() {
             if (!salesCollectionRef) return showAlert('ยังไม่พร้อมใช้งาน กรุณารอสักครู่');
             const seller = ui.sellerNameInput.value.trim();
@@ -1039,7 +1012,6 @@
                 showAlert(`เกิดข้อผิดพลาดในการบันทึก: ${error.message}`);
             }
         }
-
         function handleTableClick(e) {
             const target = e.target.closest('button');
             if (!target) return;
@@ -1078,12 +1050,10 @@
                 createPrintableReceipt(saleToProcess);
             }
         }
-
         function updateDateDisplay() {
             const date = ui.receiptDateInput.valueAsDate;
             ui.dateDisplay.textContent = `(${(date || new Date()).toLocaleDateString('th-TH')})`;
         }
-
         function createWeighingStationHTML(scaleId) {
             return `
                 <section class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
@@ -1131,7 +1101,6 @@
                 </section>
             `;
         }
-
         function renderWeighingStations() {
             for (let i = 1; i <= 4; i++) {
                 const tabContent = document.getElementById(`tab-weighing-${i}`);
@@ -1148,7 +1117,6 @@
                 }
             }
         }
-        
         function printWeighingHistory(scaleId) {
             if (!localWeighingData) return showAlert('ข้อมูลการวางยางยังไม่ถูกโหลด');
 
@@ -1173,8 +1141,7 @@
                             return `<option value="${dateStr}">${formattedDate}</option>`;
                         }).join('')}
                     </select>
-                </div>
-            `;
+                </div>`;
 
             showModal(`พิมพ์รายงานย้อนหลัง (ตาชั่งที่ ${scaleId})`, modalContentHTML, [
                 {
@@ -1225,8 +1192,7 @@
                                     </thead>
                                     <tbody>${tableRows}</tbody>
                                 </table>
-                            </div>
-                        `;
+                            </div>`;
                         ui.printArea.innerHTML = reportHTML;
                         setTimeout(() => window.print(), 100); // Add a small delay for rendering
                         return true; // Allow modal to close
@@ -1238,16 +1204,13 @@
                 }
             ]);
         }
-        
         // ... (The rest of your functions: exportWeighingHistoryToXLSX, exportToExcel, etc. remain the same) ...
-
         function exportWeighingHistoryToXLSX(scaleId) {
             if (!localWeighingData) return showAlert('ข้อมูลการวางยางยังไม่ถูกโหลด');
 
             const scaleData = localWeighingData
                 .filter(record => record.scaleId == scaleId)
                 .sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
-                
             if (scaleData.length === 0) {
                 return showAlert(`ไม่พบข้อมูลการวางยางย้อนหลังสำหรับตาชั่งที่ ${scaleId} เพื่อ Export`);
             }
@@ -1267,13 +1230,11 @@
 
             const ws = XLSX.utils.aoa_to_sheet(exportData);
             ws['!cols'] = [{ wch: 15 }, { wch: 15 }, { wch: 30 }, { wch: 15 }];
-            
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, `ประวัติตาชั่งที่ ${scaleId}`);
 
             XLSX.writeFile(wb, `weighing-history-scale-${scaleId}.xlsx`);
         }
-
 
         function exportToExcel() {
             if (localSalesData.length === 0) return showAlert('ไม่มีข้อมูลการขายสำหรับ Export');
@@ -1317,7 +1278,6 @@
             const today = new Date().toISOString().slice(0, 10);
             XLSX.writeFile(wb, `daily-sales-report-${today}.xlsx`);
         }
-
         async function saveWeighing(event) {
             if (!weighingsCollectionRef) return showAlert('ยังไม่พร้อมใช้งาน กรุณารอสักครู่');
             const scaleId = parseInt(event.target.dataset.scale);
@@ -1351,13 +1311,11 @@
                 showAlert(`เกิดข้อผิดพลาดในการบันทึกน้ำหนัก: ${error.message}`);
             }
         }
-
         function calculateSummaryTotalWeight() {
             const totalBags = parseFloat(ui.summaryTotalBags.textContent) || 0;
             const multiplier = parseFloat(ui.summaryMultiplierWeight.value) || 0;
             ui.summaryCalculatedWeight.textContent = (totalBags * multiplier).toFixed(2);
         }
-
         function updateWeighingSummary() {
             let totalBags = 0;
             for (const scaleId in dailyWeighingData) {
@@ -1366,7 +1324,6 @@
             ui.summaryTotalBags.textContent = totalBags;
             calculateSummaryTotalWeight();
         }
-
         async function deleteAllTodaysWeighings() {
             showConfirm(
                 'คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลการวางยางทั้งหมดของวันนี้? <strong>การกระทำนี้ไม่สามารถย้อนกลับได้</strong>',
@@ -1390,7 +1347,6 @@
                 }
             );
         }
-
         function setupWeighingListeners() {
             if (!weighingsCollectionRef) return;
             for (let i = 1; i <= 4; i++) {
@@ -1436,7 +1392,6 @@
                 });
             }
         }
-
         async function fetchAndPopulateWeights(sellerName) {
             if (!weighingsCollectionRef || editingId) return; // Do not fetch if editing a record
             const q = query(weighingsCollectionRef, where("sellerName", "==", sellerName));
@@ -1463,10 +1418,8 @@
                 await batch.commit();
             });
         }
-        
         async function initializeFirebaseAndAuth() {
-            if (isAppInitialized) return; 
-            
+            if (isAppInitialized) return;
             if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
                 return showAlert('การตั้งค่า Firebase ไม่ถูกต้อง ไม่สามารถเชื่อมต่อฐานข้อมูลได้');
             }
@@ -1510,16 +1463,13 @@
                         Object.keys(unsubscribeWeighings).forEach(k => unsubscribeWeighings[k]());
                     }
                 });
-                
                 if (!auth.currentUser) {
                     await signInAnonymously(auth);
                 }
-                
             } catch (error) {
                 showAlert(`เกิดข้อผิดพลาดในการเริ่มต้นระบบ: ${error.message}`);
             }
         }
-
         async function handleWeighingTableClick(e) {
             const target = e.target.closest('button');
             if (!target) return;
@@ -1542,7 +1492,6 @@
                 }
             }
         }
-
         function renderScaleSummaries() {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
@@ -1592,7 +1541,6 @@
             });
             ui.salesSummaryTodayTotal.classList.remove('hidden');
         }
-
         function populateReportDateSelector() {
             const dateSet = new Set(localSalesData.map(sale => sale.date.toDate().toISOString().split('T')[0]));
             const sortedDates = Array.from(dateSet).sort((a, b) => new Date(b) - new Date(a));
@@ -1612,7 +1560,6 @@
             });
             ui.reportDateSelect.value = currentValue;
         }
-        
         // --- NEW: Change Password Modal Logic ---
         function promptChangePassword() {
             const modalContentHTML = `
@@ -1630,9 +1577,7 @@
                         <input type="password" id="confirm-password-input" class="mt-1 w-full p-3 border border-stone-300 rounded-lg shadow-sm">
                     </div>
                     <p id="change-password-error" class="text-sm text-red-600 text-center hidden"></p>
-                </div>
-            `;
-            
+                </div>`;
             showModal('เปลี่ยนรหัสผ่าน', modalContentHTML, [
                 {
                     text: 'ยืนยันการเปลี่ยนแปลง',
@@ -1642,7 +1587,7 @@
                         const newPassword = document.getElementById('new-password-input').value;
                         const confirmPassword = document.getElementById('confirm-password-input').value;
                         const errorEl = document.getElementById('change-password-error');
-                        
+
                         if (oldPassword !== currentPassword) {
                             errorEl.textContent = 'รหัสผ่านเก่าไม่ถูกต้อง';
                             errorEl.classList.remove('hidden');
@@ -1672,9 +1617,7 @@
                 }
             ]);
         }
-
         document.addEventListener('DOMContentLoaded', () => {
-
             // --- Login and Session Handling ---
             const handleLogin = () => {
                  const username = ui.usernameInput.value.trim();
@@ -1696,7 +1639,6 @@
                     ui.passwordInput.focus();
                  }
             };
-            
             if (sessionStorage.getItem('isLoggedIn') === 'true') {
                 ui.loginScreen.classList.add('hidden');
                 ui.appContainer.classList.remove('hidden');
@@ -1705,7 +1647,6 @@
                 ui.loginScreen.classList.remove('hidden');
                 ui.appContainer.classList.add('hidden');
             }
-            
             ui.loginButton.addEventListener('click', handleLogin);
             ui.passwordInput.addEventListener('keyup', (event) => {
                 if (event.key === 'Enter') {
@@ -1717,7 +1658,6 @@
                 sessionStorage.removeItem('isLoggedIn');
                 window.location.reload();
             });
-            
             ui.changePasswordBtn.addEventListener('click', promptChangePassword);
 
             // --- Main App Setup ---
@@ -1768,5 +1708,4 @@
         });
     </script>
 </body>
-
 </html>
