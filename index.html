@@ -7,6 +7,7 @@
     <title>ระบบบันทึกการขายยางก้อนถ้วย</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
@@ -79,6 +80,7 @@
                 <button data-tab="tab-weighing-3" class="tab-btn inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">6. รับวางยาง (ตาชั่ง 3)</button>
                 <button data-tab="tab-weighing-4" class="tab-btn inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">7. รับวางยาง (ตาชั่ง 4)</button>
                 <button data-tab="tab-weighing-summary" class="tab-btn inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">8. สรุปผลรวมตาชั่ง</button>
+                <button data-tab="tab-weighing-history" class="tab-btn inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">9. เรียกดูประวัติรับยาง</button>
             </nav>
         </div>
         <main>
@@ -168,8 +170,11 @@
                     <div class="border-t pt-4 mt-6">
                         <h3 class="text-lg font-semibold text-stone-700">พิมพ์รายงานสรุปประจำวัน</h3>
                         <div class="flex items-center gap-4 mt-2">
-                            <input type="date" id="report-date" class="p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500">
-                            <button id="print-report-btn" class="bg-sky-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-sky-700 transition-colors">พิมพ์รายงาน</button>
+                            <select id="report-date-select" class="p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500 bg-white">
+                                <option>กำลังโหลดวันที่...</option>
+                            </select>
+                            <button id="print-report-btn" class="bg-sky-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-sky-700 transition-colors">🖨️ พิมพ์รายงาน</button>
+                            <button id="export-report-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors">📄 Export to Excel</button>
                         </div>
                     </div>
 
@@ -257,6 +262,22 @@
                     </div>
                 </section>
             </div>
+            <div id="tab-weighing-history" class="tab-content">
+                <section class="bg-white p-6 rounded-xl shadow-md">
+                    <h2 class="text-2xl font-bold mb-4 border-b pb-3 text-stone-800">9. เรียกดูประวัติการรับวางยาง</h2>
+                    <p class="text-sm text-stone-500 mt-2 mb-4">เลือกวันที่ต้องการเพื่อดูข้อมูลการรับวางยางย้อนหลัง พิมพ์ใบรายการ หรือลบข้อมูลเก่าได้</p>
+                    <div class="flex flex-col sm:flex-row items-center gap-4 mb-6 bg-stone-50 p-4 rounded-lg">
+                        <label for="weighing-history-date-select" class="font-medium text-stone-700">เลือกวันที่:</label>
+                        <select id="weighing-history-date-select" class="p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500 bg-white flex-grow">
+                            <option>กำลังโหลดวันที่...</option>
+                        </select>
+                        <button id="export-weighing-history-btn" class="w-full sm:w-auto bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors">📄 Export to Excel</button>
+                    </div>
+                    <div id="weighing-history-display" class="space-y-6">
+                        <p class="text-center text-stone-500">กรุณาเลือกวันที่จากเมนูด้านบน</p>
+                    </div>
+                </section>
+            </div>
         </main>
     </div>
     <div id="print-area"></div>
@@ -319,11 +340,13 @@
 
         // Global variables for sales and weighing data
         let localSalesData = [];
+        let allWeighingData = []; // NEW: Store all historic weighing data
         let salesBySellerChart, dailySalesChart;
         let editingId = null; // ID of the sale being edited
         let editingWeighingId = null; // ID of the weighing record being edited
         let db, auth, userId, salesCollectionRef, weighingsCollectionRef;
         let unsubscribeSales = null; // Function to unsubscribe from sales snapshot listener
+        let unsubscribeAllWeighings = null; // NEW: Unsubscribe for all weighing data
         let unsubscribeWeighings = {}; // Stores unsubscribe functions for each weighing scale
         let dailyWeighingData = {}; // Stores daily weighing data by scale ID
 
@@ -346,8 +369,10 @@
             salesTableBody: document.getElementById('sales-table-body'),
             searchBox: document.getElementById('search-box'),
             printArea: document.getElementById('print-area'),
-            reportDateInput: document.getElementById('report-date'),
+            // MODIFIED: Changed from reportDateInput to reportDateSelect
+            reportDateSelect: document.getElementById('report-date-select'),
             printReportBtn: document.getElementById('print-report-btn'),
+            exportReportBtn: document.getElementById('export-report-btn'), // NEW
             printDashboardBtn: document.getElementById('print-dashboard-btn'),
             dashboardSection: document.getElementById('dashboard'),
             modal: document.getElementById('modal'),
@@ -362,7 +387,11 @@
             summaryMultiplierWeight: document.getElementById('summary-multiplier-weight'),
             summaryCalculatedWeight: document.getElementById('summary-calculated-weight'),
             deleteAllWeighingsBtn: document.getElementById('delete-all-weighings-btn'),
-            salesSummaryByScale: document.getElementById('sales-summary-by-scale'), // NEW: Element for scale summaries
+            salesSummaryByScale: document.getElementById('sales-summary-by-scale'),
+            // NEW: UI elements for Weighing History Tab
+            weighingHistoryDateSelect: document.getElementById('weighing-history-date-select'),
+            exportWeighingHistoryBtn: document.getElementById('export-weighing-history-btn'),
+            weighingHistoryDisplay: document.getElementById('weighing-history-display'),
         };
 
         /**
@@ -766,18 +795,44 @@
             `;
             window.print(); // Trigger browser print dialog
         }
+        
+        // NEW: Function to format date to YYYY-MM-DD
+        function toYYYYMMDD(date) {
+            const d = new Date(date);
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // NEW: Function to populate the date selection dropdown for sales reports
+        function populateReportDateSelect() {
+            const uniqueDates = [...new Set(localSalesData.map(sale => toYYYYMMDD(sale.date.toDate())))].sort().reverse();
+            
+            ui.reportDateSelect.innerHTML = ''; // Clear existing options
+            if(uniqueDates.length === 0) {
+                ui.reportDateSelect.innerHTML = '<option>ไม่พบข้อมูล</option>';
+                return;
+            }
+            uniqueDates.forEach(dateStr => {
+                const option = document.createElement('option');
+                option.value = dateStr;
+                option.textContent = new Date(dateStr).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric'});
+                ui.reportDateSelect.appendChild(option);
+            });
+        }
 
         /**
          * Creates and prints a daily summary report based on the selected date.
          */
         function createDailySummaryReport() {
-            const reportDateStr = ui.reportDateInput.value;
+            const reportDateStr = ui.reportDateSelect.value;
             if (!reportDateStr) {
                 showAlert('กรุณาเลือกวันที่ที่ต้องการทำรายงาน');
                 return;
             }
             const reportDate = new Date(reportDateStr);
-            const formattedDate = reportDate.toLocaleDateString('th-TH', {
+             const formattedDate = reportDate.toLocaleDateString('th-TH', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric'
@@ -840,6 +895,53 @@
             window.print(); // Trigger browser print dialog
         }
 
+        // NEW: Function to export the daily summary report to Excel
+        function exportDailySummaryReport() {
+            const reportDateStr = ui.reportDateSelect.value;
+            if (!reportDateStr) {
+                showAlert('กรุณาเลือกวันที่ที่ต้องการส่งออก');
+                return;
+            }
+            const reportDate = new Date(reportDateStr);
+            const reportStart = new Date(reportDate.getFullYear(), reportDate.getMonth(), reportDate.getDate());
+            const reportEnd = new Date(reportDate.getFullYear(), reportDate.getMonth(), reportDate.getDate(), 23, 59, 59, 999);
+
+            const salesForDay = localSalesData.filter(sale => {
+                const saleDate = sale.date.toDate();
+                return saleDate >= reportStart && saleDate <= reportEnd;
+            });
+
+            if (salesForDay.length === 0) {
+                showAlert(`ไม่พบข้อมูลการขายในวันที่ ${reportStart.toLocaleDateString('th-TH')} เพื่อส่งออก`);
+                return;
+            }
+            
+            // Format data for Excel
+            const excelData = salesForDay.map((sale, index) => ({
+                'ลำดับที่': index + 1,
+                'วันที่': sale.date.toDate().toLocaleDateString('th-TH'),
+                'ชื่อผู้ขาย': sale.seller,
+                'น้ำหนัก (กก.)': sale.weight,
+                'ราคา/หน่วย': sale.price,
+                'ยอดรวม (บาท)': sale.total,
+                'ตาชั่งที่': sale.scaleNumber || ''
+            }));
+            
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "รายงานการขาย");
+
+            // Generate filename
+            const day = String(reportDate.getDate()).padStart(2, '0');
+            const month = String(reportDate.getMonth() + 1).padStart(2, '0');
+            const year = reportDate.getFullYear();
+            const fileName = `รายงานผลซื้อ-ขายยางก้อนถ้วย(${day}-${month}-${year}).xlsx`;
+
+            // Trigger download
+            XLSX.writeFile(workbook, fileName);
+            showAlert('สร้างไฟล์ Excel สำเร็จ!');
+        }
+
         /**
          * Clears the receipt input form and resets the editing state.
          */
@@ -893,7 +995,7 @@
                 weights: weightInputs,
                 price,
                 total,
-                timestamp: new Date(), // NEW: Add timestamp for sorting
+                timestamp: new Date(),
                 userId
             };
 
@@ -1144,74 +1246,76 @@
          * @param {Event} event - The click event from the print button.
          */
         function printWeighingLog(event) {
-            if (!weighingsCollectionRef) return showAlert("ยังไม่พร้อมใช้งาน กรุณารอสักครู่");
             const scaleId = event.target.dataset.scale;
+            const today = new Date();
+            const dateStr = toYYYYMMDD(today);
+            printHistoricWeighingLog(scaleId, dateStr);
+        }
 
-            const q = query(weighingsCollectionRef, where("scaleId", "==", parseInt(scaleId)));
+        // MODIFIED: This function can now print for any given date, not just today.
+        function printHistoricWeighingLog(scaleId, dateStr) {
+            const reportDate = new Date(dateStr);
+            reportDate.setHours(23, 59, 59, 999); // Ensure we cover the whole day
+            const reportStart = new Date(reportDate.getFullYear(), reportDate.getMonth(), reportDate.getDate());
+            const reportEnd = new Date(reportDate.getFullYear(), reportDate.getMonth(), reportDate.getDate(), 23, 59, 59, 999);
 
-            getDocs(q).then(snapshot => {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0); // Set to start of today
+            const weighingsForDayAndScale = allWeighingData.filter(data => {
+                const weighDate = data.timestamp.toDate();
+                return weighDate >= reportStart && weighDate <= reportEnd && data.scaleId == scaleId;
+            }).sort((a, b) => a.timestamp.toDate() - b.timestamp.toDate());
 
-                // Filter documents for today and sort by timestamp
-                const salesForDay = snapshot.docs
-                    .map(doc => doc.data())
-                    .filter(data => data.timestamp.toDate() >= today)
-                    .sort((a, b) => a.timestamp.toDate() - b.timestamp.toDate()); // Sort by time entered (ascending)
+            if (weighingsForDayAndScale.length === 0) {
+                showAlert(`ไม่พบข้อมูลสำหรับตาชั่งที่ ${scaleId} ในวันที่เลือก`);
+                return;
+            }
 
-                if (salesForDay.length === 0) {
-                    showAlert(`ไม่พบข้อมูลสำหรับตาชั่งที่ ${scaleId} ในวันนี้`);
-                    return;
-                }
-
-                let tableRows = '';
-                let index = 1;
-                salesForDay.forEach(data => {
-                    tableRows += `
-                                <tr class="border-b">
-                                        <td class="px-2 py-2 text-center">${index++}</td>
-                                        <td class="px-2 py-2">${data.sellerName}</td>
-                                        <td class="px-2 py-2 text-center">${data.bags}</td>
-                                        <td class="px-2 py-2 text-center border-l"></td>
-                                </tr>
-                            `;
-                });
-
-                const reportHTML = `
-                                <style>
-                                    @media print {
-                                        @page { size: A4; margin: 1.5cm; }
-                                        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                                        .print-container { width: 100%; margin: 0; padding: 0; }
-                                        .print-table { width: 100%; border-collapse: collapse; font-size: 10pt; }
-                                        .print-table th, .print-table td { border: 1px solid black; padding: 4px 8px; text-align: left; }
-                                        .print-table th { background-color: #f5f5f4 !important; }
-                                        .text-center { text-align: center; }
-                                    }
-                                </style>
-                                <div class="print-container">
-                                    <div class="text-center mb-4">
-                                        <h2 class="text-xl font-bold">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</h2>
-                                        <h3 class="text-lg">รายงานการชั่งยางประจำวันที่ ${today.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })} (ตาชั่งที่ ${scaleId})</h3>
-                                    </div>
-                                    <table class="print-table">
-                                        <thead class="bg-stone-200">
-                                            <tr class="border-b border-black">
-                                                <th class="text-center" style="width: 10%;">ลำดับที่</th>
-                                                <th style="width: 40%;">ชื่อ</th>
-                                                <th class="text-center" style="width: 20%;">จำนวนถุง</th>
-                                                <th class="text-center" style="width: 30%;">น้ำหนักที่ชั่ง</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            ${tableRows}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            `;
-                ui.printArea.innerHTML = reportHTML;
-                window.print(); // Trigger browser print dialog
+            let tableRows = '';
+            let index = 1;
+            weighingsForDayAndScale.forEach(data => {
+                tableRows += `
+                    <tr class="border-b">
+                        <td class="px-2 py-2 text-center">${index++}</td>
+                        <td class="px-2 py-2">${data.sellerName}</td>
+                        <td class="px-2 py-2 text-center">${data.bags}</td>
+                        <td class="px-2 py-2 text-center border-l"></td>
+                    </tr>
+                `;
             });
+
+            const reportHTML = `
+                <style>
+                    @media print {
+                        @page { size: A4; margin: 1.5cm; }
+                        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                        .print-container { width: 100%; margin: 0; padding: 0; }
+                        .print-table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+                        .print-table th, .print-table td { border: 1px solid black; padding: 4px 8px; text-align: left; }
+                        .print-table th { background-color: #f5f5f4 !important; }
+                        .text-center { text-align: center; }
+                    }
+                </style>
+                <div class="print-container">
+                    <div class="text-center mb-4">
+                        <h2 class="text-xl font-bold">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</h2>
+                        <h3 class="text-lg">รายงานการรับวางยาง ประจำวันที่ ${reportStart.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })} (ตาชั่งที่ ${scaleId})</h3>
+                    </div>
+                    <table class="print-table">
+                        <thead class="bg-stone-200">
+                            <tr class="border-b border-black">
+                                <th class="text-center" style="width: 10%;">ลำดับที่</th>
+                                <th style="width: 40%;">ชื่อ</th>
+                                <th class="text-center" style="width: 20%;">จำนวนถุง</th>
+                                <th class="text-center" style="width: 30%;">น้ำหนักที่ชั่ง</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRows}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            ui.printArea.innerHTML = reportHTML;
+            window.print();
         }
 
         /**
@@ -1285,58 +1389,56 @@
          */
         function setupWeighingListeners() {
             if (!weighingsCollectionRef) return;
-            for (let i = 1; i <= 4; i++) {
-                const q = query(weighingsCollectionRef, where("scaleId", "==", i));
+            // Listener for ALL weighing data (for history tab)
+            if (unsubscribeAllWeighings) unsubscribeAllWeighings();
+            const allWeighingsQuery = query(weighingsCollectionRef);
+            unsubscribeAllWeighings = onSnapshot(allWeighingsQuery, (snapshot) => {
+                allWeighingData = snapshot.docs.map(doc => ({id: doc.id, ...doc.data() }));
+                populateWeighingHistoryDateSelect(); // Update history dropdown
+            });
 
-                // Unsubscribe from previous listener if exists
+
+            // Listener for TODAY's weighing data (for live tabs 4-7)
+            for (let i = 1; i <= 4; i++) {
+                const todayStart = new Date();
+                todayStart.setHours(0, 0, 0, 0);
+                const q = query(weighingsCollectionRef, where("scaleId", "==", i), where("timestamp", ">=", todayStart));
+
                 if (unsubscribeWeighings[i]) unsubscribeWeighings[i]();
 
                 unsubscribeWeighings[i] = onSnapshot(q, (snapshot) => {
-                    const todayStart = new Date();
-                    todayStart.setHours(0, 0, 0, 0); // Set to start of today
-
                     const tableBody = document.getElementById(`weighing-table-body-${i}`);
-                    if (!tableBody) return; // Ensure element exists
-                    tableBody.innerHTML = ''; // Clear table body
+                    if (!tableBody) return;
+                    tableBody.innerHTML = '';
                     let totalBags = 0;
 
-                    const docs = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }));
-
-                    // Filter for today's data and sort by timestamp
-                    const todaysDocs = docs.filter(data => data.timestamp.toDate() >= todayStart);
-
-                    dailyWeighingData[i] = todaysDocs; // Update global store for daily weighing data
+                    const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    dailyWeighingData[i] = docs; // Update global store for daily data
                     updateWeighingSummary(); // Update the combined summary tab
 
-                    if (todaysDocs.length === 0) {
+                    if (docs.length === 0) {
                         tableBody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-stone-400">ยังไม่มีรายการ</td></tr>';
                     } else {
-                        // Sort by timestamp descending (most recent first in the log)
-                        todaysDocs.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate()).forEach(data => {
+                        docs.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate()).forEach(data => {
                             totalBags += data.bags;
                             const row = document.createElement('tr');
                             row.className = 'border-b';
                             row.innerHTML = `
-                                    <td class="px-4 py-2">${data.timestamp.toDate().toLocaleTimeString('th-TH')}</td>
-                                    <td class="px-4 py-2">${data.sellerName}</td>
-                                    <td class="px-4 py-2 text-right">${data.bags}</td>
-                                    <td class="px-4 py-2 text-center space-x-2">
-                                            <button class="edit-weighing-btn text-blue-600 hover:text-blue-800 p-1" data-id="${data.id}" data-scale="${i}" title="แก้ไข">✏️</button>
-                                            <button class="delete-weighing-btn text-red-600 hover:text-red-800 p-1" data-id="${data.id}" title="ลบ">🗑️</button>
-                                    </td>
-                                    `;
+                                <td class="px-4 py-2">${data.timestamp.toDate().toLocaleTimeString('th-TH')}</td>
+                                <td class="px-4 py-2">${data.sellerName}</td>
+                                <td class="px-4 py-2 text-right">${data.bags}</td>
+                                <td class="px-4 py-2 text-center space-x-2">
+                                    <button class="edit-weighing-btn text-blue-600 hover:text-blue-800 p-1" data-id="${data.id}" data-scale="${i}" title="แก้ไข">✏️</button>
+                                    <button class="delete-weighing-btn text-red-600 hover:text-red-800 p-1" data-id="${data.id}" title="ลบ">🗑️</button>
+                                </td>
+                                `;
                             tableBody.appendChild(row);
                         });
                     }
-
-                    // Update total bags display for the specific scale
                     const totalBagsEl = document.getElementById(`total-bags-${i}`);
                     if (totalBagsEl) {
                         totalBagsEl.textContent = totalBags;
-                        calculateTotalWeight(i); // Recalculate based on current bags and multiplier
+                        calculateTotalWeight(i);
                     }
                 });
             }
@@ -1422,6 +1524,7 @@
                             renderSummary(); // Update general summary
                             renderDailySummary(); // Update daily summary on dashboard
                             renderScaleSummaries(); // NEW: Update scale summaries
+                            populateReportDateSelect(); // NEW: Populate date dropdown
                         }, (error) => {
                             console.error("Error fetching data with onSnapshot: ", error);
                             showAlert(`เกิดข้อผิดพลาดในการดึงข้อมูล: ${error.message}`);
@@ -1525,80 +1628,170 @@
             }
         }
 
+        // --- NEW Functions for Weighing History Tab ---
 
-        // Event listeners attached once the DOM is fully loaded
-        document.addEventListener('DOMContentLoaded', () => {
-            renderWeighingStations(); // Initialize weighing station HTML and basic listeners
+        function populateWeighingHistoryDateSelect() {
+            const uniqueDates = [...new Set(allWeighingData.map(w => toYYYYMMDD(w.timestamp.toDate())))].sort().reverse();
+            
+            ui.weighingHistoryDateSelect.innerHTML = '';
+            if(uniqueDates.length === 0) {
+                ui.weighingHistoryDateSelect.innerHTML = '<option>ไม่พบข้อมูล</option>';
+                return;
+            }
+            uniqueDates.forEach(dateStr => {
+                const option = document.createElement('option');
+                option.value = dateStr;
+                option.textContent = new Date(dateStr).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric'});
+                ui.weighingHistoryDateSelect.appendChild(option);
+            });
+            // Auto-trigger display for the most recent date
+            if(uniqueDates.length > 0) {
+                displayWeighingHistory();
+            }
+        }
 
-            // Tab switching logic
-            ui.tabs.addEventListener('click', (e) => {
-                if (e.target.dataset.tab) {
-                    const targetTab = e.target.dataset.tab;
-                    ui.tabs.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-                    ui.tabContents.forEach(content => content.classList.remove('active'));
-                    e.target.classList.add('active');
-                    document.getElementById(targetTab).classList.add('active');
+        function displayWeighingHistory() {
+            const dateStr = ui.weighingHistoryDateSelect.value;
+            if(!dateStr) {
+                ui.weighingHistoryDisplay.innerHTML = '<p class="text-center text-stone-500">กรุณาเลือกวันที่</p>';
+                return;
+            }
+            
+            const reportDate = new Date(dateStr);
+            const reportStart = new Date(reportDate.getFullYear(), reportDate.getMonth(), reportDate.getDate());
+            const reportEnd = new Date(reportDate.getFullYear(), reportDate.getMonth(), reportDate.getDate(), 23, 59, 59, 999);
+
+            const weighingsForDay = allWeighingData.filter(data => {
+                const weighDate = data.timestamp.toDate();
+                return weighDate >= reportStart && weighDate <= reportEnd;
+            });
+            
+            if(weighingsForDay.length === 0) {
+                ui.weighingHistoryDisplay.innerHTML = '<p class="text-center text-stone-500">ไม่พบข้อมูลการรับวางยางในวันที่เลือก</p>';
+                return;
+            }
+            
+            // Group by scale ID
+            const groupedByScale = weighingsForDay.reduce((acc, current) => {
+                const scaleId = current.scaleId;
+                if(!acc[scaleId]) {
+                    acc[scaleId] = [];
+                }
+                acc[scaleId].push(current);
+                return acc;
+            }, {});
+
+            ui.weighingHistoryDisplay.innerHTML = ''; // Clear previous display
+            
+            Object.keys(groupedByScale).sort().forEach(scaleId => {
+                const scaleData = groupedByScale[scaleId].sort((a,b) => a.timestamp.toDate() - b.timestamp.toDate());
+                const totalBags = scaleData.reduce((sum, item) => sum + item.bags, 0);
+
+                let tableRows = scaleData.map(item => `
+                    <tr class="border-b">
+                        <td class="px-3 py-1">${item.timestamp.toDate().toLocaleTimeString('th-TH')}</td>
+                        <td class="px-3 py-1">${item.sellerName}</td>
+                        <td class="px-3 py-1 text-right">${item.bags}</td>
+                    </tr>
+                `).join('');
+                
+                const scaleHtml = `
+                    <div class="border rounded-lg p-4 bg-stone-50">
+                        <div class="flex justify-between items-center mb-3">
+                           <div>
+                                <h3 class="text-xl font-bold text-stone-800">ตาชั่งที่ ${scaleId}</h3>
+                                <p class="text-sm text-stone-600">รวม ${totalBags} ถุง</p>
+                           </div>
+                            <div class="flex gap-2">
+                                <button class="historic-print-btn bg-sky-600 text-white font-bold py-1 px-3 rounded-lg text-sm" data-scale="${scaleId}" data-date="${dateStr}">🖨️ พิมพ์</button>
+                                <button class="historic-delete-btn bg-red-600 text-white font-bold py-1 px-3 rounded-lg text-sm" data-scale="${scaleId}" data-date="${dateStr}">🗑️ ลบข้อมูล</button>
+                            </div>
+                        </div>
+                        <div class="overflow-y-auto h-48 border rounded-md bg-white">
+                           <table class="w-full text-sm">
+                               <thead class="bg-stone-100 sticky top-0">
+                                   <tr>
+                                       <th class="px-3 py-2 text-left">เวลา</th>
+                                       <th class="px-3 py-2 text-left">ชื่อ</th>
+                                       <th class="px-3 py-2 text-right">จำนวนถุง</th>
+                                   </tr>
+                               </thead>
+                               <tbody>${tableRows}</tbody>
+                           </table>
+                        </div>
+                    </div>
+                `;
+                ui.weighingHistoryDisplay.innerHTML += scaleHtml;
+            });
+        }
+        
+        async function deleteHistoricWeighingLog(scaleId, dateStr) {
+            showConfirm(`คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลการรับวางยาง **ทั้งหมด** ของตาชั่งที่ ${scaleId} ในวันที่ ${new Date(dateStr).toLocaleDateString('th-TH')}? การกระทำนี้ไม่สามารถย้อนกลับได้`, async () => {
+                const reportDate = new Date(dateStr);
+                const reportStart = new Date(reportDate.getFullYear(), reportDate.getMonth(), reportDate.getDate());
+                const reportEnd = new Date(reportDate.getFullYear(), reportDate.getMonth(), reportDate.getDate(), 23, 59, 59, 999);
+
+                const q = query(weighingsCollectionRef, 
+                    where("scaleId", "==", parseInt(scaleId)),
+                    where("timestamp", ">=", reportStart),
+                    where("timestamp", "<=", reportEnd)
+                );
+                
+                try {
+                    const querySnapshot = await getDocs(q);
+                    if (querySnapshot.empty) {
+                        showAlert('ไม่พบข้อมูลที่จะลบ');
+                        return;
+                    }
+                    const batch = writeBatch(db);
+                    querySnapshot.forEach(doc => {
+                        batch.delete(doc.ref);
+                    });
+                    await batch.commit();
+                    showAlert(`ลบข้อมูลของตาชั่งที่ ${scaleId} จำนวน ${querySnapshot.size} รายการเรียบร้อยแล้ว`);
+                    // The onSnapshot listener will automatically refresh the view
+                } catch(error) {
+                    console.error("Error deleting historic weighing data: ", error);
+                    showAlert(`เกิดข้อผิดพลาดในการลบข้อมูล: ${error.message}`);
                 }
             });
-
-            // Set default active tab to 'receipt'
-            document.querySelector('[data-tab="tab-receipt"]').classList.add('active');
-            document.getElementById('tab-receipt').classList.add('active');
-
-            // Fetch and populate weights when seller name input loses focus
-            ui.sellerNameInput.addEventListener('blur', (e) => {
-                const sellerName = e.target.value.trim();
-                if (sellerName) {
-                    fetchAndPopulateWeights(sellerName);
-                }
-            });
-
-            // Button event listeners for receipt section
-            ui.saveButton.addEventListener('click', handleSave);
-            ui.cancelEditButton.addEventListener('click', clearForm);
-
-            // Event listener for sales table actions (delete, edit, reprint)
-            ui.salesTableBody.addEventListener('click', handleTableClick);
-
-            // Event listener for printing daily report
-            ui.printReportBtn.addEventListener('click', createDailySummaryReport);
-
-            // Event listener for printing dashboard
-            if (ui.printDashboardBtn) {
-                ui.printDashboardBtn.addEventListener('click', () => window.print());
+        }
+        
+        function exportWeighingHistory() {
+             const dateStr = ui.weighingHistoryDateSelect.value;
+            if(!dateStr) {
+                showAlert('กรุณาเลือกวันที่จะส่งออก');
+                return;
             }
 
-            // Update date display on date input change
-            ui.receiptDateInput.addEventListener('input', updateDateDisplay);
+            const reportDate = new Date(dateStr);
+            const reportStart = new Date(reportDate.getFullYear(), reportDate.getMonth(), reportDate.getDate());
+            const reportEnd = new Date(reportDate.getFullYear(), reportDate.getMonth(), reportDate.getDate(), 23, 59, 59, 999);
 
-            // Event listeners for recalculating totals on weight/price input change
-            const calculationInputs = [...document.querySelectorAll('.weight-input'), ui.pricePerKgInput];
-            calculationInputs.forEach(input => input.addEventListener('input', calculateTotals));
+            const weighingsForDay = allWeighingData
+                .filter(data => {
+                    const weighDate = data.timestamp.toDate();
+                    return weighDate >= reportStart && weighDate <= reportEnd;
+                })
+                .sort((a,b) => a.scaleId - b.scaleId || a.timestamp.toDate() - b.timestamp.toDate());
+            
+             if (weighingsForDay.length === 0) {
+                showAlert(`ไม่พบข้อมูลการรับวางยางในวันที่เลือกเพื่อส่งออก`);
+                return;
+            }
 
-            // Search functionality for the sales table
-            ui.searchBox.addEventListener('input', (e) => {
-                const searchTerm = e.target.value.toLowerCase();
-                const filteredData = localSalesData.filter(sale =>
-                    sale.seller.toLowerCase().includes(searchTerm) ||
-                    sale.date.toDate().toLocaleDateString('th-TH').includes(searchTerm)
-                );
-                renderTable(filteredData);
-            });
-
-            // NEW Event Listeners for Summary Tab
-            ui.summaryMultiplierWeight.addEventListener('input', calculateSummaryTotalWeight);
-            ui.deleteAllWeighingsBtn.addEventListener('click', deleteAllTodaysWeighings);
-
-
-            // Set initial date values to today
-            ui.receiptDateInput.valueAsDate = new Date();
-            ui.reportDateInput.valueAsDate = new Date();
-            updateDateDisplay(); // Update display for current date
-
-            initApp(); // Initialize Firebase and app data
-        });
-    </script>
-</body>
-
-</html>
-```
+            const excelData = weighingsForDay.map(item => ({
+                'ตาชั่งที่': item.scaleId,
+                'เวลา': item.timestamp.toDate().toLocaleTimeString('th-TH'),
+                'ชื่อผู้ขาย': item.sellerName,
+                'จำนวนถุง': item.bags
+            }));
+            
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "ประวัติการรับยาง");
+            
+            const day = String(reportDate.getDate()).padStart(2, '0');
+            const month = String(reportDate.getMonth() + 1).padStart(2, '0');
+            const year = reportDate.getFullYear();
+            const fileName = `รับยาง(${day}-${month}-${year}).xlsx`;
