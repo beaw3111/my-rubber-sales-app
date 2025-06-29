@@ -1,3 +1,26 @@
+แน่นอนครับ ผมได้นำการแก้ไขจากครั้งก่อน ซึ่งประกอบด้วย:
+
+  * แสดงรายชื่อของผู้ขายให้ใหญ่ขึ้นในใบเสร็จ
+  * แสดงตัวเลข "รวมเป็นเงิน" ให้ใหญ่ขึ้นในใบเสร็จ
+  * ลบการแสดงผลเศษทศนิยมในยอดรวมของใบเสร็จ (มีการปัดเศษ)
+  * ใส่เครื่องหมายจุลภาค (,) คั่นหลักพันในตัวเลข
+  * ลบการแสดงผลมูลค่าเงินแบบตัวอักษร
+
+มาใส่ในโค้ดฉบับสมบูรณ์ให้เรียบร้อยแล้วครับ
+
+### ผลการทำงานของเว็บหลังการแก้ไข
+
+เมื่อคุณบันทึกข้อมูลและพิมพ์ใบเสร็จ ใบเสร็จที่ได้จะมีการเปลี่ยนแปลงดังนี้:
+
+1.  **ชื่อผู้ขาย:** จะแสดงด้วยตัวอักษรที่ **ใหญ่และหนาขึ้น** ทำให้อ่านง่ายและโดดเด่น
+2.  **ยอดรวมท้ายบิล:** ตัวเลขยอดรวมสุดท้ายจะถูก **ปัดเศษเป็นจำนวนเต็ม** (ไม่มีทศนิยม) แสดงด้วย **ตัวเลขขนาดใหญ่** และมี **เครื่องหมายจุลภาค (,)** คั่นทุกๆ สามหลัก (เช่น 1,500)
+3.  **ข้อความตัวอักษร:** บรรทัดที่เคยแสดงยอดเงินเป็นตัวอักษร (เช่น "หนึ่งพันห้าร้อยบาทถ้วน") ได้ถูก **ลบออกไป** จากใบเสร็จ
+
+### โค้ดที่แก้ไขสมบูรณ์แล้ว
+
+นี่คือโค้ดทั้งหมดของไฟล์ HTML ที่รวมการแก้ไขทุกอย่างไว้แล้ว คุณสามารถคัดลอกโค้ดนี้ไปใช้งานได้เลย
+
+```html
 <!DOCTYPE html>
 <html lang="th">
 
@@ -159,16 +182,12 @@
                             <p id="summary-total-price" class="text-2xl font-bold text-amber-600">0.00</p>
                         </div>
                     </div>
-                    <!-- NEW: Summary by Scale -->
                     <div class="border-t pt-4 mt-6">
                         <h3 class="text-lg font-semibold text-stone-700">สรุปยอดขายแยกตามตาชั่ง (วันนี้)</h3>
                         <div id="sales-summary-by-scale" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-                            <!-- Summaries for each scale will be rendered here -->
                             <div class="col-span-full text-center text-stone-500">ไม่มีข้อมูลการขายสำหรับวันนี้</div>
                         </div>
                     </div>
-                    <!-- END NEW -->
-
                     <div class="border-t pt-4 mt-6">
                         <h3 class="text-lg font-semibold text-stone-700">พิมพ์รายงานสรุปประจำวัน</h3>
                         <div class="flex items-center gap-4 mt-2">
@@ -483,7 +502,10 @@
             const totalAmount = totalWeight * pricePerKg;
 
             ui.totalWeightEl.textContent = totalWeight.toFixed(2);
-            ui.totalAmountEl.textContent = totalAmount.toFixed(2);
+            ui.totalAmountEl.textContent = totalAmount.toLocaleString('th-TH', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
             ui.totalAmountTextEl.textContent = bahttext(totalAmount);
         }
 
@@ -702,7 +724,7 @@
             const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
 
             const generateSingleReceiptHTML = (title) => `
-                <div class="w-1/2 p-4 border border-dashed border-stone-400 h-full flex flex-col text-xs">
+                <div class="w-1/2 p-4 border border-dashed border-stone-400 h-full flex flex-col text-sm">
                     <div class="text-center mb-4">
                         <h2 class="text-base font-bold">${title}</h2>
                         <h3 class="text-sm font-semibold mt-1">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</h3>
@@ -717,14 +739,14 @@
                             <span class="font-semibold">วันที่:</span>
                             <span>${saleDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                         </div>
-                           <div class="flex justify-between mt-1">
+                            <div class="flex justify-between mt-1">
                             <span class="font-semibold">ตาชั่งที่:</span>
                             <span>${sale.scaleNumber || '-'}</span>
                         </div>
                     </div>
                     <div class="mb-2">
                         <span class="font-semibold">ผู้ขาย:</span>
-                        <span>${sale.seller}</span>
+                        <span class="text-lg font-bold">${sale.seller}</span>
                     </div>
                     <table class="w-full my-1">
                         <thead class="border-y border-stone-300">
@@ -739,17 +761,17 @@
                                     ค่ายางก้อนถ้วย
                                     <span class="block text-xs text-stone-600">น้ำหนัก: ${sale.weight.toFixed(2)} กก. @ ${sale.price.toFixed(2)} บาท/กก.</span>
                                 </td>
-                                <td class="text-right align-top pt-2">${sale.total.toFixed(2)}</td>
+                                <td class="text-right align-top pt-2 text-lg font-bold">${Math.round(sale.total).toLocaleString('th-TH')}</td>
                             </tr>
                         </tbody>
                         <tfoot>
                             <tr class="font-bold">
-                                <td class="py-2">รวมเป็นเงิน</td>
-                                <td class="text-right">${sale.total.toFixed(2)}</td>
+                                <td class="py-2 text-lg">รวมเป็นเงิน</td>
+                                <td class="text-right text-lg">${Math.round(sale.total).toLocaleString('th-TH')}</td>
                             </tr>
                         </tfoot>
                     </table>
-                    <p class="text-center mb-4 font-semibold">(${bahttext(sale.total)})</p>
+                    
                     <div class="flex-grow"></div>
                     <div class="flex justify-center text-center mt-4">
                         <div>
@@ -865,9 +887,9 @@
             const seller = ui.sellerNameInput.value.trim();
             const date = ui.receiptDateInput.valueAsDate;
             const scaleNumber = ui.scaleNumberInput.value;
-            const weight = parseFloat(ui.totalWeightEl.textContent) || 0;
+            const weight = parseFloat(ui.totalWeightEl.textContent.replace(/,/g, '')) || 0;
             const price = parseFloat(ui.pricePerKgInput.value) || 0;
-            const total = parseFloat(ui.totalAmountEl.textContent) || 0;
+            const total = parseFloat(ui.totalAmountEl.textContent.replace(/,/g, '')) || 0;
             const weightInputs = Array.from(ui.weightInputsContainer.querySelectorAll('.weight-input'))
                 .map(input => parseFloat(input.value) || 0)
                 .filter(v => v > 0); // Filter out zero or empty weights
@@ -1036,14 +1058,14 @@
                                 <p id="total-calculated-weight-${scaleId}" class="text-lg font-bold">0.00</p>
                             </div>
                         </div>
-                           <div class="mt-4 flex justify-end">
+                            <div class="mt-4 flex justify-end">
                             <button id="print-weighing-log-${scaleId}" data-scale="${scaleId}" class="bg-sky-600 text-white font-bold py-1 px-3 rounded-lg shadow-md hover:bg-sky-700">ปริ้นรายการตาชั่ง</button>
                         </div>
                     </div>
                     <div class="mt-6">
                         <h3 class="font-semibold mb-2">รายชื่อผู้มาขายยางพารา (ตาชั่งที่ ${scaleId})</h3>
                         <div class="overflow-y-auto h-64 border rounded-lg">
-                               <table class="w-full text-sm text-left">
+                                <table class="w-full text-sm text-left">
                                 <thead class="bg-stone-100 sticky top-0">
                                     <tr>
                                         <th class="px-4 py-2">เวลา</th>
@@ -1169,47 +1191,47 @@
                 let index = 1;
                 salesForDay.forEach(data => {
                     tableRows += `
-                            <tr class="border-b">
-                                   <td class="px-2 py-2 text-center">${index++}</td>
-                                   <td class="px-2 py-2">${data.sellerName}</td>
-                                   <td class="px-2 py-2 text-center">${data.bags}</td>
-                                   <td class="px-2 py-2 text-center border-l"></td>
-                            </tr>
-                        `;
+                                <tr class="border-b">
+                                        <td class="px-2 py-2 text-center">${index++}</td>
+                                        <td class="px-2 py-2">${data.sellerName}</td>
+                                        <td class="px-2 py-2 text-center">${data.bags}</td>
+                                        <td class="px-2 py-2 text-center border-l"></td>
+                                </tr>
+                            `;
                 });
 
                 const reportHTML = `
-                            <style>
-                                @media print {
-                                    @page { size: A4; margin: 1.5cm; }
-                                    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                                    .print-container { width: 100%; margin: 0; padding: 0; }
-                                    .print-table { width: 100%; border-collapse: collapse; font-size: 10pt; }
-                                    .print-table th, .print-table td { border: 1px solid black; padding: 4px 8px; text-align: left; }
-                                    .print-table th { background-color: #f5f5f4 !important; }
-                                    .text-center { text-align: center; }
-                                }
-                            </style>
-                            <div class="print-container">
-                                <div class="text-center mb-4">
-                                    <h2 class="text-xl font-bold">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</h2>
-                                    <h3 class="text-lg">รายงานการชั่งยางประจำวันที่ ${today.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })} (ตาชั่งที่ ${scaleId})</h3>
+                                <style>
+                                    @media print {
+                                        @page { size: A4; margin: 1.5cm; }
+                                        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                                        .print-container { width: 100%; margin: 0; padding: 0; }
+                                        .print-table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+                                        .print-table th, .print-table td { border: 1px solid black; padding: 4px 8px; text-align: left; }
+                                        .print-table th { background-color: #f5f5f4 !important; }
+                                        .text-center { text-align: center; }
+                                    }
+                                </style>
+                                <div class="print-container">
+                                    <div class="text-center mb-4">
+                                        <h2 class="text-xl font-bold">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</h2>
+                                        <h3 class="text-lg">รายงานการชั่งยางประจำวันที่ ${today.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })} (ตาชั่งที่ ${scaleId})</h3>
+                                    </div>
+                                    <table class="print-table">
+                                        <thead class="bg-stone-200">
+                                            <tr class="border-b border-black">
+                                                <th class="text-center" style="width: 10%;">ลำดับที่</th>
+                                                <th style="width: 40%;">ชื่อ</th>
+                                                <th class="text-center" style="width: 20%;">จำนวนถุง</th>
+                                                <th class="text-center" style="width: 30%;">น้ำหนักที่ชั่ง</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${tableRows}
+                                        </tbody>
+                                    </table>
                                 </div>
-                                <table class="print-table">
-                                    <thead class="bg-stone-200">
-                                        <tr class="border-b border-black">
-                                            <th class="text-center" style="width: 10%;">ลำดับที่</th>
-                                            <th style="width: 40%;">ชื่อ</th>
-                                            <th class="text-center" style="width: 20%;">จำนวนถุง</th>
-                                            <th class="text-center" style="width: 30%;">น้ำหนักที่ชั่ง</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        ${tableRows}
-                                    </tbody>
-                                </table>
-                            </div>
-                        `;
+                            `;
                 ui.printArea.innerHTML = reportHTML;
                 window.print(); // Trigger browser print dialog
             });
@@ -1321,14 +1343,14 @@
                             const row = document.createElement('tr');
                             row.className = 'border-b';
                             row.innerHTML = `
-                                   <td class="px-4 py-2">${data.timestamp.toDate().toLocaleTimeString('th-TH')}</td>
-                                   <td class="px-4 py-2">${data.sellerName}</td>
-                                   <td class="px-4 py-2 text-right">${data.bags}</td>
-                                   <td class="px-4 py-2 text-center space-x-2">
-                                           <button class="edit-weighing-btn text-blue-600 hover:text-blue-800 p-1" data-id="${data.id}" data-scale="${i}" title="แก้ไข">✏️</button>
-                                           <button class="delete-weighing-btn text-red-600 hover:text-red-800 p-1" data-id="${data.id}" title="ลบ">🗑️</button>
-                                   </td>
-                                 `;
+                                    <td class="px-4 py-2">${data.timestamp.toDate().toLocaleTimeString('th-TH')}</td>
+                                    <td class="px-4 py-2">${data.sellerName}</td>
+                                    <td class="px-4 py-2 text-right">${data.bags}</td>
+                                    <td class="px-4 py-2 text-center space-x-2">
+                                            <button class="edit-weighing-btn text-blue-600 hover:text-blue-800 p-1" data-id="${data.id}" data-scale="${i}" title="แก้ไข">✏️</button>
+                                            <button class="delete-weighing-btn text-red-600 hover:text-red-800 p-1" data-id="${data.id}" title="ลบ">🗑️</button>
+                                    </td>
+                                    `;
                             tableBody.appendChild(row);
                         });
                     }
@@ -1602,3 +1624,4 @@
 </body>
 
 </html>
+```
