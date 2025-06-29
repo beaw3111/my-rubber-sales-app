@@ -1154,57 +1154,100 @@
         }
         
         /**
-         * NEW: Creates a printable report of all historical weighing data for a specific scale.
+         * MODIFIED: Shows a modal to select a date before printing the weighing history for a specific scale.
          */
         function printWeighingHistory(scaleId) {
             if (!localWeighingData) return showAlert('ข้อมูลการวางยางยังไม่ถูกโหลด');
 
-            const scaleData = localWeighingData
-                .filter(record => record.scaleId == scaleId)
-                .sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
-            
+            // 1. Filter all records for the specific scale
+            const scaleData = localWeighingData.filter(record => record.scaleId == scaleId);
+
             if (scaleData.length === 0) {
                 return showAlert(`ไม่พบข้อมูลการวางยางย้อนหลังสำหรับตาชั่งที่ ${scaleId}`);
             }
 
-            const reportDate = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+            // 2. Get a unique, sorted list of dates for the dropdown
+            const uniqueDates = Array.from(
+                new Set(scaleData.map(r => r.timestamp.toDate().toISOString().split('T')[0]))
+            ).sort((a, b) => new Date(b) - new Date(a)); // Sort newest first
 
-            const tableRows = scaleData.map(record => {
-                const timestamp = record.timestamp.toDate();
-                return `
-                    <tr class="border-b">
-                        <td class="px-2 py-2">${timestamp.toLocaleDateString('th-TH')}</td>
-                        <td class="px-2 py-2">${timestamp.toLocaleTimeString('th-TH')}</td>
-                        <td class="px-2 py-2">${record.sellerName}</td>
-                        <td class="px-2 py-2 text-right">${record.bags}</td>
-                    </tr>
-                `;
-            }).join('');
-
-            const reportHTML = `
-                <div class="p-8 bg-white text-black">
-                    <div class="text-center mb-6">
-                        <h2 class="text-xl font-bold">รายงานการรับวางยางย้อนหลัง (ตาชั่งที่ ${scaleId})</h2>
-                        <h3 class="text-lg">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</h3>
-                        <p>พิมพ์ ณ วันที่ ${reportDate}</p>
-                    </div>
-                    <table class="w-full text-sm border-collapse border border-black">
-                        <thead class="bg-stone-200">
-                            <tr class="border-b-2 border-black">
-                                <th class="px-2 py-2 border-r border-black">วันที่</th>
-                                <th class="px-2 py-2 border-r border-black">เวลา</th>
-                                <th class="px-2 py-2 border-r border-black">ชื่อผู้ขาย</th>
-                                <th class="px-2 py-2 border-r border-black">จำนวนถุง</th>
-                            </tr>
-                        </thead>
-                        <tbody>${tableRows}</tbody>
-                    </table>
+            // 3. Create the HTML for the date selection dropdown
+            let modalContentHTML = `
+                <div class="space-y-2">
+                    <label for="modal-date-select" class="block text-sm font-medium text-stone-700">กรุณาเลือกวันที่ที่ต้องการพิมพ์:</label>
+                    <select id="modal-date-select" class="w-full p-2 border border-stone-300 rounded-md shadow-sm">
+                        <option value="">-- เลือกวันที่ --</option>
+                        ${uniqueDates.map(dateStr => {
+                            const dateObj = new Date(dateStr);
+                            const formattedDate = dateObj.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+                            return `<option value="${dateStr}">${formattedDate}</option>`;
+                        }).join('')}
+                    </select>
                 </div>
             `;
-            ui.printArea.innerHTML = reportHTML;
-            window.print();
-        }
 
+            // 4. Show the modal with the date selector
+            showModal(`พิมพ์รายงานย้อนหลัง (ตาชั่งที่ ${scaleId})`, modalContentHTML, [
+                {
+                    text: '🖨️ พิมพ์รายงาน',
+                    classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-sky-600 text-base font-medium text-white hover:bg-sky-700 sm:ml-3 sm:w-auto sm:text-sm',
+                    onClick: () => {
+                        // 5. This code runs when the user clicks "Print" in the modal
+                        const selectedDate = document.getElementById('modal-date-select').value;
+                        if (!selectedDate) {
+                            showAlert('กรุณาเลือกวันที่ก่อน');
+                            // Re-show the modal by calling the function again
+                            printWeighingHistory(scaleId); 
+                            return;
+                        }
+
+                        // Filter the data again for the selected date and sort by time
+                        const reportData = scaleData
+                            .filter(record => record.timestamp.toDate().toISOString().split('T')[0] === selectedDate)
+                            .sort((a, b) => a.timestamp.toDate() - b.timestamp.toDate()); // Sort oldest first for daily report
+
+                        const formattedPrintDate = new Date(selectedDate).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+
+                        const tableRows = reportData.map(record => {
+                            const timestamp = record.timestamp.toDate();
+                            return `
+                                <tr class="border-b">
+                                    <td class="px-2 py-2">${timestamp.toLocaleTimeString('th-TH')}</td>
+                                    <td class="px-2 py-2">${record.sellerName}</td>
+                                    <td class="px-2 py-2 text-right">${record.bags}</td>
+                                </tr>
+                            `;
+                        }).join('');
+
+                        const reportHTML = `
+                            <div class="p-8 bg-white text-black">
+                                <div class="text-center mb-6">
+                                    <h2 class="text-xl font-bold">รายงานการรับวางยาง ประจำวันที่ ${formattedPrintDate}</h2>
+                                    <h3 class="text-lg">ตาชั่งที่ ${scaleId}</h3>
+                                    <p>สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</p>
+                                </div>
+                                <table class="w-full text-sm border-collapse border border-black">
+                                    <thead class="bg-stone-200">
+                                        <tr class="border-b-2 border-black">
+                                            <th class="px-2 py-2 border-r border-black" style="width: 20%;">เวลา</th>
+                                            <th class="px-2 py-2 border-r border-black" style="width: 60%;">ชื่อผู้ขาย</th>
+                                            <th class="px-2 py-2 border-r border-black" style="width: 20%;">จำนวนถุง</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>${tableRows}</tbody>
+                                </table>
+                            </div>
+                        `;
+                        ui.printArea.innerHTML = reportHTML;
+                        window.print();
+                    }
+                },
+                {
+                    text: 'ยกเลิก',
+                    classes: 'mt-3 w-full inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 sm:mt-0 sm:w-auto sm:text-sm'
+                }
+            ]);
+        }
 
         /**
          * NEW: Exports all historical weighing data for a specific scale to an XLSX file.
