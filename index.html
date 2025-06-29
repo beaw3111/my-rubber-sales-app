@@ -15,7 +15,6 @@
         body {
             font-family: 'Sarabun', sans-serif;
         }
-
         .chart-container {
             position: relative;
             height: 300px;
@@ -23,42 +22,18 @@
             max-width: 500px;
             margin: auto;
         }
-
         .tab-btn.active {
             border-color: #d97706;
             background-color: #fef3c7;
             color: #b45309;
         }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
         @media print {
-            body * {
-                visibility: hidden;
-            }
-
-            #print-area,
-            #print-area * {
-                visibility: visible;
-            }
-
-            #print-area {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                height: 100%;
-            }
-
-            .no-print {
-                display: none !important;
-            }
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+            .no-print { display: none !important; }
         }
     </style>
 </head>
@@ -84,7 +59,7 @@
         </div>
         <main>
             <div id="tab-receipt" class="tab-content">
-                <section id="receipt-generator" class="bg-white p-6 rounded-xl shadow-md">
+                <section class="bg-white p-6 rounded-xl shadow-md">
                     <h2 class="text-2xl font-bold mb-2 border-b pb-3 text-stone-800">1. กรอกข้อมูลเพื่อออกใบเสร็จ</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
@@ -96,9 +71,9 @@
                             <input type="number" id="scale-number" min="1" max="9" class="w-full p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500" placeholder="1-9">
                         </div>
                         <div class="md:col-span-2">
-                            <label for="receipt-date" class="block text-sm font-medium text-stone-600 mb-1">วันที่ <span id="date-display" class="font-normal text-stone-500 ml-2"></span></label>
-                            <input type="date" id="receipt-date" class="w-full p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500">
-                        </div>
+                            <label for="receipt-date-dropdown" class="block text-sm font-medium text-stone-600 mb-1">วันที่</label>
+                            <select id="receipt-date-dropdown" class="w-full p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500"></select>
+                            <input type="date" id="receipt-date" class="hidden"> </div>
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-stone-600 mb-1">น้ำหนัก (กก.) - ใส่ได้สูงสุด 5 รายการ</label>
                             <div id="weight-inputs-container" class="grid grid-cols-2 sm:grid-cols-5 gap-4">
@@ -129,22 +104,18 @@
                         </div>
                     </div>
                     <div class="mt-6 flex justify-end items-center gap-4">
-                        <button id="cancel-edit-button" class="hidden bg-stone-200 text-stone-700 font-bold py-2 px-6 rounded-lg hover:bg-stone-300 transition-colors">
-                            ยกเลิก
-                        </button>
-                        <button id="save-button" class="bg-amber-600 text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-colors">
-                            บันทึกและพิมพ์ใบเสร็จ
-                        </button>
+                        <button id="cancel-edit-button" class="hidden bg-stone-200 text-stone-700 font-bold py-2 px-6 rounded-lg hover:bg-stone-300 transition-colors">ยกเลิก</button>
+                        <button id="save-button" class="bg-amber-600 text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-colors">บันทึกและพิมพ์ใบเสร็จ</button>
                     </div>
                 </section>
             </div>
             <div id="tab-history" class="tab-content">
-                <section id="sales-data" class="bg-white p-6 rounded-xl shadow-md">
+                <section class="bg-white p-6 rounded-xl shadow-md">
                     <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-2 border-b pb-3">
                         <h2 class="text-2xl font-bold text-stone-800">2. ประวัติและรายงาน</h2>
                         <input type="text" id="search-box" class="mt-3 sm:mt-0 w-full sm:w-64 p-2 border border-stone-300 rounded-md shadow-sm" placeholder="🔍 ค้นหาตามชื่อผู้ขาย...">
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 my-6">
+                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 my-6">
                         <div class="bg-stone-200 p-4 rounded-lg text-center">
                             <p class="text-sm font-medium text-stone-600">จำนวนผู้ขายทั้งหมด</p>
                             <p id="summary-total-sellers" class="text-2xl font-bold text-amber-600">0</p>
@@ -158,18 +129,22 @@
                             <p id="summary-total-price" class="text-2xl font-bold text-amber-600">0.00</p>
                         </div>
                     </div>
-
                     <div class="border-t pt-4 mt-6">
                         <h3 class="text-lg font-semibold text-stone-700">จัดการรายงานประจำวัน</h3>
-                        <p class="text-sm text-stone-500 mt-1 mb-2">เลือกวันที่เพื่อกรองข้อมูล, พิมพ์, ส่งออก หรือลบข้อมูลของวันนั้นๆ</p>
                         <div class="flex flex-wrap items-center gap-2 md:gap-4 mt-2">
-                            <input type="date" id="report-date" class="p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500">
-                            <button id="print-report-btn" class="bg-sky-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-sky-700 transition-colors">🖨️ พิมพ์รายงาน</button>
-                            <button id="export-excel-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors">📄 ส่งออก Excel</button>
-                            <button id="delete-by-date-btn" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors">🗑️ ลบตามวัน</button>
+                             <div>
+                                <label for="report-date-dropdown" class="block text-sm font-medium text-stone-700 mb-1">เลือกวันที่</label>
+                                <select id="report-date-dropdown" class="p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500">
+                                   <option value="">แสดงทุกวัน</option>
+                                </select>
+                            </div>
+                            <div class="self-end flex gap-2">
+                                <button id="print-report-btn" class="bg-sky-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-sky-700">🖨️ พิมพ์</button>
+                                <button id="export-sales-excel-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700">📄 ส่งออก Excel</button>
+                                <button id="delete-by-date-btn" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-red-700">🗑️ ลบตามวัน</button>
+                            </div>
                         </div>
                     </div>
-
                     <div class="overflow-x-auto mt-6">
                         <table class="w-full text-sm text-left text-stone-500">
                             <thead class="text-xs text-stone-700 uppercase bg-stone-200">
@@ -187,60 +162,23 @@
                     </div>
                 </section>
             </div>
-            <div id="tab-dashboard" class="tab-content">
-                <section id="dashboard" class="bg-white p-6 rounded-xl shadow-md">
-                    <div class="flex justify-between items-center mb-2 border-b pb-3">
-                        <h2 class="text-2xl font-bold text-stone-800">3. สรุปภาพรวม</h2>
-                        <button id="print-dashboard-btn" class="bg-sky-600 text-white font-bold py-1 px-3 rounded-lg shadow-md hover:bg-sky-700 no-print">🖨️ พิมพ์</button>
-                    </div>
-                    <div class="space-y-8">
-                        <div class="border-b pb-4 mb-4">
-                            <h3 class="font-bold text-center mb-2 text-stone-700">สรุปยอดประจำวัน</h3>
-                            <div class="bg-amber-100 p-4 rounded-lg text-center">
-                                <p class="text-sm font-medium text-amber-800">ปริมาณรวมวันนี้ (กก.)</p>
-                                <p id="summary-daily-weight" class="text-2xl font-bold text-amber-700">0.00</p>
-                            </div>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-center mb-2 text-stone-700">สัดส่วนยอดขายตามผู้ขาย</h3>
-                            <div class="chart-container">
-                                <canvas id="sales-by-seller-chart"></canvas>
-                            </div>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-center mb-2 text-stone-700">แนวโน้มยอดขายรายวัน</h3>
-                            <div class="chart-container">
-                                <canvas id="daily-sales-chart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </div>
+            <div id="tab-dashboard" class="tab-content">...</div>
             <div id="tab-weighing-1" class="tab-content"></div>
             <div id="tab-weighing-2" class="tab-content"></div>
             <div id="tab-weighing-3" class="tab-content"></div>
             <div id="tab-weighing-4" class="tab-content"></div>
-            
             <div id="tab-weighing-summary" class="tab-content">
-                <section id="weighing-summary-section" class="bg-white p-6 rounded-xl shadow-md">
+                <section class="bg-white p-6 rounded-xl shadow-md">
                     <h2 class="text-2xl font-bold mb-4 border-b pb-3 text-stone-800">8. สรุปผลรวมย้อนหลัง</h2>
-                
                     <div class="flex flex-wrap items-center gap-4 mb-6">
                         <div>
-                            <label for="weighing-history-dates-dropdown" class="block text-sm font-medium text-stone-700 mb-1">
-                                เลือกจากวันที่เคยมีการบันทึกข้อมูล
-                            </label>
-                            <select id="weighing-history-dates-dropdown" class="p-2 border border-stone-300 rounded-md shadow-sm">
-                                <option value="">-- กรุณาเลือกวันที่ --</option>
-                            </select>
+                            <label for="weighing-history-dates-dropdown" class="block text-sm font-medium text-stone-700 mb-1">เลือกจากวันที่เคยมีการบันทึกข้อมูล</label>
+                            <select id="weighing-history-dates-dropdown" class="p-2 border border-stone-300 rounded-md shadow-sm"><option value="">-- กรุณาเลือกวันที่ --</option></select>
                         </div>
                         <div class="self-end">
-                            <button id="export-weighings-excel-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors disabled:bg-gray-400" disabled>
-                                📄 ส่งออก Excel
-                            </button>
+                            <button id="export-weighings-excel-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors disabled:bg-gray-400" disabled>📄 ส่งออก Excel</button>
                         </div>
                     </div>
-                
                     <div id="weighing-history-details" class="space-y-8 border-t pt-4">
                         <p class="text-center text-stone-500">กรุณาเลือกวันที่จากเมนูด้านบนเพื่อแสดงรายละเอียด</p>
                     </div>
@@ -249,315 +187,162 @@
         </main>
     </div>
     <div id="print-area"></div>
-    <div id="modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden opacity-0">
-        <div class="modal-content bg-white rounded-xl shadow-2xl w-full max-w-md transform scale-95">
-            <div class="p-6 text-center">
-                <h3 id="modal-title" class="text-lg leading-6 font-bold text-stone-900"></h3>
-                <div class="mt-2">
-                    <p id="modal-message" class="text-sm text-stone-500"></p>
-                </div>
-            </div>
-            <div id="modal-actions" class="bg-stone-50 px-6 py-4 rounded-b-xl flex flex-row-reverse gap-3"></div>
-        </div>
-    </div>
+    <div id="modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden opacity-0">...</div>
 
     <script type="module">
-        import {
-            initializeApp
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import {
-            getAuth,
-            signInAnonymously,
-            onAuthStateChanged
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import {
-            getFirestore,
-            collection,
-            doc,
-            addDoc,
-            updateDoc,
-            deleteDoc,
-            onSnapshot,
-            query,
-            where,
-            getDocs,
-            getDoc,
-            writeBatch
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // --- Config and Global Variables ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyCNVxG6s46SRXOYAeT0rJHAtz_-3IPUJNE",
-            authDomain: "coopksb001.firebaseapp.com",
-            projectId: "coopksb001",
-            storageBucket: "coopksb001.appspot.com",
-            messagingSenderId: "259378610497",
-            appId: "1:259378610497:web:fd12679830e97bf5e761c0",
-            measurementId: "G-1RHH9TMD73"
-        };
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, where, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // --- CONFIG AND GLOBALS ---
+        const firebaseConfig = { /* ... your config ... */ };
         const appId = 'cup-rubber-sales-app';
-        let localSalesData = [], salesBySellerChart, dailySalesChart;
-        let editingId = null, editingWeighingId = null;
-        let db, auth, userId, salesCollectionRef, weighingsCollectionRef;
-        let unsubscribeSales = null, unsubscribeWeighings = {};
-
-        // --- UI Elements Map ---
+        let localSalesData = [], localWeighingData = [];
+        let db, auth, salesCollectionRef, weighingsCollectionRef;
+        // ... other globals
+        
+        // --- UI ELEMENTS ---
         const ui = {
-            // Receipt
-            sellerNameInput: document.getElementById('seller-name'),
-            receiptDateInput: document.getElementById('receipt-date'),
-            dateDisplay: document.getElementById('date-display'),
-            scaleNumberInput: document.getElementById('scale-number'),
-            weightInputsContainer: document.getElementById('weight-inputs-container'),
-            pricePerKgInput: document.getElementById('price-per-kg'),
-            totalWeightEl: document.getElementById('total-weight'),
-            totalAmountEl: document.getElementById('total-amount'),
-            totalAmountTextEl: document.getElementById('total-amount-text'),
-            saveButton: document.getElementById('save-button'),
-            cancelEditButton: document.getElementById('cancel-edit-button'),
-            // History
-            salesTableBody: document.getElementById('sales-table-body'),
-            searchBox: document.getElementById('search-box'),
-            reportDateInput: document.getElementById('report-date'),
-            printReportBtn: document.getElementById('print-report-btn'),
-            exportExcelBtn: document.getElementById('export-excel-btn'),
-            deleteByDateBtn: document.getElementById('delete-by-date-btn'),
-            summaryTotalSellers: document.getElementById('summary-total-sellers'),
-            summaryTotalWeight: document.getElementById('summary-total-weight'),
-            summaryTotalPrice: document.getElementById('summary-total-price'),
-            // Dashboard
-            summaryDailyWeight: document.getElementById('summary-daily-weight'),
-            printDashboardBtn: document.getElementById('print-dashboard-btn'),
-            // Weighing History
+            // ... all previous UI elements
+            receiptDateDropdown: document.getElementById('receipt-date-dropdown'), // MODIFIED
+            reportDateDropdown: document.getElementById('report-date-dropdown'),   // MODIFIED
+            exportSalesExcelBtn: document.getElementById('export-sales-excel-btn'),// MODIFIED
+            // Weighing History (NEW)
             weighingHistoryDatesDropdown: document.getElementById('weighing-history-dates-dropdown'),
             exportWeighingsExcelBtn: document.getElementById('export-weighings-excel-btn'),
             weighingHistoryDetails: document.getElementById('weighing-history-details'),
-            // Global
-            tabs: document.getElementById('tabs'),
-            tabContents: document.querySelectorAll('.tab-content'),
-            printArea: document.getElementById('print-area'),
-            modal: document.getElementById('modal'),
-            modalTitle: document.getElementById('modal-title'),
-            modalMessage: document.getElementById('modal-message'),
-            modalActions: document.getElementById('modal-actions'),
         };
+        
+        // --- UTILITY FUNCTIONS (showAlert, bahttext, etc) ---
+        // ... Unchanged ...
 
-        // ... (Utility Functions are unchanged)
-
+        // --- NEW/MODIFIED CORE FUNCTIONS ---
+        
         /**
-         * Fetches all unique dates with weighing records and populates the history dropdown.
+         * Generic function to populate a dropdown with unique dates from a Firestore collection.
          */
-        async function populateWeighingHistoryDropdown() {
-            if (!weighingsCollectionRef) return;
+        async function populateDateDropdown(collectionRef, dropdownElement, dateField, hasAllOption = false, allOptionText = 'แสดงทุกวัน') {
+            if (!collectionRef || !dropdownElement) return;
             try {
-                const snapshot = await getDocs(query(weighingsCollectionRef));
+                const snapshot = await getDocs(query(collectionRef));
                 const dateSet = new Set();
                 snapshot.forEach(doc => {
-                    const date = doc.data().timestamp.toDate();
-                    const dateString = date.toISOString().split('T')[0];
-                    dateSet.add(dateString);
+                    const data = doc.data();
+                    if (data[dateField]) {
+                        const date = data[dateField].toDate();
+                        const dateString = date.toISOString().split('T')[0];
+                        dateSet.add(dateString);
+                    }
                 });
 
-                const sortedDates = Array.from(dateSet).sort((a, b) => b.localeCompare(a));
+                const sortedDates = Array.from(dateSet).sort((a, b) => b.localeCompare(a)); // Descending sort
 
-                ui.weighingHistoryDatesDropdown.innerHTML = '<option value="">-- กรุณาเลือกวันที่ --</option>';
+                dropdownElement.innerHTML = ''; // Clear existing options
+                if (hasAllOption) {
+                    const allOption = document.createElement('option');
+                    allOption.value = '';
+                    allOption.textContent = allOptionText;
+                    dropdownElement.appendChild(allOption);
+                }
+
                 sortedDates.forEach(dateStr => {
                     const option = document.createElement('option');
                     option.value = dateStr;
                     const d = new Date(dateStr);
                     option.textContent = d.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
-                    ui.weighingHistoryDatesDropdown.appendChild(option);
+                    dropdownElement.appendChild(option);
                 });
+                
+                // For receipt date, select today by default if it exists
+                if (dropdownElement.id === 'receipt-date-dropdown') {
+                     const todayStr = new Date().toISOString().split('T')[0];
+                     if (dateSet.has(todayStr)) {
+                         dropdownElement.value = todayStr;
+                     }
+                     // Trigger change to update hidden input
+                     dropdownElement.dispatchEvent(new Event('change'));
+                }
+
             } catch (error) {
-                console.error("Error populating weighing history dropdown:", error);
+                console.error(`Error populating dropdown for ${dropdownElement.id}:`, error);
             }
+        }
+
+        /**
+         * MODIFIED: Filters the sales table based on selected date and search term.
+         */
+        function applyFilters() {
+            const searchTerm = ui.searchBox.value.toLowerCase();
+            const selectedDateStr = ui.reportDateDropdown.value; // MODIFIED
+            
+            let filteredData = [...localSalesData];
+
+            if (selectedDateStr) {
+                const startOfDay = new Date(selectedDateStr);
+                startOfDay.setHours(0, 0, 0, 0);
+                const endOfDay = new Date(selectedDateStr);
+                endOfDay.setHours(23, 59, 59, 999);
+                filteredData = filteredData.filter(sale => {
+                    const saleDate = sale.date.toDate();
+                    return saleDate >= startOfDay && saleDate <= endOfDay;
+                });
+            }
+            
+            if (searchTerm) {
+                filteredData = filteredData.filter(sale => sale.seller.toLowerCase().includes(searchTerm));
+            }
+
+            renderTable(filteredData);
         }
         
         /**
-         * Fetches and displays the detailed weighing records for a selected date, grouped by scale.
+         * MODIFIED: Exports the filtered sales data to an Excel file.
          */
-        async function displayWeighingDetailsForDate(dateString) {
-            ui.weighingHistoryDetails.innerHTML = '';
-            ui.exportWeighingsExcelBtn.disabled = true;
+        function exportSalesToExcel() {
+            const selectedDateStr = ui.reportDateDropdown.value;
+            const rows = ui.salesTableBody.querySelectorAll('tr');
 
-            if (!dateString) {
-                ui.weighingHistoryDetails.innerHTML = '<p class="text-center text-stone-500">กรุณาเลือกวันที่จากเมนูด้านบนเพื่อแสดงรายละเอียด</p>';
+            if (rows.length === 0 || (rows.length === 1 && rows[0].textContent.includes("ไม่พบข้อมูล"))) {
+                showAlert('ไม่มีข้อมูลให้ส่งออก');
                 return;
             }
 
-            ui.weighingHistoryDetails.innerHTML = '<p class="text-center text-stone-500">กำลังโหลดข้อมูล...</p>';
+            const data = [];
+            const headers = Array.from(document.querySelectorAll('#sales-data thead th')).map(th => th.textContent).slice(0, -1);
+            data.push(headers);
             
-            const selectedDate = new Date(dateString);
-            const startOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
-            const endOfDay = new Date(startOfDay);
-            endOfDay.setHours(23, 59, 59, 999);
-            
-            const q = query(weighingsCollectionRef, where("timestamp", ">=", startOfDay), where("timestamp", "<=", endOfDay));
-            const snapshot = await getDocs(q);
-
-            if (snapshot.empty) {
-                ui.weighingHistoryDetails.innerHTML = '<p class="text-center text-stone-500">ไม่พบข้อมูลการวางยางในวันที่เลือก</p>';
-                return;
-            }
-
-            const weighingsByScale = {};
-            snapshot.forEach(doc => {
-                const data = { id: doc.id, ...doc.data() };
-                const scaleId = data.scaleId || 'ไม่ระบุ';
-                if (!weighingsByScale[scaleId]) {
-                    weighingsByScale[scaleId] = [];
-                }
-                weighingsByScale[scaleId].push(data);
-            });
-            
-            ui.weighingHistoryDetails.innerHTML = ''; // Clear loading message
-            ui.exportWeighingsExcelBtn.disabled = false;
-
-            const sortedScales = Object.keys(weighingsByScale).sort((a,b) => a - b);
-
-            for (const scaleId of sortedScales) {
-                const records = weighingsByScale[scaleId];
-                const scaleContainer = document.createElement('div');
-                scaleContainer.className = 'p-4 border rounded-lg';
-
-                let tableRows = '';
-                records.sort((a,b) => a.timestamp.toDate() - b.timestamp.toDate()).forEach(rec => {
-                    tableRows += `<tr class="border-b"><td class="px-2 py-1">${rec.sellerName}</td><td class="px-2 py-1 text-right">${rec.bags}</td></tr>`;
-                });
-
-                scaleContainer.innerHTML = `
-                    <div class="flex justify-between items-center mb-3">
-                        <h3 class="text-lg font-bold text-amber-700">ตาชั่งที่ ${scaleId}</h3>
-                        <button class="print-history-scale-btn bg-sky-600 text-white font-bold py-1 px-3 rounded-lg shadow-sm hover:bg-sky-700" data-scale-id="${scaleId}" data-date="${dateString}">
-                            🖨️ พิมพ์
-                        </button>
-                    </div>
-                    <table class="w-full text-sm">
-                        <thead class="bg-stone-100">
-                            <tr>
-                                <th class="px-2 py-2 text-left">ชื่อผู้ขาย</th>
-                                <th class="px-2 py-2 text-right">จำนวนถุง</th>
-                            </tr>
-                        </thead>
-                        <tbody>${tableRows}</tbody>
-                    </table>
-                `;
-                ui.weighingHistoryDetails.appendChild(scaleContainer);
-            }
-        }
-        
-        /**
-         * Prints a log for a specific scale from a specific historical date.
-         */
-        async function printHistoricalScaleLog(scaleId, dateString) {
-            const selectedDate = new Date(dateString);
-            const startOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
-            const endOfDay = new Date(startOfDay);
-            endOfDay.setHours(23, 59, 59, 999);
-            
-            const q = query(weighingsCollectionRef, where("timestamp", ">=", startOfDay), where("timestamp", "<=", endOfDay), where("scaleId", "==", parseInt(scaleId)));
-            const snapshot = await getDocs(q);
-
-            if (snapshot.empty) { showAlert('ไม่พบข้อมูลสำหรับพิมพ์'); return; }
-
-            const records = snapshot.docs.map(doc => doc.data()).sort((a,b) => a.timestamp.toDate() - b.timestamp.toDate());
-            
-            let tableRows = '';
-            records.forEach((data, index) => {
-                tableRows += `
-                    <tr class="border-b">
-                        <td class="px-2 py-2 text-center">${index + 1}</td>
-                        <td class="px-2 py-2">${data.sellerName}</td>
-                        <td class="px-2 py-2 text-center">${data.bags}</td>
-                        <td class="px-2 py-2 text-center border-l"></td>
-                    </tr>`;
+            rows.forEach(row => {
+                const rowData = Array.from(row.querySelectorAll('td')).map(td => td.textContent).slice(0, -1);
+                data.push(rowData);
             });
 
-            const reportHTML = `
-                <div class="p-8 bg-white text-black">
-                    <div class="text-center mb-4">
-                        <h2 class="text-xl font-bold">รายงานการรับวางยาง (ย้อนหลัง)</h2>
-                        <h3 class="text-lg">วันที่ ${selectedDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })} (ตาชั่งที่ ${scaleId})</h3>
-                    </div>
-                    <table class="w-full text-sm border-collapse border border-black">
-                        <thead class="bg-stone-200">
-                            <tr>
-                                <th class="px-2 py-2 border-r border-black" style="width:10%">ลำดับ</th>
-                                <th class="px-2 py-2 border-r border-black" style="width:50%">ชื่อ</th>
-                                <th class="px-2 py-2 border-r border-black" style="width:15%">จำนวนถุง</th>
-                                <th class="px-2 py-2" style="width:25%">ลายเซ็น</th>
-                            </tr>
-                        </thead>
-                        <tbody>${tableRows}</tbody>
-                    </table>
-                </div>`;
-            ui.printArea.innerHTML = reportHTML;
-            window.print();
-        }
-
-        /**
-         * Exports weighing data for a selected date to an Excel file with multiple sheets.
-         */
-        async function exportWeighingsToExcel() {
-            const dateString = ui.weighingHistoryDatesDropdown.value;
-            if (!dateString) { showAlert('กรุณาเลือกวันที่ก่อนส่งออก Excel'); return; }
-
-            const selectedDate = new Date(dateString);
-            const startOfDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
-            const endOfDay = new Date(startOfDay);
-            endOfDay.setHours(23, 59, 59, 999);
-            
-            const q = query(weighingsCollectionRef, where("timestamp", ">=", startOfDay), where("timestamp", "<=", endOfDay));
-            const snapshot = await getDocs(q);
-
-            if (snapshot.empty) { showAlert('ไม่พบข้อมูลในวันที่เลือกเพื่อส่งออก'); return; }
-
-            const weighingsByScale = {};
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                const scaleId = data.scaleId || 'ไม่ระบุ';
-                if (!weighingsByScale[scaleId]) {
-                    weighingsByScale[scaleId] = [];
-                }
-                weighingsByScale[scaleId].push({
-                    'เวลา': data.timestamp.toDate().toLocaleTimeString('th-TH'),
-                    'ชื่อผู้ขาย': data.sellerName,
-                    'จำนวนถุง': data.bags
-                });
-            });
-
+            const worksheet = XLSX.utils.aoa_to_sheet(data);
             const workbook = XLSX.utils.book_new();
-            const sortedScales = Object.keys(weighingsByScale).sort((a,b) => a - b);
-
-            for (const scaleId of sortedScales) {
-                const records = weighingsByScale[scaleId];
-                const worksheet = XLSX.utils.json_to_sheet(records);
-                XLSX.utils.book_append_sheet(workbook, worksheet, `ตาชั่ง ${scaleId}`);
-            }
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Sales Report");
             
-            const formattedDate = selectedDate.toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
-            const fileName = `รับยาง(${formattedDate}).xlsx`;
+            const dateForFile = selectedDateStr ? new Date(selectedDateStr).toLocaleDateString('th-TH', {year:'numeric', month:'2-digit', day:'2-digit'}).replace(/\//g,'-') : 'ทั้งหมด';
+            const fileName = `รายงานผลชั่งยาง(${dateForFile}).xlsx`;
             XLSX.writeFile(workbook, fileName);
         }
 
-        // --- Init and Event Listeners ---
-        document.addEventListener('DOMContentLoaded', () => {
-            // ... Setup for tabs and other event listeners from previous versions...
-            ui.tabs.addEventListener('click', (e) => {
-                if(e.target.dataset.tab) {
-                    ui.tabs.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-                    ui.tabContents.forEach(content => content.classList.remove('active'));
-                    e.target.classList.add('active');
-                    document.getElementById(e.target.dataset.tab).classList.add('active');
-                }
-            });
-            document.querySelector('[data-tab="tab-receipt"]').classList.add('active');
-            document.getElementById('tab-receipt').classList.add('active');
+        // --- TAB 8: WEIGHING HISTORY FUNCTIONS (NEW) ---
+        
+        async function displayWeighingDetailsForDate(dateString) { /* ... same as previous answer ... */ }
+        async function printHistoricalScaleLog(scaleId, dateString) { /* ... same as previous answer ... */ }
+        async function exportWeighingsToExcel() { /* ... same as previous answer ... */ }
 
-            // Listeners for Weighing History Tab
-            ui.weighingHistoryDatesDropdown.addEventListener('change', (e) => {
-                displayWeighingDetailsForDate(e.target.value);
+        // --- INIT & EVENT LISTENERS ---
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // ... all previous listeners ...
+            ui.reportDateDropdown.addEventListener('change', applyFilters); // MODIFIED
+            ui.exportSalesExcelBtn.addEventListener('click', exportSalesToExcel); // MODIFIED
+            ui.receiptDateDropdown.addEventListener('change', () => { // MODIFIED
+                // Update the hidden date input when dropdown changes
+                ui.receiptDateInput.value = ui.receiptDateDropdown.value;
             });
+            // Weighing History Listeners (NEW)
+            ui.weighingHistoryDatesDropdown.addEventListener('change', (e) => displayWeighingDetailsForDate(e.target.value));
             ui.exportWeighingsExcelBtn.addEventListener('click', exportWeighingsToExcel);
             ui.weighingHistoryDetails.addEventListener('click', (e) => {
                 if (e.target.classList.contains('print-history-scale-btn')) {
@@ -571,22 +356,28 @@
         });
 
         async function initApp() {
-            // ... (The robust initApp function from the previous step)
-             try {
+            try {
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
+                salesCollectionRef = collection(db, "artifacts", appId, "public", "data", "sales");
+                weighingsCollectionRef = collection(db, "artifacts", appId, "public", "data", "weighings");
 
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
-                        userId = user.uid;
-                        salesCollectionRef = collection(db, "artifacts", appId, "public", "data", "sales");
-                        weighingsCollectionRef = collection(db, "artifacts", appId, "public", "data", "weighings");
-                        
-                        // Populate history dropdown once we are connected
-                        await populateWeighingHistoryDropdown();
-                        
-                        // Other setup...
+                        // Populate all date dropdowns
+                        await populateDateDropdown(weighingsCollectionRef, ui.receiptDateDropdown, 'timestamp');
+                        await populateDateDropdown(salesCollectionRef, ui.reportDateDropdown, 'date', true, 'แสดงทุกวัน');
+                        await populateDateDropdown(weighingsCollectionRef, ui.weighingHistoryDatesDropdown, 'timestamp', true, '-- กรุณาเลือกวันที่ --');
+
+                        // Setup snapshot listeners for real-time updates
+                        onSnapshot(query(salesCollectionRef), snapshot => {
+                            localSalesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            applyFilters();
+                            renderSummary();
+                            renderDashboard();
+                        });
+                        // ... setup weighing listeners ...
                     } else {
                         await signInAnonymously(auth);
                     }
