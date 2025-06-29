@@ -850,15 +850,14 @@
                                      ค่ายางก้อนถ้วย
                                      <span class="block text-xs text-stone-600">น้ำหนัก: ${sale.weight.toFixed(2)} กก. @ ${sale.price.toFixed(2)} บาท/กก.</span>
                                  </td>
-                                 <td class="text-right align-top pt-2">${sale.total.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                 <td class="text-right align-top pt-2">${sale.total.toLocaleString('th-TH', { maximumFractionDigits: 0 })}</td>
                              </tr>
                         </tbody>
                         <tfoot>
-                            <tr class="font-bold"><td class="py-2 text-base">รวมเป็นเงิน</td><td class="text-right text-xl">${sale.total.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td></tr>
+                            <tr class="font-bold"><td class="py-2 text-base">รวมเป็นเงิน</td><td class="text-right text-xl">${sale.total.toLocaleString('th-TH', { maximumFractionDigits: 0 })}</td></tr>
                         </tfoot>
                     </table>
-                     <div class="text-center text-stone-600 mt-2">(${bahttext(sale.total)})</div>
-                    <div class="flex-grow"></div>
+                     <div class="flex-grow"></div>
                     <div class="flex justify-around text-center mt-12">
                          <div><p class="pb-1">........................................</p><p>(ผู้รับเงิน)</p></div>
                          <div><p class="pb-1">........................................</p><p>(ผู้จ่ายเงิน)</p></div>
@@ -904,7 +903,7 @@
                     <td class="px-2 py-2">${sale.seller}</td>
                     <td class="px-2 py-2 text-right">${sale.weight.toFixed(2)}</td>
                     <td class="px-2 py-2 text-right">${sale.price.toFixed(2)}</td>
-                    <td class="px-2 py-2 text-right">${sale.total.toFixed(2)}</td>
+                    <td class="px-2 py-2 text-right">${totalAmount.toLocaleString('th-TH', { maximumFractionDigits: 0 })}</td>
                     <td class="px-2 py-2 text-center">${sale.scaleNumber || ''}</td>
                     <td class="px-2 py-2 border-l"></td>
                 </tr>
@@ -934,7 +933,7 @@
                                <td class="px-2 py-2 text-right" colspan="2">รวมทั้งสิ้น</td>
                                <td class="px-2 py-2 text-right">${totalWeight.toFixed(2)}</td>
                                <td class="px-2 py-2 text-right"></td>
-                               <td class="px-2 py-2 text-right">${totalAmount.toFixed(2)}</td>
+                               <td class="px-2 py-2 text-right">${totalAmount.toLocaleString('th-TH', { maximumFractionDigits: 0 })}</td>
                                <td class="px-2 py-2" colspan="2"></td>
                            </tr>
                         </tfoot>
