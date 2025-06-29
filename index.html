@@ -521,7 +521,6 @@
                 classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-amber-600 text-base font-medium text-white hover:bg-amber-700 sm:w-auto sm:text-sm'
             }]);
         }
-        // ... (The rest of your functions: showConfirm, bahttext, etc., remain the same) ...
         function showConfirm(message, onConfirm) {
             showModal('ยืนยันการดำเนินการ', `<p class="text-sm text-stone-500">${message}</p>`, [{
                 text: 'ยืนยัน',
@@ -801,12 +800,13 @@
                 historyBody.appendChild(row);
             });
         }
-        // --- Other Functions ---
+        
+        // --- [MODIFIED] This function contains the requested changes ---
         function createPrintableReceipt(sale) {
             const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
             // ฟังก์ชันย่อยสำหรับสร้าง HTML ของใบเสร็จหนึ่งใบ
             const generateSingleReceiptHTML = (title, isCopy = false) => `
-                <div class="w-1/2 p-4 text-xs relative" style="border: 2px dashed #9ca3af; height: 14.8cm; float: left; page-break-inside: avoid;">
+                <div class="w-1/2 p-4 text-xs relative" style="border: 2px dashed #9ca3af; height: 12cm; float: left; page-break-inside: avoid;">
                     ${isCopy ? '<div class="watermark">สำเนา</div>' : ''}
                     <div class="text-center mb-4">
                         <h2 class="text-base font-bold">${title}</h2>
@@ -818,7 +818,7 @@
                         <div class="flex justify-between mt-1"><span>วันที่:</span><span>${saleDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</span></div>
                         <div class="flex justify-between mt-1"><span>ตาชั่งที่:</span><span>${sale.scaleNumber || '-'}</span></div>
                     </div>
-                    <div class="mb-2"><strong>ผู้ขาย:</strong> <span class="font-bold text-base">${sale.seller}</span></div>
+                    <div class="mb-2"><strong>ผู้ขาย:</strong> <span class="font-bold text-xl">${sale.seller}</span></div>
                     <table class="w-full my-1">
                         <thead class="border-y border-dotted border-stone-400">
                             <tr><th class="py-1 text-left font-semibold">รายการ</th><th class="py-1 text-right font-semibold">ยอดรวม (บาท)</th></tr>
@@ -844,7 +844,7 @@
             ui.printArea.innerHTML = `<div style="overflow: auto;">${generateSingleReceiptHTML('ใบเสร็จรับเงิน (ต้นฉบับ)')}${generateSingleReceiptHTML('ใบเสร็จรับเงิน (สำเนา)', true)}</div>`;
             window.print();
         }
-        // ... (The rest of your functions: createDailySummaryReport, clearForm, etc. remain the same) ...
+
         function createDailySummaryReport() {
             const reportDateStr = ui.reportDateSelect.value;
             if (!reportDateStr) {
@@ -1203,7 +1203,6 @@
                 }
             ]);
         }
-        // ... (The rest of your functions: exportWeighingHistoryToXLSX, exportToExcel, etc. remain the same) ...
         function exportWeighingHistoryToXLSX(scaleId) {
             if (!localWeighingData) return showAlert('ข้อมูลการวางยางยังไม่ถูกโหลด');
 
