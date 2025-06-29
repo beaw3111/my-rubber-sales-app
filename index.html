@@ -20,7 +20,7 @@
 
         .chart-container {
             position: relative;
-            height: 400px; /* Increased height for better visibility */
+            height: 400px;
             width: 100%;
         }
 
@@ -288,6 +288,27 @@
                         </div>
 
                         <div class="border-t pt-8 mt-8">
+                            <h3 class="text-xl font-semibold text-stone-700 mb-4">สถิติการรับวางยางย้อนหลัง</h3>
+                             <div class="overflow-x-auto rounded-lg border">
+                                <table class="w-full text-sm text-left text-stone-600">
+                                    <thead class="text-xs text-stone-700 uppercase bg-stone-200">
+                                        <tr>
+                                            <th scope="col" class="px-6 py-3">วันที่</th>
+                                            <th scope="col" class="px-6 py-3 text-center">จำนวนรายการ</th>
+                                            <th scope="col" class="px-6 py-3 text-center">จำนวนถุงทั้งหมด</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="weighing-history-body">
+                                        <tr>
+                                            <td colspan="3" class="px-6 py-8 text-center text-stone-400">กำลังโหลดข้อมูล...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+
+                        <div class="border-t pt-8 mt-8">
                             <div class="bg-red-50 border border-red-200 p-6 rounded-xl">
                                 <h3 class="text-lg font-semibold text-red-800">จัดการข้อมูล (การกระทำนี้มีความเสี่ยง)</h3>
                                 <p class="text-sm text-red-600 mt-1 mb-4">ใช้สำหรับล้างข้อมูลการรับวางยางทั้งหมดของวันนี้เมื่อเริ่มการชั่งจริง</p>
@@ -363,17 +384,21 @@
 
         // Global variables
         let localSalesData = [];
-        let dailyStatsChart; // MODIFIED: New chart variable
+        let localWeighingData = []; // NEW: To store all weighing records for history
+        let dailyStatsChart;
         let editingId = null; 
         let editingWeighingId = null;
         let db, auth, userId, salesCollectionRef, weighingsCollectionRef;
         let unsubscribeSales = null;
+        let unsubscribeAllWeighings = null; // NEW: Listener for all weighings
         let unsubscribeWeighings = {};
         let dailyWeighingData = {}; 
         let isPriceLocked = false;
 
         // UI elements mapping
         const ui = {
+            // ... (all previous ui elements)
+            weighingHistoryBody: document.getElementById('weighing-history-body'), // NEW
             appContainer: document.getElementById('app'),
             tabs: document.getElementById('tabs'),
             tabContents: document.querySelectorAll('.tab-content'),
@@ -416,6 +441,8 @@
         };
         
         // --- Core Application Logic (mostly unchanged) ---
+        // switchToTab, showModal, hideModal, showAlert, showConfirm, bahttext, calculateTotals, renderTable, renderSummary
+        // All these functions remain the same as the previous version.
 
         function switchToTab(targetTabId) {
             ui.tabs.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -564,11 +591,8 @@
             ui.summaryTotalPrice.textContent = totalPrice.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
         
-        // --- MODIFIED Dashboard Rendering ---
+        // --- Dashboard and History Rendering ---
         
-        /**
-         * Main function to render the dashboard. Now only calls the new chart function.
-         */
         function renderDashboard() {
             renderDailyStatsChart();
         }
@@ -582,54 +606,29 @@
              return new Date(year, month, day);
         }
 
-        /**
-         * NEW: Renders a combined bar and line chart for daily weight and average price.
-         */
         function renderDailyStatsChart() {
-            // 1. Aggregate data by day
             const statsByDay = localSalesData.reduce((acc, sale) => {
-                const saleDate = sale.date.toDate();
-                const day = saleDate.toISOString().split('T')[0]; // Use YYYY-MM-DD for reliable key
-
+                const day = sale.date.toDate().toISOString().split('T')[0];
                 if (!acc[day]) {
-                    acc[day] = {
-                        totalWeight: 0,
-                        totalValue: 0, // Sum of (weight * price)
-                        transactionCount: 0
-                    };
+                    acc[day] = { totalWeight: 0, totalValue: 0 };
                 }
-
                 acc[day].totalWeight += sale.weight;
-                acc[day].totalValue += sale.total; // total is already weight * price
-                acc[day].transactionCount++;
-                
+                acc[day].totalValue += sale.total;
                 return acc;
             }, {});
 
-            // 2. Sort keys (dates) and prepare data arrays
             const sortedDays = Object.keys(statsByDay).sort((a, b) => new Date(a) - new Date(b));
-            
-            const labels = sortedDays.map(day => {
-                return new Date(day).toLocaleDateString('th-TH', {
-                    year: '2-digit',
-                    month: 'short',
-                    day: 'numeric'
-                });
-            });
-
+            const labels = sortedDays.map(day => new Date(day).toLocaleDateString('th-TH', { year: '2-digit', month: 'short', day: 'numeric' }));
             const weightData = sortedDays.map(day => statsByDay[day].totalWeight);
             const priceData = sortedDays.map(day => {
                 const stats = statsByDay[day];
-                // Calculate weighted average price
                 return stats.totalWeight > 0 ? stats.totalValue / stats.totalWeight : 0;
             });
 
-            // 3. Destroy previous chart instance if it exists
             if (dailyStatsChart) {
                 dailyStatsChart.destroy();
             }
 
-            // 4. Render the new chart
             const canvas = document.getElementById('daily-stats-chart');
             if (canvas && labels.length > 0) {
                 dailyStatsChart = new Chart(canvas.getContext('2d'), {
@@ -640,7 +639,7 @@
                                 type: 'bar',
                                 label: 'ปริมาณยาง (กก.)',
                                 data: weightData,
-                                backgroundColor: 'rgba(217, 119, 6, 0.6)', // Amber color
+                                backgroundColor: 'rgba(217, 119, 6, 0.6)',
                                 borderColor: 'rgb(217, 119, 6)',
                                 yAxisID: 'yWeight',
                             },
@@ -649,7 +648,7 @@
                                 label: 'ราคาเฉลี่ย (บาท)',
                                 data: priceData,
                                 fill: false,
-                                backgroundColor: 'rgba(54, 162, 235, 1)', // Blue color
+                                backgroundColor: 'rgba(54, 162, 235, 1)',
                                 borderColor: 'rgba(54, 162, 235, 1)',
                                 tension: 0.1,
                                 yAxisID: 'yPrice',
@@ -659,44 +658,25 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false,
-                        },
+                        interaction: { mode: 'index', intersect: false },
                         scales: {
-                            x: {
-                                ticks: { font: { family: "'Sarabun', sans-serif" }}
-                            },
-                            yWeight: { // Left Y-axis for Weight
+                            x: { ticks: { font: { family: "'Sarabun', sans-serif" }}},
+                            yWeight: {
                                 type: 'linear',
                                 display: true,
                                 position: 'left',
-                                title: {
-                                    display: true,
-                                    text: 'ปริมาณ (กก.)',
-                                    font: { family: "'Sarabun', sans-serif", size: 14 }
-                                }
+                                title: { display: true, text: 'ปริมาณ (กก.)', font: { family: "'Sarabun', sans-serif", size: 14 }}
                             },
-                            yPrice: { // Right Y-axis for Price
+                            yPrice: {
                                 type: 'linear',
                                 display: true,
                                 position: 'right',
-                                title: {
-                                    display: true,
-                                    text: 'ราคาเฉลี่ย (บาท)',
-                                    font: { family: "'Sarabun', sans-serif", size: 14 }
-                                },
-                                // Hide grid lines for the second y-axis to make it cleaner
-                                grid: {
-                                    drawOnChartArea: false, 
-                                }
+                                title: { display: true, text: 'ราคาเฉลี่ย (บาท)', font: { family: "'Sarabun', sans-serif", size: 14 }},
+                                grid: { drawOnChartArea: false }
                             }
                         },
                         plugins: {
-                            legend: {
-                                position: 'top',
-                                labels: { font: { family: "'Sarabun', sans-serif" }}
-                            },
+                            legend: { position: 'top', labels: { font: { family: "'Sarabun', sans-serif" }}},
                             tooltip: {
                                 titleFont: { family: "'Sarabun', sans-serif" },
                                 bodyFont: { family: "'Sarabun', sans-serif" },
@@ -708,7 +688,55 @@
             }
         }
         
+        /**
+         * NEW: Renders the historical table for weighing data.
+         */
+        function renderWeighingHistory() {
+            const historyBody = ui.weighingHistoryBody;
+            if (!historyBody) return;
+
+            // 1. Aggregate weighing data by day
+            const statsByDay = localWeighingData.reduce((acc, entry) => {
+                const day = entry.timestamp.toDate().toISOString().split('T')[0];
+                if (!acc[day]) {
+                    acc[day] = { totalBags: 0, recordCount: 0 };
+                }
+                acc[day].totalBags += entry.bags;
+                acc[day].recordCount++;
+                return acc;
+            }, {});
+
+            // 2. Sort days and prepare rows
+            const sortedDays = Object.keys(statsByDay).sort((a, b) => new Date(b) - new Date(a)); // Newest first
+
+            historyBody.innerHTML = ''; // Clear previous data
+            if (sortedDays.length === 0) {
+                historyBody.innerHTML = '<tr><td colspan="3" class="px-6 py-8 text-center text-stone-400">ยังไม่มีข้อมูลย้อนหลัง</td></tr>';
+                return;
+            }
+
+            // 3. Create and append table rows
+            sortedDays.forEach(day => {
+                const stats = statsByDay[day];
+                const formattedDate = new Date(day).toLocaleDateString('th-TH', {
+                    year: 'numeric', month: 'long', day: 'numeric'
+                });
+                const row = document.createElement('tr');
+                row.className = 'bg-white border-b hover:bg-stone-50';
+                row.innerHTML = `
+                    <td class="px-6 py-4 font-medium text-stone-900">${formattedDate}</td>
+                    <td class="px-6 py-4 text-center">${stats.recordCount.toLocaleString('th-TH')}</td>
+                    <td class="px-6 py-4 text-center font-bold text-amber-700">${stats.totalBags.toLocaleString('th-TH')}</td>
+                `;
+                historyBody.appendChild(row);
+            });
+        }
+
+        
         // --- Other Functions (Unchanged) ---
+        // createPrintableReceipt, createDailySummaryReport, clearForm, togglePriceLock, handleSave, handleTableClick, updateDateDisplay
+        // createWeighingStationHTML, renderWeighingStations, exportToExcel, saveWeighing, calculateSummaryTotalWeight, etc.
+        // All these functions remain the same as the previous version.
         
         function createPrintableReceipt(sale) {
             const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
@@ -1177,21 +1205,31 @@
                         salesCollectionRef = collection(db, "artifacts", appId, "public", "data", "sales");
                         weighingsCollectionRef = collection(db, "artifacts", appId, "public", "data", "weighings");
 
+                        // Listener for sales data
                         if (unsubscribeSales) unsubscribeSales();
                         unsubscribeSales = onSnapshot(query(salesCollectionRef), (snapshot) => {
                             localSalesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                             localSalesData.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
                             
-                            // Trigger initial render/filter
                             ui.searchBox.dispatchEvent(new Event('input'));
-                            
-                            renderDashboard(); // Renders the new chart
+                            renderDashboard();
                             renderSummary();
                             renderScaleSummaries();
                             populateReportDateSelector();
                         }, (error) => {
-                            showAlert(`เกิดข้อผิดพลาดในการดึงข้อมูล: ${error.message}`);
+                            showAlert(`เกิดข้อผิดพลาดในการดึงข้อมูลการขาย: ${error.message}`);
                         });
+                        
+                        // NEW: Listener for ALL weighing data (for history)
+                        if (unsubscribeAllWeighings) unsubscribeAllWeighings();
+                        unsubscribeAllWeighings = onSnapshot(query(weighingsCollectionRef), (snapshot) => {
+                             localWeighingData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                             renderWeighingHistory(); // Render the new history table
+                        }, (error) => {
+                            showAlert(`เกิดข้อผิดพลาดในการดึงข้อมูลวางยาง: ${error.message}`);
+                        });
+
+                        // Listeners for today's data per scale
                         setupWeighingListeners();
                     } else {
                         try {
