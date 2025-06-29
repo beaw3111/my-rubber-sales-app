@@ -71,11 +71,37 @@
 </head>
 
 <body class="bg-stone-100 text-stone-800">
-    <div id="app" class="container mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
-        <header class="mb-10 text-center">
+
+    <div id="login-screen" class="min-h-screen flex items-center justify-center">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm">
+            <h2 class="text-2xl font-bold text-center text-stone-800 mb-2">ระบบจัดการขายยางก้อนถ้วย</h2>
+            <p class="text-center text-stone-500 mb-6">กรุณาเข้าสู่ระบบ</p>
+            <div class="space-y-4">
+                <div>
+                    <label for="username-input" class="block text-sm font-medium text-stone-600">ชื่อผู้ใช้</label>
+                    <input type="text" id="username-input" class="mt-1 w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500">
+                </div>
+                <div>
+                    <label for="password-input" class="block text-sm font-medium text-stone-600">รหัสผ่าน</label>
+                    <input type="password" id="password-input" class="mt-1 w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500">
+                </div>
+                <p id="login-error" class="text-sm text-red-600 text-center hidden"></p>
+                <button id="login-button" class="w-full bg-amber-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-amber-700 transition-colors">
+                    เข้าสู่ระบบ
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="app" class="container mx-auto max-w-7xl p-4 sm:p-6 lg:p-8 hidden">
+        <header class="relative mb-10 text-center">
             <h1 class="text-4xl font-bold text-stone-900">ระบบจัดการขายยางก้อนถ้วย</h1>
             <p class="text-xl font-semibold text-stone-700 mt-2">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</p>
             <p class="text-stone-600 mt-2">ออกใบเสร็จ บันทึกข้อมูล และดูสรุปยอดขายในที่เดียว</p>
+            
+            <button id="logout-button" class="absolute top-0 right-0 bg-red-500 text-white font-semibold py-2 px-4 rounded-lg shadow hover:bg-red-600 transition-colors no-print">
+                ออกจากระบบ
+            </button>
         </header>
 
         <div class="mb-6 border-b border-stone-300 no-print">
@@ -395,11 +421,18 @@
         let unsubscribeWeighings = {};
         let dailyWeighingData = {};
         let isPriceLocked = false;
+        let isAppInitialized = false; // Flag to check if Firebase is initialized
 
         // UI elements mapping
         const ui = {
-            weighingHistoryBody: document.getElementById('weighing-history-body'), // NEW
+            loginScreen: document.getElementById('login-screen'),
             appContainer: document.getElementById('app'),
+            loginButton: document.getElementById('login-button'),
+            logoutButton: document.getElementById('logout-button'),
+            usernameInput: document.getElementById('username-input'),
+            passwordInput: document.getElementById('password-input'),
+            loginError: document.getElementById('login-error'),
+            weighingHistoryBody: document.getElementById('weighing-history-body'),
             tabs: document.getElementById('tabs'),
             tabContents: document.querySelectorAll('.tab-content'),
             sellerNameInput: document.getElementById('seller-name'),
@@ -464,7 +497,10 @@
                 buttonEl.textContent = btn.text;
                 buttonEl.className = btn.classes;
                 buttonEl.onclick = () => {
-                    hideModal();
+                    // Only hide modal if it's NOT a special case (like re-showing it on error)
+                    if(!btn.noHide) {
+                       hideModal();
+                    }
                     if (btn.onClick) btn.onClick();
                 };
                 ui.modalActions.appendChild(buttonEl);
@@ -1195,11 +1231,14 @@
                         // 5. This code runs when the user clicks "Print" in the modal
                         const selectedDate = document.getElementById('modal-date-select').value;
                         if (!selectedDate) {
+                            // Use a separate alert that doesn't close the main modal
                             showAlert('กรุณาเลือกวันที่ก่อน');
-                            // Re-show the modal by calling the function again
-                            printWeighingHistory(scaleId); 
+                            // Re-show the main modal by calling the function again, but we need to let the old one close first.
+                            setTimeout(() => printWeighingHistory(scaleId), 350); 
                             return;
                         }
+
+                        hideModal(); // Explicitly hide the selection modal
 
                         // Filter the data again for the selected date and sort by time
                         const reportData = scaleData
@@ -1244,7 +1283,8 @@
                 },
                 {
                     text: 'ยกเลิก',
-                    classes: 'mt-3 w-full inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 sm:mt-0 sm:w-auto sm:text-sm'
+                    classes: 'mt-3 w-full inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 sm:mt-0 sm:w-auto sm:text-sm',
+                    onClick: () => hideModal()
                 }
             ]);
         }
@@ -1474,8 +1514,10 @@
                 await batch.commit();
             });
         }
-
-        async function initApp() {
+        
+        async function initializeFirebaseAndAuth() {
+            if (isAppInitialized) return; // Prevent re-initialization
+            
             if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
                 return showAlert('การตั้งค่า Firebase ไม่ถูกต้อง ไม่สามารถเชื่อมต่อฐานข้อมูลได้');
             }
@@ -1486,7 +1528,7 @@
                 db = getFirestore(app);
 
                 onAuthStateChanged(auth, async (user) => {
-                    if (user) {
+                    if (user && !isAppInitialized) {
                         userId = user.uid;
                         salesCollectionRef = collection(db, "artifacts", appId, "public", "data", "sales");
                         weighingsCollectionRef = collection(db, "artifacts", appId, "public", "data", "weighings");
@@ -1495,11 +1537,8 @@
                         if (unsubscribeSales) unsubscribeSales();
                         unsubscribeSales = onSnapshot(query(salesCollectionRef), (snapshot) => {
                             localSalesData = snapshot.docs.map(doc => ({
-                                id: doc.id,
-                                ...doc.data()
-                            }));
+                                id: doc.id, ...doc.data() }));
                             localSalesData.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
-
                             ui.searchBox.dispatchEvent(new Event('input'));
                             renderDashboard();
                             renderSummary();
@@ -1509,32 +1548,32 @@
                             showAlert(`เกิดข้อผิดพลาดในการดึงข้อมูลการขาย: ${error.message}`);
                         });
 
-                        // NEW: Listener for ALL weighing data (for history)
+                        // Listener for ALL weighing data (for history)
                         if (unsubscribeAllWeighings) unsubscribeAllWeighings();
                         unsubscribeAllWeighings = onSnapshot(query(weighingsCollectionRef), (snapshot) => {
                             localWeighingData = snapshot.docs.map(doc => ({
-                                id: doc.id,
-                                ...doc.data()
-                            }));
-                            renderWeighingHistory(); // Render the new history table
+                                id: doc.id, ...doc.data() }));
+                            renderWeighingHistory();
                         }, (error) => {
                             showAlert(`เกิดข้อผิดพลาดในการดึงข้อมูลวางยาง: ${error.message}`);
                         });
 
-                        // Listeners for today's data per scale
                         setupWeighingListeners();
-                    } else {
-                        try {
-                            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                                await signInWithCustomToken(auth, __initial_auth_token);
-                            } else {
-                                await signInAnonymously(auth);
-                            }
-                        } catch (error) {
-                            showAlert(`การยืนยันตัวตนล้มเหลว: ${error.message}`);
-                        }
+                        isAppInitialized = true; // Set flag to true after setup
+                    } else if (!user) {
+                        // Reset if user signs out
+                        isAppInitialized = false;
+                        if(unsubscribeSales) unsubscribeSales();
+                        if(unsubscribeAllWeighings) unsubscribeAllWeighings();
+                        Object.keys(unsubscribeWeighings).forEach(k => unsubscribeWeighings[k]());
                     }
                 });
+                
+                // Try to sign in anonymously if no user is found
+                if (!auth.currentUser) {
+                    await signInAnonymously(auth);
+                }
+                
             } catch (error) {
                 showAlert(`เกิดข้อผิดพลาดในการเริ่มต้นระบบ: ${error.message}`);
             }
@@ -1634,6 +1673,49 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+
+            // --- Login and Session Handling ---
+            const handleLogin = () => {
+                 const username = ui.usernameInput.value.trim();
+                 const password = ui.passwordInput.value.trim();
+
+                 if (username === 'admin' && password === 'as54321') {
+                    ui.loginScreen.classList.add('hidden');
+                    ui.appContainer.classList.remove('hidden');
+                    sessionStorage.setItem('isLoggedIn', 'true');
+                    ui.loginError.classList.add('hidden');
+                    ui.passwordInput.value = '';
+                    initializeFirebaseAndAuth(); // Initialize the main app after successful login
+                 } else {
+                    ui.loginError.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+                    ui.loginError.classList.remove('hidden');
+                    ui.passwordInput.value = '';
+                    ui.passwordInput.focus();
+                 }
+            };
+            
+            if (sessionStorage.getItem('isLoggedIn') === 'true') {
+                ui.loginScreen.classList.add('hidden');
+                ui.appContainer.classList.remove('hidden');
+                initializeFirebaseAndAuth();
+            } else {
+                ui.loginScreen.classList.remove('hidden');
+                ui.appContainer.classList.add('hidden');
+            }
+            
+            ui.loginButton.addEventListener('click', handleLogin);
+            ui.passwordInput.addEventListener('keyup', (event) => {
+                if (event.key === 'Enter') {
+                    handleLogin();
+                }
+            });
+
+            ui.logoutButton.addEventListener('click', () => {
+                sessionStorage.removeItem('isLoggedIn');
+                window.location.reload(); // Simple way to reset state
+            });
+
+            // --- Main App Setup ---
             renderWeighingStations();
 
             ui.tabs.addEventListener('click', (e) => {
@@ -1678,7 +1760,7 @@
 
             ui.receiptDateInput.valueAsDate = new Date();
             updateDateDisplay();
-            initApp();
+            // initApp is now called after successful login
         });
     </script>
 </body>
