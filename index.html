@@ -99,19 +99,30 @@
                             <label for="receipt-date" class="block text-sm font-medium text-stone-600 mb-1">วันที่ <span id="date-display" class="font-normal text-stone-500 ml-2"></span></label>
                             <input type="date" id="receipt-date" class="w-full p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500">
                         </div>
+                        
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-stone-600 mb-1">น้ำหนัก (กก.) - ใส่ได้สูงสุด 5 รายการ</label>
+                            <label class="block text-sm font-medium text-stone-600 mb-1">น้ำหนัก (กก.) - ใส่ได้สูงสุด 10 รายการ</label>
                             <div id="weight-inputs-container" class="grid grid-cols-2 sm:grid-cols-5 gap-4">
                                 <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 1">
                                 <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 2">
                                 <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 3">
                                 <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 4">
                                 <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 5">
+                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 6">
+                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 7">
+                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 8">
+                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 9">
+                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 10">
                             </div>
                         </div>
                         <div class="md:col-span-2">
-                            <label for="price-per-kg" class="block text-sm font-medium text-stone-600 mb-1">ราคาต่อหน่วย (บาท/กก.)</label>
-                            <input type="number" id="price-per-kg" class="w-full p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500" placeholder="0.00">
+                            <div class="relative">
+                                <label for="price-per-kg" class="block text-sm font-medium text-stone-600 mb-1">ราคาต่อหน่วย (บาท/กก.)</label>
+                                <input type="number" id="price-per-kg" class="w-full p-2 border border-stone-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500 transition-colors" placeholder="0.00">
+                                <button id="price-lock-btn" title="ล็อคราคา" class="absolute right-2 bottom-1.5 h-7 w-7 flex items-center justify-center rounded-md text-white bg-gray-400 hover:bg-gray-500">
+                                    <span id="price-lock-icon">🔓</span>
+                                </button>
+                            </div>
                         </div>
                         <div class="md:col-span-2 bg-stone-200 p-4 rounded-lg space-y-3">
                             <div class="flex justify-between items-center">
@@ -327,6 +338,7 @@
         let unsubscribeSales = null; // Function to unsubscribe from sales snapshot listener
         let unsubscribeWeighings = {}; // Stores unsubscribe functions for each weighing scale
         let dailyWeighingData = {}; // Stores daily weighing data by scale ID
+        let isPriceLocked = false; // NEW: State for price lock
 
         // UI elements mapping for easier access
         const ui = {
@@ -339,6 +351,8 @@
             scaleNumberInput: document.getElementById('scale-number'),
             weightInputsContainer: document.getElementById('weight-inputs-container'),
             pricePerKgInput: document.getElementById('price-per-kg'),
+            priceLockBtn: document.getElementById('price-lock-btn'), // NEW: Price lock button
+            priceLockIcon: document.getElementById('price-lock-icon'), // NEW: Price lock icon
             totalWeightEl: document.getElementById('total-weight'),
             totalAmountEl: document.getElementById('total-amount'),
             totalAmountTextEl: document.getElementById('total-amount-text'),
@@ -349,7 +363,7 @@
             printArea: document.getElementById('print-area'),
             reportDateInput: document.getElementById('report-date'),
             printReportBtn: document.getElementById('print-report-btn'),
-            exportExcelBtn: document.getElementById('export-excel-btn'), // NEW: Excel button
+            exportExcelBtn: document.getElementById('export-excel-btn'),
             printDashboardBtn: document.getElementById('print-dashboard-btn'),
             dashboardSection: document.getElementById('dashboard'),
             modal: document.getElementById('modal'),
@@ -698,8 +712,7 @@
          */
         function createPrintableReceipt(sale) {
             const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
-            
-            // --- START: MODIFICATION FOR RECEIPT ---
+
             const generateSingleReceiptHTML = (title) => `
                 <div class="w-1/2 p-4 border border-dashed border-stone-400 h-full flex flex-col text-xs">
                     <div class="text-center mb-4">
@@ -757,8 +770,7 @@
                     </div>
                 </div>
             `;
-            // --- END: MODIFICATION FOR RECEIPT ---
-
+            
             ui.printArea.innerHTML = `
                 <div class="flex gap-4">
                     ${generateSingleReceiptHTML('ใบเสร็จรับเงิน ต้นฉบับ')}
@@ -850,12 +862,46 @@
             ui.scaleNumberInput.value = '';
             const weightInputs = ui.weightInputsContainer.querySelectorAll('.weight-input');
             weightInputs.forEach(input => input.value = '');
-            ui.pricePerKgInput.value = '';
+            
+            // --- START: MODIFICATION FOR PRICE LOCK ---
+            if (!isPriceLocked) {
+                ui.pricePerKgInput.value = '';
+            }
+            // --- END: MODIFICATION FOR PRICE LOCK ---
+
             editingId = null; // Clear editing ID
             ui.saveButton.textContent = 'บันทึกและพิมพ์ใบเสร็จ';
             ui.cancelEditButton.classList.add('hidden');
             calculateTotals(); // Recalculate totals after clearing
         }
+        
+        // --- START: NEW PRICE LOCK FUNCTION ---
+        /**
+         * Toggles the read-only state of the price input field.
+         */
+        function togglePriceLock() {
+            isPriceLocked = !isPriceLocked; // Flip the state
+
+            if (isPriceLocked) {
+                // Lock the input
+                ui.pricePerKgInput.readOnly = true;
+                ui.pricePerKgInput.classList.add('bg-stone-200', 'cursor-not-allowed');
+                ui.priceLockIcon.textContent = '🔒';
+                ui.priceLockBtn.title = 'ปลดล็อคราคา';
+                ui.priceLockBtn.classList.remove('bg-gray-400', 'hover:bg-gray-500');
+                ui.priceLockBtn.classList.add('bg-sky-500', 'hover:bg-sky-600');
+            } else {
+                // Unlock the input
+                ui.pricePerKgInput.readOnly = false;
+                ui.pricePerKgInput.classList.remove('bg-stone-200', 'cursor-not-allowed');
+                ui.priceLockIcon.textContent = '🔓';
+                ui.priceLockBtn.title = 'ล็อคราคา';
+                ui.priceLockBtn.classList.add('bg-gray-400', 'hover:bg-gray-500');
+                ui.priceLockBtn.classList.remove('bg-sky-500', 'hover:bg-sky-600');
+                ui.pricePerKgInput.focus(); // Focus on the input after unlocking
+            }
+        }
+        // --- END: NEW PRICE LOCK FUNCTION ---
 
         /**
          * Handles saving (add or update) a sales record to Firestore.
@@ -895,7 +941,7 @@
                 weights: weightInputs,
                 price,
                 total,
-                timestamp: new Date(), // NEW: Add timestamp for sorting
+                timestamp: new Date(),
                 userId
             };
 
@@ -975,7 +1021,7 @@
                 calculateTotals();
                 ui.saveButton.textContent = 'อัปเดตข้อมูล';
                 ui.cancelEditButton.classList.remove('hidden');
-                window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to top for editing
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             } else if (target.classList.contains('reprint-btn')) {
                 createPrintableReceipt(saleToProcess);
             }
@@ -1075,7 +1121,6 @@
             }
         }
 
-        // --- START: NEW EXPORT TO EXCEL FUNCTION ---
         /**
          * Exports the current sales data to a CSV file.
          */
@@ -1118,8 +1163,7 @@
                 document.body.removeChild(link);
             }
         }
-        // --- END: NEW EXPORT TO EXCEL FUNCTION ---
-
+        
         /**
          * Saves a new weighing record or updates an existing one to Firestore.
          * @param {Event} event - The click event from the save button.
@@ -1597,6 +1641,11 @@
             // Button event listeners for receipt section
             ui.saveButton.addEventListener('click', handleSave);
             ui.cancelEditButton.addEventListener('click', clearForm);
+            
+            // --- START: ADDED EVENT LISTENER FOR PRICE LOCK ---
+            ui.priceLockBtn.addEventListener('click', togglePriceLock);
+            // --- END: ADDED EVENT LISTENER FOR PRICE LOCK ---
+
 
             // Event listener for sales table actions (delete, edit, reprint)
             ui.salesTableBody.addEventListener('click', handleTableClick);
@@ -1604,10 +1653,8 @@
             // Event listener for printing daily report
             ui.printReportBtn.addEventListener('click', createDailySummaryReport);
             
-            // --- START: ADDED EVENT LISTENER ---
             // Event listener for exporting to Excel
             ui.exportExcelBtn.addEventListener('click', exportToExcel);
-            // --- END: ADDED EVENT LISTENER ---
 
             // Event listener for printing dashboard
             if (ui.printDashboardBtn) {
