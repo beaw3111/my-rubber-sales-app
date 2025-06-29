@@ -5,6 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบบันทึกการขายยางก้อนถ้วย</title>
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://www.gstatic.com https://www.google-analytics.com;
+        style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com;
+        font-src 'self' https://fonts.gstatic.com;
+        img-src 'self' data: https://www.google-analytics.com;
+        connect-src 'self' https://coopksb001.firebaseapp.com https://coopksb001.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.google-analytics.com;
+        frame-src 'none';
+        object-src 'none';
+    ">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
@@ -78,8 +89,8 @@
             <p class="text-center text-stone-500 mb-6">กรุณาเข้าสู่ระบบ</p>
             <div class="space-y-4">
                 <div>
-                    <label for="username-input" class="block text-sm font-medium text-stone-600">ชื่อผู้ใช้</label>
-                    <input type="text" id="username-input" value="admin" class="mt-1 w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500">
+                    <label for="username-input" class="block text-sm font-medium text-stone-600">อีเมลผู้ใช้</label>
+                    <input type="email" id="username-input" class="mt-1 w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500" placeholder="เช่น admin@example.com">
                 </div>
                 <div>
                     <label for="password-input" class="block text-sm font-medium text-stone-600">รหัสผ่าน</label>
@@ -375,15 +386,17 @@
     <script type="module">
         import {
             initializeApp
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import {
             getAnalytics
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-analytics.js";
         import {
             getAuth,
-            signInAnonymously,
+            signInWithEmailAndPassword,
+            updatePassword,
+            signOut, // Added signOut
             onAuthStateChanged
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
         import {
             getFirestore,
             collection,
@@ -397,10 +410,13 @@
             getDocs,
             getDoc,
             writeBatch
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"; // Changed version to 9.6.1
 
-        // Firebase configuration (provided by the environment or a default)
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+
+        // Firebase configuration
+        // In a production environment, these should be loaded from environment variables.
+        // For this self-contained HTML file, they are hardcoded.
+        const firebaseConfig = {
             apiKey: "AIzaSyCNVxG6s46SRXOYAeT0rJHAtz_-3IPUJNE",
             authDomain: "coopksb001.firebaseapp.com",
             projectId: "coopksb001",
@@ -413,8 +429,8 @@
         // Application ID (provided by the environment or a default)
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'cup-rubber-sales-app';
 
-        // --- NEW: Password Management ---
-        let currentPassword = localStorage.getItem('customPassword') || 'as54321';
+        // --- OLD: Password Management (Removed as Firebase Auth will handle) ---
+        // let currentPassword = localStorage.getItem('customPassword') || 'as54321';
 
         // Global variables
         let localSalesData = [];
@@ -436,7 +452,7 @@
             appContainer: document.getElementById('app'),
             loginButton: document.getElementById('login-button'),
             logoutButton: document.getElementById('logout-button'),
-            usernameInput: document.getElementById('username-input'),
+            usernameInput: document.getElementById('username-input'), // Now acts as email input
             passwordInput: document.getElementById('password-input'),
             loginError: document.getElementById('login-error'),
             changePasswordBtn: document.getElementById('change-password-btn'),
@@ -533,8 +549,6 @@
             }]);
         }
         
-        // ... (The rest of your functions: showConfirm, bahttext, etc., remain the same) ...
-
         function showConfirm(message, onConfirm) {
             showModal('ยืนยันการดำเนินการ', `<p class="text-sm text-stone-500">${message}</p>`, [{
                 text: 'ยืนยัน',
@@ -865,8 +879,6 @@
             ui.printArea.innerHTML = `<div class="flex gap-0">${generateSingleReceiptHTML('ใบเสร็จรับเงิน (ต้นฉบับ)')}${generateSingleReceiptHTML('ใบเสร็จรับเงิน (สำเนา)')}</div>`;
             window.print();
         }
-
-        // ... (The rest of your functions: createDailySummaryReport, clearForm, etc. remain the same) ...
 
         function createDailySummaryReport() {
             const reportDateStr = ui.reportDateSelect.value;
@@ -1238,8 +1250,6 @@
             ]);
         }
         
-        // ... (The rest of your functions: exportWeighingHistoryToXLSX, exportToExcel, etc. remain the same) ...
-
         function exportWeighingHistoryToXLSX(scaleId) {
             if (!localWeighingData) return showAlert('ข้อมูลการวางยางยังไม่ถูกโหลด');
 
@@ -1476,7 +1486,7 @@
                 db = getFirestore(app);
 
                 onAuthStateChanged(auth, async (user) => {
-                    if (user && !isAppInitialized) {
+                    if (user && sessionStorage.getItem('isAuthenticated') === 'true' && !isAppInitialized) {
                         userId = user.uid;
                         salesCollectionRef = collection(db, "artifacts", appId, "public", "data", "sales");
                         weighingsCollectionRef = collection(db, "artifacts", appId, "public", "data", "weighings");
@@ -1502,17 +1512,23 @@
 
                         setupWeighingListeners();
                         isAppInitialized = true;
-                    } else if (!user) {
+                        ui.loginScreen.classList.add('hidden');
+                        ui.appContainer.classList.remove('hidden');
+                    } else if (!user || sessionStorage.getItem('isAuthenticated') !== 'true') { // If no user or not authenticated
                         isAppInitialized = false;
+                        sessionStorage.removeItem('isAuthenticated'); // Clear session
                         if(unsubscribeSales) unsubscribeSales();
                         if(unsubscribeAllWeighings) unsubscribeAllWeighings();
                         Object.keys(unsubscribeWeighings).forEach(k => unsubscribeWeighings[k]());
+                        ui.loginScreen.classList.remove('hidden');
+                        ui.appContainer.classList.add('hidden');
                     }
                 });
                 
-                if (!auth.currentUser) {
-                    await signInAnonymously(auth);
-                }
+                // No anonymous sign-in at startup with full auth
+                // if (!auth.currentUser) {
+                //     await signInAnonymously(auth);
+                // }
                 
             } catch (error) {
                 showAlert(`เกิดข้อผิดพลาดในการเริ่มต้นระบบ: ${error.message}`);
@@ -1613,7 +1629,7 @@
         }
         
         // --- NEW: Change Password Modal Logic ---
-        function promptChangePassword() {
+        async function promptChangePassword() {
             const modalContentHTML = `
                 <div class="space-y-4 text-left">
                     <div>
@@ -1636,19 +1652,15 @@
                 {
                     text: 'ยืนยันการเปลี่ยนแปลง',
                     classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-amber-600 text-base font-medium text-white hover:bg-amber-700 sm:ml-3 sm:w-auto sm:text-sm',
-                    onClick: () => {
+                    onClick: async () => { // Made onClick async
                         const oldPassword = document.getElementById('old-password-input').value;
                         const newPassword = document.getElementById('new-password-input').value;
                         const confirmPassword = document.getElementById('confirm-password-input').value;
                         const errorEl = document.getElementById('change-password-error');
-                        
-                        if (oldPassword !== currentPassword) {
-                            errorEl.textContent = 'รหัสผ่านเก่าไม่ถูกต้อง';
-                            errorEl.classList.remove('hidden');
-                            return false; // Prevent modal from closing
-                        }
-                        if (newPassword.length < 4) {
-                             errorEl.textContent = 'รหัสผ่านใหม่ต้องมีอย่างน้อย 4 ตัวอักษร';
+                        errorEl.classList.add('hidden'); // Clear previous error
+
+                        if (newPassword.length < 6) { // Firebase minimum password length is 6
+                             errorEl.textContent = 'รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร';
                              errorEl.classList.remove('hidden');
                              return false;
                         }
@@ -1658,11 +1670,45 @@
                             return false;
                         }
 
-                        // Success
-                        localStorage.setItem('customPassword', newPassword);
-                        currentPassword = newPassword;
-                        showAlert('เปลี่ยนรหัสผ่านสำเร็จแล้ว');
-                        return true; // Allow modal to close
+                        try {
+                            const user = auth.currentUser;
+                            if (!user) {
+                                throw new Error('ไม่พบผู้ใช้งาน กรุณาเข้าสู่ระบบใหม่');
+                            }
+
+                            // Re-authenticate user with old password
+                            const credential = signInWithEmailAndPassword(auth, user.email, oldPassword);
+                            await credential; // Await the re-authentication
+
+                            // Update password
+                            await updatePassword(user, newPassword);
+                            
+                            // Update last changed timestamp in Firestore
+                            await updateDoc(doc(db, "adminUsers", user.uid), {
+                                passwordLastChanged: new Date()
+                            });
+
+                            showAlert('เปลี่ยนรหัสผ่านสำเร็จแล้ว');
+                            return true; // Allow modal to close
+                        } catch (error) {
+                            console.error("Change password error:", error);
+                            // Specific Firebase error handling
+                            let errorMessage = 'เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน';
+                            if (error.code === 'auth/wrong-password') {
+                                errorMessage = 'รหัสผ่านเก่าไม่ถูกต้อง';
+                            } else if (error.code === 'auth/user-not-found') {
+                                errorMessage = 'ไม่พบผู้ใช้';
+                            } else if (error.code === 'auth/invalid-email') {
+                                errorMessage = 'รูปแบบอีเมลไม่ถูกต้อง';
+                            } else if (error.code === 'auth/requires-recent-login') {
+                                errorMessage = 'การดำเนินการนี้ต้องมีการเข้าสู่ระบบล่าสุด กรุณาลองเข้าสู่ระบบอีกครั้งแล้วเปลี่ยนรหัสผ่าน';
+                            } else if (error.message) {
+                                errorMessage = error.message;
+                            }
+                            errorEl.textContent = errorMessage;
+                            errorEl.classList.remove('hidden');
+                            return false; // Prevent modal from closing
+                        }
                     }
                 },
                 {
@@ -1673,48 +1719,80 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            initializeFirebaseAndAuth(); // Initialize Firebase and check auth state immediately
 
             // --- Login and Session Handling ---
-            const handleLogin = () => {
-                 const username = ui.usernameInput.value.trim();
+            const handleLoginAttempt = async () => { // Made handleLoginAttempt async
+                 const email = ui.usernameInput.value.trim(); // Now email
                  const password = ui.passwordInput.value.trim();
 
-                 if (username === 'admin' && password === currentPassword) {
-                    ui.loginScreen.classList.add('hidden');
-                    ui.appContainer.classList.remove('hidden');
-                    sessionStorage.setItem('isLoggedIn', 'true');
-                    ui.loginError.classList.add('hidden');
-                    ui.passwordInput.value = '';
-                    if (!isAppInitialized) {
-                       initializeFirebaseAndAuth();
+                 if (!email || !password) {
+                    ui.loginError.textContent = 'กรุณากรอกอีเมลและรหัสผ่าน';
+                    ui.loginError.classList.remove('hidden');
+                    return;
+                 }
+
+                 try {
+                    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                    const user = userCredential.user;
+                    
+                    // Check if the user is in the adminUsers collection
+                    const docRef = doc(db, "adminUsers", user.uid);
+                    const docSnap = await getDoc(docRef);
+                    
+                    if (docSnap.exists()) {
+                      // Login successful and user is admin
+                      sessionStorage.setItem('isAuthenticated', 'true');
+                      // onAuthStateChanged will handle UI display
+                      ui.loginError.classList.add('hidden');
+                      ui.passwordInput.value = '';
+                    } else {
+                      // User is authenticated but not an admin
+                      await signOut(auth); // Sign out non-admin user
+                      ui.loginError.textContent = 'ไม่มีสิทธิ์เข้าถึงระบบนี้';
+                      ui.loginError.classList.remove('hidden');
+                      ui.passwordInput.value = '';
                     }
-                 } else {
-                    ui.loginError.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+                 } catch (error) {
+                    console.error("Login error:", error);
+                    let errorMessage = 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ';
+                    if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                        errorMessage = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
+                    } else if (error.code === 'auth/invalid-email') {
+                        errorMessage = 'รูปแบบอีเมลไม่ถูกต้อง';
+                    } else if (error.message) {
+                        errorMessage = error.message;
+                    }
+                    ui.loginError.textContent = errorMessage;
                     ui.loginError.classList.remove('hidden');
                     ui.passwordInput.value = '';
                     ui.passwordInput.focus();
                  }
             };
             
-            if (sessionStorage.getItem('isLoggedIn') === 'true') {
+            // Initial check for authentication state
+            // onAuthStateChanged in initializeFirebaseAndAuth handles this after DOMContentLoaded
+            if (sessionStorage.getItem('isAuthenticated') === 'true') {
                 ui.loginScreen.classList.add('hidden');
                 ui.appContainer.classList.remove('hidden');
-                initializeFirebaseAndAuth();
             } else {
                 ui.loginScreen.classList.remove('hidden');
                 ui.appContainer.classList.add('hidden');
             }
             
-            ui.loginButton.addEventListener('click', handleLogin);
+            ui.loginButton.addEventListener('click', handleLoginAttempt);
             ui.passwordInput.addEventListener('keyup', (event) => {
                 if (event.key === 'Enter') {
-                    handleLogin();
+                    handleLoginAttempt();
                 }
             });
 
-            ui.logoutButton.addEventListener('click', () => {
-                sessionStorage.removeItem('isLoggedIn');
-                window.location.reload();
+            ui.logoutButton.addEventListener('click', async () => { // Made async for signOut
+                sessionStorage.removeItem('isAuthenticated');
+                if (auth.currentUser) {
+                    await signOut(auth); // Sign out from Firebase
+                }
+                // onAuthStateChanged will handle redirect to login screen
             });
             
             ui.changePasswordBtn.addEventListener('click', promptChangePassword);
