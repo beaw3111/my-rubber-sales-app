@@ -1158,7 +1158,7 @@
         }
 
         /**
-         * Exports the current sales data to an XLSX file.
+         * Exports the current sales data to an XLSX file with each day in a separate tab.
          */
         function exportToExcel() {
             if (localSalesData.length === 0) {
@@ -1166,87 +1166,75 @@
                 return;
             }
 
-            // Create a sorted copy for export
-            const sortedData = [...localSalesData].sort((a, b) => {
-                const dateA = a.date.toDate();
-                const dateB = b.date.toDate();
+            // 1. Group sales data by date
+            const salesByDate = localSalesData.reduce((acc, sale) => {
+                const d = sale.date.toDate();
+                const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-                // Compare by date first (descending)
-                if (dateB.getTime() !== dateA.getTime()) {
-                    return dateB.getTime() - dateA.getTime();
+                if (!acc[dateKey]) {
+                    acc[dateKey] = [];
                 }
+                acc[dateKey].push(sale);
+                return acc;
+            }, {});
 
-                // If dates are the same, sort by queue number (ascending)
-                return (a.dailyQueueNumber || 0) - (b.dailyQueueNumber || 0);
-            });
-
-            const headers = ['คิว', 'วันที่', 'ชื่อผู้ขาย', 'น้ำหนัก (กก.)', 'ราคา/หน่วย (บาท)', 'ยอดรวม (บาท)', 'ตาชั่งที่'];
-
-            // Prepare data for SheetJS, starting with headers
-            const exportData = [headers];
-
-            // Add data rows
-            sortedData.forEach((sale) => {
-                const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
-                const row = [
-                    sale.dailyQueueNumber || '',
-                    saleDate.toLocaleDateString('th-TH'),
-                    sale.seller,
-                    sale.weight,
-                    sale.price,
-                    sale.total,
-                    sale.scaleNumber || ''
-                ];
-                exportData.push(row);
-            });
-
-            // Create a new workbook and a worksheet
+            // 2. Create a new workbook
             const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.aoa_to_sheet(exportData);
 
-            // Set column widths for better readability
-            ws['!cols'] = [{
-                wch: 5
-            }, // คิว
-                {
-                    wch: 15
-                }, // วันที่
-                {
-                    wch: 25
-                }, // ชื่อผู้ขาย
-                {
-                    wch: 15
-                }, // น้ำหนัก (กก.)
-                {
-                    wch: 15
-                }, // ราคา/หน่วย (บาท)
-                {
-                    wch: 15
-                }, // ยอดรวม (บาท)
-                {
-                    wch: 10
-                } // ตาชั่งที่
-            ];
-            
-            // Format number columns (D, E, F) to have 2 decimal places
-            for (let R = 1; R < exportData.length; ++R) {
-                for (let C of[3, 4, 5]) { // Columns D, E, F
-                    const cell_address = {c: C, r: R};
-                    const cell_ref = XLSX.utils.encode_cell(cell_address);
-                    if (ws[cell_ref]) {
-                        ws[cell_ref].t = 'n'; // Set type to number
-                        ws[cell_ref].z = '#,##0.00'; // Set number format
+            // 3. Get the dates and sort them so tabs are in chronological order (newest first)
+            const sortedDates = Object.keys(salesByDate).sort((a, b) => new Date(b) - new Date(a));
+
+            // 4. Create a sheet for each day
+            sortedDates.forEach(dateKey => {
+                // a. Get data for the day and sort it by queue number (ascending)
+                const daySales = salesByDate[dateKey].sort((a, b) => (a.dailyQueueNumber || 0) - (b.dailyQueueNumber || 0));
+
+                // b. Prepare headers and rows for the sheet
+                const headers = ['คิว', 'วันที่', 'ชื่อผู้ขาย', 'น้ำหนัก (กก.)', 'ราคา/หน่วย (บาท)', 'ยอดรวม (บาท)', 'ตาชั่งที่'];
+                const exportData = [headers];
+
+                daySales.forEach(sale => {
+                    const saleDate = sale.date.toDate();
+                    const row = [
+                        sale.dailyQueueNumber || '',
+                        saleDate.toLocaleDateString('th-TH'),
+                        sale.seller,
+                        sale.weight,
+                        sale.price,
+                        sale.total,
+                        sale.scaleNumber || ''
+                    ];
+                    exportData.push(row);
+                });
+
+                // c. Create worksheet
+                const ws = XLSX.utils.aoa_to_sheet(exportData);
+
+                // d. Apply formatting (column widths and number formats)
+                ws['!cols'] = [{ wch: 5 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 10 }];
+                
+                for (let R = 1; R < exportData.length; ++R) {
+                    for (let C of [3, 4, 5]) { // Columns D, E, F
+                        const cell_address = { c: C, r: R };
+                        const cell_ref = XLSX.utils.encode_cell(cell_address);
+                        if (ws[cell_ref]) {
+                            ws[cell_ref].t = 'n';
+                            ws[cell_ref].z = '#,##0.00';
+                        }
                     }
                 }
-            }
 
+                // e. Create a valid sheet name from the date key (e.g., 29-06-25)
+                const dateParts = dateKey.split('-');
+                const sheetName = `${dateParts[2]}-${dateParts[1]}-${dateParts[0].substring(2)}`;
 
-            // Append the worksheet to the workbook
-            XLSX.utils.book_append_sheet(wb, ws, 'SalesData');
+                // f. Append the sheet to the workbook
+                XLSX.utils.book_append_sheet(wb, ws, sheetName);
+            });
 
-            // Generate the filename and trigger the download
+            // 5. Generate the filename and trigger the download
             const today = new Date().toISOString().slice(0, 10);
-            XLSX.writeFile(wb, `sales-report-${today}.xlsx`);
+            XLSX.writeFile(wb, `daily-sales-report-${today}.xlsx`);
         }
 
         /**
