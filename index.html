@@ -20,7 +20,7 @@
 
         .chart-container {
             position: relative;
-            height: 350px;
+            height: 400px; /* Increased height for better visibility */
             width: 100%;
         }
 
@@ -93,7 +93,7 @@
 
         <main>
             <div id="tab-receipt" class="tab-content">
-                <section id="receipt-generator" class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                 <section id="receipt-generator" class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
                     <h2 class="text-2xl font-bold mb-2 border-b pb-3 text-stone-800">1. กรอกข้อมูลเพื่อออกใบเสร็จ</h2>
                     <p class="text-sm text-stone-500 mt-2 mb-6">ส่วนนี้คือศูนย์กลางการทำงาน สำหรับบันทึกข้อมูลการขาย ระบบจะคำนวณยอดรวมให้อัตโนมัติ และเมื่อบันทึกข้อมูลแล้วจะสร้างใบเสร็จสำหรับพิมพ์ได้ทันที</p>
                     
@@ -225,7 +225,7 @@
                     </div>
                 </section>
             </div>
-
+            
             <div id="tab-dashboard" class="tab-content">
                 <section id="dashboard" class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
                     <div class="flex justify-between items-center mb-2 border-b pb-3 no-print">
@@ -254,15 +254,9 @@
 
                     <div class="space-y-12">
                          <div class="border rounded-xl p-6 shadow-sm">
-                            <h3 class="font-bold text-center mb-4 text-stone-700 text-xl">แนวโน้มยอดขายรายวัน</h3>
+                            <h3 class="font-bold text-center mb-4 text-stone-700 text-xl">สถิติปริมาณและราคายางรายวัน</h3>
                             <div class="chart-container mx-auto">
-                                <canvas id="daily-sales-chart"></canvas>
-                            </div>
-                        </div>
-                        <div class="border rounded-xl p-6 shadow-sm">
-                            <h3 class="font-bold text-center mb-4 text-stone-700 text-xl">สัดส่วนยอดขายตามผู้ขาย</h3>
-                            <div class="chart-container mx-auto">
-                                <canvas id="sales-by-seller-chart"></canvas>
+                                <canvas id="daily-stats-chart"></canvas>
                             </div>
                         </div>
                     </div>
@@ -325,10 +319,6 @@
         </div>
     </div>
     
-    <div class="hidden">
-      <p id="summary-daily-weight">0.00</p>
-    </div>
-    
     <script type="module">
        import {
             initializeApp
@@ -371,18 +361,18 @@
         // Application ID (provided by the environment or a default)
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'cup-rubber-sales-app';
 
-        // Global variables for sales and weighing data
+        // Global variables
         let localSalesData = [];
-        let salesBySellerChart, dailySalesChart;
-        let editingId = null; // ID of the sale being edited
-        let editingWeighingId = null; // ID of the weighing record being edited
+        let dailyStatsChart; // MODIFIED: New chart variable
+        let editingId = null; 
+        let editingWeighingId = null;
         let db, auth, userId, salesCollectionRef, weighingsCollectionRef;
-        let unsubscribeSales = null; // Function to unsubscribe from sales snapshot listener
-        let unsubscribeWeighings = {}; // Stores unsubscribe functions for each weighing scale
-        let dailyWeighingData = {}; // Stores daily weighing data by scale ID
+        let unsubscribeSales = null;
+        let unsubscribeWeighings = {};
+        let dailyWeighingData = {}; 
         let isPriceLocked = false;
 
-        // UI elements mapping for easier access
+        // UI elements mapping
         const ui = {
             appContainer: document.getElementById('app'),
             tabs: document.getElementById('tabs'),
@@ -415,7 +405,6 @@
             summaryTotalSellers: document.getElementById('summary-total-sellers'),
             summaryTotalWeight: document.getElementById('summary-total-weight'),
             summaryTotalPrice: document.getElementById('summary-total-price'),
-            summaryDailyWeight: document.getElementById('summary-daily-weight'),
             summaryTotalBags: document.getElementById('summary-total-bags'),
             summaryMultiplierWeight: document.getElementById('summary-multiplier-weight'),
             summaryCalculatedWeight: document.getElementById('summary-calculated-weight'),
@@ -425,11 +414,9 @@
             summaryTodayTotalWeight: document.getElementById('summary-today-total-weight'),
             summaryTodayTotalAmount: document.getElementById('summary-today-total-amount'), 
         };
+        
+        // --- Core Application Logic (mostly unchanged) ---
 
-        /**
-         * Switches the active tab view.
-         * @param {string} targetTabId - The ID of the tab content to display (e.g., 'tab-receipt').
-         */
         function switchToTab(targetTabId) {
             ui.tabs.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             ui.tabContents.forEach(content => content.classList.remove('active'));
@@ -442,17 +429,11 @@
                 targetContent.classList.add('active');
             }
         }
-        
-        /**
-         * Displays a modal dialog with a title, message, and customizable buttons.
-         * @param {string} title - The title of the modal.
-         * @param {string} message - The message content of the modal.
-         * @param {Array<Object>} buttons - An array of button configurations.
-         */
+
         function showModal(title, message, buttons) {
             ui.modalTitle.textContent = title;
-            ui.modalMessage.innerHTML = message; // Use innerHTML to allow for simple formatting
-            ui.modalActions.innerHTML = ''; // Clear previous buttons
+            ui.modalMessage.innerHTML = message;
+            ui.modalActions.innerHTML = '';
             buttons.forEach(btn => {
                 const buttonEl = document.createElement('button');
                 buttonEl.textContent = btn.text;
@@ -470,9 +451,6 @@
             }, 10);
         }
 
-        /**
-         * Hides the currently displayed modal.
-         */
         function hideModal() {
             ui.modal.classList.add('opacity-0');
             ui.modal.querySelector('.modal-content').classList.add('scale-95');
@@ -496,7 +474,7 @@
                 classes: 'mt-3 w-full inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 sm:mt-0 sm:w-auto sm:text-sm'
             }]);
         }
-
+        
         function bahttext(number) {
             number = Number(number).toFixed(2);
             let [integer, fraction] = number.split('.');
@@ -528,7 +506,7 @@
             if (!fracText && intText) fracText = 'ถ้วน';
             return intText + fracText;
         }
-
+        
         function calculateTotals() {
             let totalWeight = 0;
             const weightInputs = ui.weightInputsContainer.querySelectorAll('.weight-input');
@@ -541,7 +519,7 @@
             ui.totalAmountEl.textContent = totalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             ui.totalAmountTextEl.textContent = bahttext(totalAmount);
         }
-
+        
         function renderTable(dataToRender) {
             ui.salesTableBody.innerHTML = '';
             if (dataToRender.length === 0) {
@@ -570,7 +548,7 @@
                 ui.salesTableBody.appendChild(row);
             });
         }
-
+        
         function renderSummary() {
             if (!localSalesData || localSalesData.length === 0) {
                 ui.summaryTotalSellers.textContent = '0';
@@ -585,61 +563,14 @@
             ui.summaryTotalWeight.textContent = totalWeight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             ui.summaryTotalPrice.textContent = totalPrice.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
-
-        function renderDashboard() {
-            renderSalesBySellerChart();
-            renderDailySalesChart();
-        }
         
-        function getChartColors(count) {
-             const baseColors = [
-                '#f59e0b', '#d97706', '#b45309', '#fcd34d', '#fbbf24', '#ea580c', '#c2410c',
-                '#fef3c7', '#fed7aa', '#ffedd5', '#fde68a', '#fecaca', '#fee2e2'
-            ];
-            let colors = [];
-            for (let i = 0; i < count; i++) {
-                colors.push(baseColors[i % baseColors.length]);
-            }
-            return colors;
-        }
-
-        function renderSalesBySellerChart() {
-            const salesBySeller = localSalesData.reduce((acc, sale) => {
-                acc[sale.seller] = (acc[sale.seller] || 0) + sale.total;
-                return acc;
-            }, {});
-            const sortedSellers = Object.entries(salesBySeller).sort(([, a], [, b]) => b - a);
-            const topSellers = sortedSellers.slice(0, 10);
-            const otherTotal = sortedSellers.slice(10).reduce((acc, [, total]) => acc + total, 0);
-            const labels = topSellers.map(([seller]) => seller);
-            const data = topSellers.map(([, total]) => total);
-            if (otherTotal > 0) {
-                labels.push('อื่นๆ');
-                data.push(otherTotal);
-            }
-
-            if (salesBySellerChart) salesBySellerChart.destroy();
-            const canvas = document.getElementById('sales-by-seller-chart');
-            if (canvas && data.length > 0) {
-                salesBySellerChart = new Chart(canvas.getContext('2d'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'ยอดขาย',
-                            data: data,
-                            backgroundColor: getChartColors(labels.length),
-                            borderColor: '#ffffff',
-                            borderWidth: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { position: 'bottom', labels: {font: { family: "'Sarabun', sans-serif"}} } }
-                    }
-                });
-            }
+        // --- MODIFIED Dashboard Rendering ---
+        
+        /**
+         * Main function to render the dashboard. Now only calls the new chart function.
+         */
+        function renderDashboard() {
+            renderDailyStatsChart();
         }
         
         function parseThaiDate(dateString) {
@@ -647,47 +578,137 @@
              const day = parseInt(parts[0]);
              const monthMap = { 'ม.ค.': 0, 'ก.พ.': 1, 'มี.ค.': 2, 'เม.ย.': 3, 'พ.ค.': 4, 'มิ.ย.': 5, 'ก.ค.': 6, 'ส.ค.': 7, 'ก.ย.': 8, 'ต.ค.': 9, 'พ.ย.': 10, 'ธ.ค.': 11 };
              const month = monthMap[parts[1]];
-             // Correctly handle BE to CE conversion
              const year = parseInt(parts[2]) - 543;
              return new Date(year, month, day);
         }
 
-        function renderDailySalesChart() {
-            const salesByDay = localSalesData.reduce((acc, sale) => {
+        /**
+         * NEW: Renders a combined bar and line chart for daily weight and average price.
+         */
+        function renderDailyStatsChart() {
+            // 1. Aggregate data by day
+            const statsByDay = localSalesData.reduce((acc, sale) => {
                 const saleDate = sale.date.toDate();
-                const day = saleDate.toLocaleDateString('th-TH', { year: '2-digit', month: 'short', day: 'numeric' });
-                acc[day] = (acc[day] || 0) + sale.total;
+                const day = saleDate.toISOString().split('T')[0]; // Use YYYY-MM-DD for reliable key
+
+                if (!acc[day]) {
+                    acc[day] = {
+                        totalWeight: 0,
+                        totalValue: 0, // Sum of (weight * price)
+                        transactionCount: 0
+                    };
+                }
+
+                acc[day].totalWeight += sale.weight;
+                acc[day].totalValue += sale.total; // total is already weight * price
+                acc[day].transactionCount++;
+                
                 return acc;
             }, {});
 
-            const sortedLabels = Object.keys(salesByDay).sort((a, b) => parseThaiDate(a) - parseThaiDate(b));
-            const data = sortedLabels.map(label => salesByDay[label]);
-            if (dailySalesChart) dailySalesChart.destroy();
-            const canvas = document.getElementById('daily-sales-chart');
-            if (canvas && data.length > 0) {
-                dailySalesChart = new Chart(canvas.getContext('2d'), {
-                    type: 'line',
+            // 2. Sort keys (dates) and prepare data arrays
+            const sortedDays = Object.keys(statsByDay).sort((a, b) => new Date(a) - new Date(b));
+            
+            const labels = sortedDays.map(day => {
+                return new Date(day).toLocaleDateString('th-TH', {
+                    year: '2-digit',
+                    month: 'short',
+                    day: 'numeric'
+                });
+            });
+
+            const weightData = sortedDays.map(day => statsByDay[day].totalWeight);
+            const priceData = sortedDays.map(day => {
+                const stats = statsByDay[day];
+                // Calculate weighted average price
+                return stats.totalWeight > 0 ? stats.totalValue / stats.totalWeight : 0;
+            });
+
+            // 3. Destroy previous chart instance if it exists
+            if (dailyStatsChart) {
+                dailyStatsChart.destroy();
+            }
+
+            // 4. Render the new chart
+            const canvas = document.getElementById('daily-stats-chart');
+            if (canvas && labels.length > 0) {
+                dailyStatsChart = new Chart(canvas.getContext('2d'), {
                     data: {
-                        labels: sortedLabels,
-                        datasets: [{
-                            label: 'ยอดขายรวมรายวัน',
-                            data: data,
-                            fill: true,
-                            backgroundColor: 'rgba(217, 119, 6, 0.1)',
-                            borderColor: 'rgb(217, 119, 6)',
-                            tension: 0.2,
-                            pointBackgroundColor: 'rgb(217, 119, 6)',
-                            pointRadius: 4
-                        }]
+                        labels: labels,
+                        datasets: [
+                            {
+                                type: 'bar',
+                                label: 'ปริมาณยาง (กก.)',
+                                data: weightData,
+                                backgroundColor: 'rgba(217, 119, 6, 0.6)', // Amber color
+                                borderColor: 'rgb(217, 119, 6)',
+                                yAxisID: 'yWeight',
+                            },
+                            {
+                                type: 'line',
+                                label: 'ราคาเฉลี่ย (บาท)',
+                                data: priceData,
+                                fill: false,
+                                backgroundColor: 'rgba(54, 162, 235, 1)', // Blue color
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                tension: 0.1,
+                                yAxisID: 'yPrice',
+                            }
+                        ]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        scales: { y: { beginAtZero: true, ticks: { callback: value => '฿' + value.toLocaleString('th-TH')} }, x: { ticks: { font: { family: "'Sarabun', sans-serif"}}}}
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        scales: {
+                            x: {
+                                ticks: { font: { family: "'Sarabun', sans-serif" }}
+                            },
+                            yWeight: { // Left Y-axis for Weight
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'ปริมาณ (กก.)',
+                                    font: { family: "'Sarabun', sans-serif", size: 14 }
+                                }
+                            },
+                            yPrice: { // Right Y-axis for Price
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'ราคาเฉลี่ย (บาท)',
+                                    font: { family: "'Sarabun', sans-serif", size: 14 }
+                                },
+                                // Hide grid lines for the second y-axis to make it cleaner
+                                grid: {
+                                    drawOnChartArea: false, 
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: { font: { family: "'Sarabun', sans-serif" }}
+                            },
+                            tooltip: {
+                                titleFont: { family: "'Sarabun', sans-serif" },
+                                bodyFont: { family: "'Sarabun', sans-serif" },
+                                footerFont: { family: "'Sarabun', sans-serif" },
+                            }
+                        }
                     }
                 });
             }
         }
+        
+        // --- Other Functions (Unchanged) ---
         
         function createPrintableReceipt(sale) {
             const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
@@ -1164,7 +1185,7 @@
                             // Trigger initial render/filter
                             ui.searchBox.dispatchEvent(new Event('input'));
                             
-                            renderDashboard();
+                            renderDashboard(); // Renders the new chart
                             renderSummary();
                             renderScaleSummaries();
                             populateReportDateSelector();
