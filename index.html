@@ -141,40 +141,6 @@
                             <input type="date" id="receipt-date" class="w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
                         </div>
                         
-                        <div class="md:col-span-2 p-4 border-t mt-4">
-                            <h3 class="text-lg font-semibold text-stone-700 mb-4">ส่วนชั่งน้ำหนักสด (ตัวช่วยกรอก)</h3>
-                            <div id="live-weighing-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <div class="border p-3 rounded-lg bg-stone-50 shadow-sm">
-                                    <label for="live-weight-input-1" class="block text-sm font-medium text-stone-700 mb-2">ตาชั่งที่ 1 (กก.)</label>
-                                    <div class="flex items-center gap-2">
-                                        <input type="number" id="live-weight-input-1" class="live-weight-input w-full p-2 border border-stone-300 rounded-md text-center text-2xl font-bold transition-colors" placeholder="0.00">
-                                        <button data-scale="1" class="stop-weighing-btn bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700">หยุด</button>
-                                    </div>
-                                </div>
-                                <div class="border p-3 rounded-lg bg-stone-50 shadow-sm">
-                                    <label for="live-weight-input-2" class="block text-sm font-medium text-stone-700 mb-2">ตาชั่งที่ 2 (กก.)</label>
-                                    <div class="flex items-center gap-2">
-                                        <input type="number" id="live-weight-input-2" class="live-weight-input w-full p-2 border border-stone-300 rounded-md text-center text-2xl font-bold transition-colors" placeholder="0.00">
-                                        <button data-scale="2" class="stop-weighing-btn bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700">หยุด</button>
-                                    </div>
-                                </div>
-                                <div class="border p-3 rounded-lg bg-stone-50 shadow-sm">
-                                    <label for="live-weight-input-3" class="block text-sm font-medium text-stone-700 mb-2">ตาชั่งที่ 3 (กก.)</label>
-                                    <div class="flex items-center gap-2">
-                                        <input type="number" id="live-weight-input-3" class="live-weight-input w-full p-2 border border-stone-300 rounded-md text-center text-2xl font-bold transition-colors" placeholder="0.00">
-                                        <button data-scale="3" class="stop-weighing-btn bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700">หยุด</button>
-                                    </div>
-                                </div>
-                                <div class="border p-3 rounded-lg bg-stone-50 shadow-sm">
-                                    <label for="live-weight-input-4" class="block text-sm font-medium text-stone-700 mb-2">ตาชั่งที่ 4 (กก.)</label>
-                                    <div class="flex items-center gap-2">
-                                        <input type="number" id="live-weight-input-4" class="live-weight-input w-full p-2 border border-stone-300 rounded-md text-center text-2xl font-bold transition-colors" placeholder="0.00">
-                                        <button data-scale="4" class="stop-weighing-btn bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700">หยุด</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-stone-700 mb-1">น้ำหนักที่บันทึก (กก.) - ใส่ได้สูงสุด 10 รายการ</label>
                             <div id="weight-inputs-container" class="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-2">
@@ -563,49 +529,6 @@
             truckGrandTotalWeight: document.getElementById('truck-grand-total-weight'),
         };
         
-        // --- Functions for Receipt Tab (Tab 1) ---
-        function handleStopWeighing(scaleNumber) {
-            const liveInput = document.getElementById(`live-weight-input-${scaleNumber}`);
-            const weightValue = parseFloat(liveInput.value);
-
-            if (!weightValue || weightValue <= 0) {
-                liveInput.classList.add('border-red-500');
-                setTimeout(() => liveInput.classList.remove('border-red-500'), 500);
-                return;
-            }
-
-            const allWeightSlots = ui.weightInputsContainer.querySelectorAll('.weight-input');
-            let emptySlot = null;
-            for (const slot of allWeightSlots) {
-                if (slot.value === '') {
-                    emptySlot = slot;
-                    break;
-                }
-            }
-
-            if (emptySlot) {
-                emptySlot.value = weightValue.toFixed(2);
-                liveInput.value = '';
-                liveInput.classList.remove('text-red-500');
-                calculateTotals(); 
-            } else {
-                showAlert('ช่องสำหรับบันทึกน้ำหนักเต็มแล้ว (สูงสุด 10 รายการ)');
-            }
-        }
-        
-        function setupLiveWeighingListeners() {
-            document.querySelectorAll('.live-weight-input').forEach(input => {
-                input.addEventListener('input', (e) => {
-                    e.target.classList.toggle('text-red-500', !!e.target.value);
-                });
-            });
-            document.querySelectorAll('.stop-weighing-btn').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    handleStopWeighing(e.target.dataset.scale);
-                });
-            });
-        }
-
         // --- Functions for Truck Summary (Tab 10) ---
         function calculateTruckSummary() {
             const selectedDate = ui.truckSummaryDate.valueAsDate;
@@ -673,6 +596,9 @@
             }
             
             ui.truckGrandTotalWeight.textContent = grandTotal.toFixed(2);
+            
+            // Recalculate all differences after rendering
+            sortedScales.forEach(scale => updateScaleDifference(scale));
         }
 
         function updateScaleDifference(scaleNumber) {
@@ -1665,7 +1591,6 @@
             ui.logoutButton.addEventListener('click', () => { sessionStorage.removeItem('isLoggedIn'); window.location.reload(); });
             ui.changePasswordBtn.addEventListener('click', promptChangePassword);
             renderWeighingStations();
-            setupLiveWeighingListeners();
             ui.tabs.addEventListener('click', (e) => { if (e.target.dataset.tab) switchToTab(e.target.dataset.tab); });
             switchToTab('tab-receipt');
             ui.sellerNameInput.addEventListener('blur', (e) => { if (e.target.value.trim()) fetchAndPopulateWeights(e.target.value.trim()); });
