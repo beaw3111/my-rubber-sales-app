@@ -243,12 +243,13 @@
                                     <th scope="col" class="px-6 py-3 text-right">น้ำหนัก (กก.)</th>
                                     <th scope="col" class="px-6 py-3 text-right">ราคา/หน่วย</th>
                                     <th scope="col" class="px-6 py-3 text-right">ยอดรวม (บาท)</th>
+                                    <th scope="col" class="px-4 py-3 text-center">สถานะการพิมพ์</th>
                                     <th scope="col" class="px-6 py-3 text-center">การดำเนินการ</th>
                                 </tr>
                             </thead>
                             <tbody id="sales-table-body">
                                 <tr>
-                                    <td colspan="7" class="px-6 py-8 text-center text-stone-400">กำลังโหลดข้อมูล...</td>
+                                    <td colspan="8" class="px-6 py-8 text-center text-stone-400">กำลังโหลดข้อมูล...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -545,8 +546,6 @@
 
         function getUTCDateKey(date) {
             if (!date) return null;
-            // This function creates a YYYY-MM-DD string based on the local date, not UTC.
-            // This is crucial because the user selects a date in their local timezone.
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const day = String(date.getDate()).padStart(2, '0');
@@ -574,7 +573,7 @@
                     await addDoc(truckLoadsCollectionRef, {
                         scaleId: scaleId,
                         weight: weightToSave,
-                        date: selectedDateStr, // Use the YYYY-MM-DD string directly
+                        date: selectedDateStr,
                         timestamp: new Date(),
                         userId: userId,
                     });
@@ -644,7 +643,7 @@
 
         function renderTruckLoadHistory(loadsForDay) {
             const container = ui.truckLoadHistoryContainer;
-            container.innerHTML = ''; // Clear previous history
+            container.innerHTML = '';
             
             const totalLoadedWeight = loadsForDay.reduce((sum, load) => sum + load.weight, 0);
             ui.truckTotalLoadedWeight.textContent = totalLoadedWeight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -928,13 +927,22 @@
         function renderTable(dataToRender) {
             ui.salesTableBody.innerHTML = '';
             if (dataToRender.length === 0) {
-                ui.salesTableBody.innerHTML = '<tr><td colspan="7" class="px-6 py-12 text-center text-stone-400">ไม่พบข้อมูล...</td></tr>';
+                ui.salesTableBody.innerHTML = '<tr><td colspan="8" class="px-6 py-12 text-center text-stone-400">ไม่พบข้อมูล...</td></tr>';
                 return;
             }
             dataToRender.forEach((sale) => {
                 const row = document.createElement('tr');
                 row.className = 'bg-white border-b hover:bg-stone-50';
                 const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
+                
+                const printCount = sale.printCount || 0;
+                let printStatusHtml = '';
+                if (printCount > 0) {
+                    printStatusHtml = `<span class="text-green-600 font-semibold">✓ พิมพ์แล้ว (${printCount} ครั้ง)</span>`;
+                } else {
+                    printStatusHtml = `<span class="text-stone-500">ยังไม่พิมพ์</span>`;
+                }
+
                 row.innerHTML = `
                     <td class="px-4 py-4 text-center font-medium text-stone-700">${sale.dailyQueueNumber || '-'}</td>
                     <td class="px-6 py-4">${saleDate.toLocaleDateString('th-TH')}</td>
@@ -942,6 +950,7 @@
                     <td class="px-6 py-4 text-right">${sale.weight.toFixed(2)}</td>
                     <td class="px-6 py-4 text-right">${sale.price.toFixed(2)}</td>
                     <td class="px-6 py-4 text-right font-bold text-amber-600">${sale.total.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td class="px-4 py-4 text-center">${printStatusHtml}</td>
                     <td class="px-6 py-4 text-center">
                         <div class="flex items-center justify-center gap-2">
                              <button class="reprint-btn text-gray-500 hover:text-gray-800 p-2 rounded-md hover:bg-gray-100" data-id="${sale.id}" title="พิมพ์ซ้ำ">🖨️</button>
@@ -1068,7 +1077,7 @@
         function createPrintableReceipt(sale) {
             const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
             const generateSingleReceiptHTML = (title, isCopy = false) => `
-                <div class="w-1/2 p-4 text-xs relative" style="border: 2px dashed #9ca3af; height: 12cm; float: left; page-break-inside: avoid;">
+                <div class="w-1/2 p-4 text-xs relative" style="border: 2px dashed #9ca3af; height: 12cm; float: left; page-break-inside: avoid; display: flex; flex-direction: column;">
                     ${isCopy ? '<div class="watermark">สำเนา</div>' : ''}
                     <div class="text-center mb-4">
                         <h2 class="text-base font-bold">${title}</h2>
@@ -1098,7 +1107,9 @@
                             <tr class="font-bold"><td class="py-2 text-base">รวมเป็นเงิน</td><td class="text-right text-xl">${sale.total.toLocaleString('th-TH', { maximumFractionDigits: 0 })}</td></tr>
                         </tfoot>
                     </table>
-                    <div class="text-center mt-8">
+                    <div class="flex-grow"></div>
+                    <div class="text-xs text-stone-500 mt-2">พิมพ์ครั้งที่: ${sale.printCount || 1}</div>
+                    <div class="text-center mt-4">
                          <div><p class="pb-1">........................................</p><p>(ผู้จ่ายเงิน)</p></div>
                     </div>
                 </div>`;
@@ -1108,14 +1119,19 @@
         function createDailySummaryReport() {
             const reportDateStr = ui.reportDateSelect.value;
             if (!reportDateStr) { return showAlert('กรุณาเลือกวันที่ที่ต้องการทำรายงาน'); }
-            const reportDate = new Date(reportDateStr);
-            const formattedDate = reportDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
-            const reportStart = new Date(reportDate.getFullYear(), reportDate.getMonth(), reportDate.getDate());
-            const reportEnd = new Date(reportDate.getFullYear(), reportDate.getMonth(), reportDate.getDate(), 23, 59, 59, 999);
+            
+            const dateParts = reportDateStr.split('-');
+            const reportDate = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2]));
+            const formattedDate = reportDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+            
+            const reportStart = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2]));
+            const reportEnd = new Date(reportStart.getTime() + (24 * 60 * 60 * 1000) - 1);
+
             const salesForDay = localSalesData.filter(sale => {
                 const saleDate = sale.date.toDate();
                 return saleDate >= reportStart && saleDate <= reportEnd;
             }).sort((a, b) => (a.dailyQueueNumber || 0) - (b.dailyQueueNumber || 0));
+
             if (salesForDay.length === 0) { return showAlert(`ไม่พบข้อมูลการขายในวันที่ ${formattedDate}`); }
             const totalWeight = salesForDay.reduce((sum, sale) => sum + sale.weight, 0);
             const totalAmount = salesForDay.reduce((sum, sale) => sum + sale.total, 0);
@@ -1210,6 +1226,7 @@
                     if (originalDoc) {
                         saleData.dailyQueueNumber = originalDoc.dailyQueueNumber;
                         saleData.receiptId = originalDoc.receiptId;
+                        saleData.printCount = originalDoc.printCount || 0; // Preserve print count on edit
                     }
                     await updateDoc(doc(salesCollectionRef, editingId), saleData);
                     showAlert('อัปเดตข้อมูลสำเร็จ');
@@ -1224,6 +1241,7 @@
                     const day = now.getDate().toString().padStart(2, '0');
                     const nextReceiptNumber = localSalesData.length + 1;
                     saleData.receiptId = `${year}${month}${day}-${String(nextReceiptNumber).padStart(4, '0')}`;
+                    saleData.printCount = 1; // First print
                     const docRef = await addDoc(salesCollectionRef, saleData);
                     createPrintableReceipt({ ...saleData, id: docRef.id });
                 }
@@ -1239,6 +1257,7 @@
             const id = target.dataset.id;
             const saleToProcess = localSalesData.find(sale => sale.id === id);
             if (!saleToProcess) return;
+
             if (target.classList.contains('delete-btn')) {
                 showConfirm('คุณแน่ใจว่าต้องการลบรายการนี้?', async () => {
                     try {
@@ -1264,7 +1283,17 @@
                 switchToTab('tab-receipt');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else if (target.classList.contains('reprint-btn')) {
-                createPrintableReceipt(saleToProcess);
+                showConfirm('ยืนยันการพิมพ์ซ้ำใช่หรือไม่? ระบบจะนับจำนวนครั้งที่พิมพ์', async () => {
+                    try {
+                        const currentCount = saleToProcess.printCount || 0;
+                        await updateDoc(doc(salesCollectionRef, id), { printCount: currentCount + 1 });
+                        // The onSnapshot listener will update localSalesData, but for immediate UI feedback on the receipt, we create a temporary updated object.
+                        const updatedSaleDataForPrint = { ...saleToProcess, printCount: currentCount + 1 };
+                        createPrintableReceipt(updatedSaleDataForPrint);
+                    } catch (error) {
+                        showAlert(`เกิดข้อผิดพลาดในการอัปเดตสถานะ: ${error.message}`);
+                    }
+                });
             }
         }
         function updateDateDisplay() {
@@ -1576,7 +1605,7 @@
                             renderSummary();
                             renderScaleSummaries();
                             populateReportDateSelector();
-                            populateTruckSummaryDateSelector(); // <-- Added call
+                            populateTruckSummaryDateSelector();
                             calculateTruckSummary(); 
                         });
                         
@@ -1673,7 +1702,7 @@
                 const option = document.createElement('option');
                 option.value = dateStr;
                 const dateParts = dateStr.split('-');
-                option.textContent = new Date(dateParts[0], dateParts[1]-1, dateParts[2]).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+                option.textContent = new Date(Date.UTC(dateParts[0], dateParts[1]-1, dateParts[2])).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
                 ui.reportDateSelect.appendChild(option);
             });
             ui.reportDateSelect.value = currentValue;
@@ -1681,10 +1710,10 @@
 
         function populateTruckSummaryDateSelector() {
             const dateSet = new Set(localSalesData.map(sale => getUTCDateKey(sale.date.toDate())));
-            const sortedDates = Array.from(dateSet).sort((a, b) => b.localeCompare(a)); // Sort YYYY-MM-DD strings
+            const sortedDates = Array.from(dateSet).sort((a, b) => b.localeCompare(a));
             const selector = ui.truckSummaryDate;
             const currentValue = selector.value;
-            selector.innerHTML = ''; // Clear existing options
+            selector.innerHTML = '';
              if (sortedDates.length === 0) {
                 selector.innerHTML = '<option value="">ไม่มีข้อมูล</option>';
                 return;
@@ -1693,7 +1722,7 @@
                 const option = document.createElement('option');
                 option.value = dateStr;
                  const dateParts = dateStr.split('-');
-                option.textContent = new Date(dateParts[0], dateParts[1]-1, dateParts[2]).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+                option.textContent = new Date(Date.UTC(dateParts[0], dateParts[1]-1, dateParts[2])).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
                 selector.appendChild(option);
             });
             if (currentValue && sortedDates.includes(currentValue)) {
@@ -1701,7 +1730,6 @@
             } else if (sortedDates.length > 0) {
                 selector.value = sortedDates[0];
             }
-             calculateTruckSummary();
         }
 
         function promptChangePassword() {
@@ -1895,7 +1923,6 @@
             ui.truckLoadHistoryContainer.addEventListener('click', handleTruckLoadHistoryClick);
 
             ui.receiptDateInput.valueAsDate = new Date();
-            // ui.truckSummaryDate.valueAsDate = new Date(); // Removed, will be set by populate function
             updateDateDisplay();
         });
     </script>
