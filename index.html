@@ -622,7 +622,7 @@
                             if (isNaN(newWeight) || newWeight <= 0) {
                                 errorEl.textContent = 'กรุณาใส่น้ำหนักที่ถูกต้อง (ต้องเป็นตัวเลขมากกว่า 0)';
                                 errorEl.classList.remove('hidden');
-                                return false;
+                                return false; 
                             }
 
                             try {
@@ -746,7 +746,7 @@
         function calculateTruckSummary() {
             const selectedDateStr = ui.truckSummaryDate.value;
             if (!selectedDateStr) {
-                ui.truckSummaryContainer.innerHTML = '<p class="text-center text-stone-500 md:col-span-2">กรุณาเลือกวันที่เพื่อดูสรุป</p>';
+                ui.truckSummaryContainer.innerHTML = '<p class="text-center text-stone-500 md:col-span-2">ไม่มีข้อมูลให้เลือก</p>';
                 ui.truckGrandTotalWeight.textContent = "0.00";
                 ui.truckTotalLoadedWeight.textContent = "0.00";
                 ui.truckLoadHistoryContainer.innerHTML = "";
@@ -840,7 +840,14 @@
             if (targetButton) { targetButton.classList.add('active'); }
             const targetContent = document.getElementById(targetTabId);
             if (targetContent) { targetContent.classList.add('active'); }
-            if (targetTabId === 'tab-truck-summary') { calculateTruckSummary(); }
+            
+            if (targetTabId === 'tab-truck-summary') {
+                const dateSelector = ui.truckSummaryDate;
+                if (dateSelector.options.length > 0 && dateSelector.options[0].value) {
+                    dateSelector.value = dateSelector.options[0].value;
+                }
+                calculateTruckSummary();
+            }
         }
         function showModal(title, message, buttons) {
             ui.modalTitle.textContent = title;
@@ -1241,7 +1248,7 @@
                     const day = now.getDate().toString().padStart(2, '0');
                     const nextReceiptNumber = localSalesData.length + 1;
                     saleData.receiptId = `${year}${month}${day}-${String(nextReceiptNumber).padStart(4, '0')}`;
-                    saleData.printCount = 0; // Set to 0, will be incremented from history tab
+                    saleData.printCount = 0;
                     await addDoc(salesCollectionRef, saleData);
                     showAlert('บันทึกข้อมูลสำเร็จ');
                 }
