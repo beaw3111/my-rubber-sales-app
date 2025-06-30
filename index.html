@@ -391,13 +391,18 @@
                     </div>
 
                     <div id="truck-summary-container" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                        </div>
+                    </div>
 
-                    <div class="border-t-2 border-stone-300 pt-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 border-t-2 border-stone-300 pt-6">
                         <div class="bg-amber-100 border border-amber-300 p-6 rounded-xl text-center">
                              <h3 class="text-xl font-bold text-amber-800">ยอดรวมน้ำหนักที่ยังไม่บันทึก</h3>
                              <p id="truck-grand-total-weight" class="text-5xl font-extrabold text-amber-900 my-2">0.00</p>
                              <p class="text-lg text-amber-800">กิโลกรัม</p>
+                        </div>
+                        <div class="bg-green-100 border border-green-300 p-6 rounded-xl text-center">
+                             <h3 class="text-xl font-bold text-green-800">ยอดรวมน้ำหนักที่บันทึกไปแล้ว</h3>
+                             <p id="truck-total-loaded-weight" class="text-5xl font-extrabold text-green-900 my-2">0.00</p>
+                             <p class="text-lg text-green-800">กิโลกรัม</p>
                         </div>
                     </div>
                     
@@ -532,6 +537,7 @@
             truckSummaryDate: document.getElementById('truck-summary-date'),
             truckSummaryContainer: document.getElementById('truck-summary-container'),
             truckGrandTotalWeight: document.getElementById('truck-grand-total-weight'),
+            truckTotalLoadedWeight: document.getElementById('truck-total-loaded-weight'),
             truckLoadHistoryContainer: document.getElementById('truck-load-history-container'),
         };
         
@@ -572,66 +578,176 @@
                         userId: userId,
                     });
                     showAlert('บันทึกน้ำหนักขึ้นรถเรียบร้อยแล้ว');
-                    // The onSnapshot listener will automatically trigger a UI update.
                 } catch (error) {
                     console.error("Error saving truck load:", error);
                     showAlert(`เกิดข้อผิดพลาดในการบันทึก: ${error.message}`);
                 }
             });
         }
+        
+        async function handleTruckLoadHistoryClick(e) {
+            const target = e.target.closest('button');
+            if (!target) return;
 
+            const loadId = target.dataset.id;
+            if (!loadId) return;
 
-        function renderTruckLoadHistory() {
+            const loadData = localTruckLoads.find(l => l.id === loadId);
+            if (!loadData) return;
+
+            if (target.classList.contains('delete-load-btn')) {
+                showConfirm('คุณแน่ใจว่าต้องการลบรายการบันทึกนี้?', async () => {
+                    try {
+                        await deleteDoc(doc(truckLoadsCollectionRef, loadId));
+                        showAlert('ลบรายการสำเร็จ');
+                    } catch (error) {
+                        showAlert(`เกิดข้อผิดพลาดในการลบ: ${error.message}`);
+                    }
+                });
+            } else if (target.classList.contains('edit-load-btn')) {
+                const modalContentHTML = `
+                    <p class="text-sm text-stone-500 mb-4 text-left">แก้ไขน้ำหนักที่บันทึกสำหรับตาชั่งที่ ${loadData.scaleId}</p>
+                    <input type="number" id="modal-edit-load-input" class="w-full p-3 border border-stone-300 rounded-lg text-center text-xl" value="${loadData.weight.toFixed(2)}">
+                    <p id="edit-load-error" class="text-sm text-red-600 text-center hidden mt-2"></p>
+                `;
+                showModal(`แก้ไขน้ำหนัก`, modalContentHTML, [
+                    {
+                        text: 'บันทึก',
+                        classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:w-auto sm:text-sm',
+                        onClick: async () => {
+                            const inputEl = document.getElementById('modal-edit-load-input');
+                            const errorEl = document.getElementById('edit-load-error');
+                            const newWeight = parseFloat(inputEl.value);
+
+                            if (isNaN(newWeight) || newWeight <= 0) {
+                                errorEl.textContent = 'กรุณาใส่น้ำหนักที่ถูกต้อง (ต้องเป็นตัวเลขมากกว่า 0)';
+                                errorEl.classList.remove('hidden');
+                                return false; // Keep modal open
+                            }
+
+                            try {
+                                await updateDoc(doc(truckLoadsCollectionRef, loadId), { weight: newWeight });
+                                showAlert('แก้ไขน้ำหนักสำเร็จ');
+                                return true; // Close modal
+                            } catch (error) {
+                                errorEl.textContent = `เกิดข้อผิดพลาด: ${error.message}`;
+                                errorEl.classList.remove('hidden');
+                                return false; // Keep modal open
+                            }
+                        }
+                    },
+                    { text: 'ยกเลิก', classes: 'mt-3 w-full inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 sm:mt-0 sm:w-auto sm:text-sm' }
+                ]);
+            }
+        }
+
+        function renderTruckLoadHistory(loadsForDay) {
             const container = ui.truckLoadHistoryContainer;
             container.innerHTML = ''; // Clear previous history
-            const selectedDate = ui.truckSummaryDate.valueAsDate;
-             if (!selectedDate) return;
-             const dateKey = getUTCDateKey(new Date(selectedDate.getTime() + selectedDate.getTimezoneOffset() * 60000));
-
-
-            const loadsForDay = localTruckLoads
-                .filter(load => load.date === dateKey)
-                .sort((a, b) => a.timestamp.toDate() - b.timestamp.toDate());
-
+            
+            const totalLoadedWeight = loadsForDay.reduce((sum, load) => sum + load.weight, 0);
+            ui.truckTotalLoadedWeight.textContent = totalLoadedWeight.toFixed(2);
+            
             if (loadsForDay.length === 0) {
-                return; // Don't render anything if no history for the day
+                const printBtn = document.getElementById('print-truck-history-btn');
+                if (printBtn) printBtn.style.display = 'none';
+                return;
             }
             
             const loadsByScale = loadsForDay.reduce((acc, load) => {
                 const scale = load.scaleId;
-                if (!acc[scale]) {
-                    acc[scale] = [];
-                }
+                if (!acc[scale]) acc[scale] = [];
                 acc[scale].push(load);
                 return acc;
             }, {});
 
+            const selectedDate = ui.truckSummaryDate.valueAsDate;
             const formattedDate = selectedDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
-            let historyHtml = `<h3 class="text-xl font-bold text-stone-800 border-b pb-2 mb-4">ประวัติการบันทึกน้ำหนักขึ้นรถ (${formattedDate})</h3>`;
+            let historyHtml = `
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-stone-800 border-b pb-2">ประวัติการบันทึกน้ำหนักขึ้นรถ</h3>
+                    <button id="print-truck-history-btn" class="bg-sky-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-sky-700 transition-colors flex items-center gap-2">
+                        <span class="text-xl">🖨️</span> พิมพ์ประวัติ
+                    </button>
+                </div>`;
 
             const sortedScales = Object.keys(loadsByScale).sort((a,b) => a-b);
 
             for(const scaleId of sortedScales) {
-                historyHtml += `<div class="mb-4">
+                historyHtml += `<div class="mb-4 bg-stone-50 p-4 rounded-lg border">
                                  <h4 class="font-bold text-md text-stone-700">ตาชั่งที่ ${scaleId}</h4>
-                                 <ul class="list-disc pl-5 mt-2 space-y-1 text-stone-600">`;
+                                 <ul class="list-none mt-2 space-y-2 text-stone-600">`;
                 
-                loadsByScale[scaleId].forEach((load, index) => {
-                    historyHtml += `<li>ครั้งที่ ${index + 1}: <strong class="text-stone-900">${load.weight.toFixed(2)} กก.</strong> (บันทึกเมื่อ: ${load.timestamp.toDate().toLocaleTimeString('th-TH')})</li>`;
+                loadsByScale[scaleId].sort((a,b) => a.timestamp.toDate() - b.timestamp.toDate()).forEach((load, index) => {
+                    historyHtml += `<li class="flex justify-between items-center border-b border-stone-200 py-1">
+                                        <span>ครั้งที่ ${index + 1}: <strong class="text-stone-900">${load.weight.toFixed(2)} กก.</strong> <span class="text-xs text-stone-500">(${load.timestamp.toDate().toLocaleTimeString('th-TH')})</span></span>
+                                        <div class="space-x-2">
+                                            <button class="edit-load-btn text-blue-600 hover:text-blue-800 p-1 rounded-md text-lg" data-id="${load.id}" title="แก้ไข">✏️</button>
+                                            <button class="delete-load-btn text-red-600 hover:text-red-800 p-1 rounded-md text-lg" data-id="${load.id}" title="ลบ">🗑️</button>
+                                        </div>
+                                    </li>`;
                 });
 
                 historyHtml += `</ul></div>`;
             }
 
             container.innerHTML = historyHtml;
+            document.getElementById('print-truck-history-btn').addEventListener('click', () => printTruckLoadHistory(loadsByScale, formattedDate, totalLoadedWeight));
         }
 
+        function printTruckLoadHistory(loadsByScale, formattedDate, totalLoadedWeight) {
+            let printContent = `
+                <div class="p-8 bg-white text-black">
+                    <div class="text-center mb-6">
+                        <h2 class="text-xl font-bold">สรุปรายการบันทึกน้ำหนักขึ้นรถ</h2>
+                        <h3 class="text-lg">ประจำวันที่ ${formattedDate}</h3>
+                        <p>สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</p>
+                    </div>
+            `;
+            const sortedScales = Object.keys(loadsByScale).sort((a,b) => a-b);
+            
+            for(const scaleId of sortedScales) {
+                printContent += `<div class="mb-4" style="page-break-inside: avoid;">
+                                    <h4 class="text-md font-bold text-stone-800 border-b-2 border-black pb-1 mb-2">ตาชั่งที่ ${scaleId}</h4>
+                                    <table class="w-full text-sm">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-left py-1" style="width:20%">ครั้งที่</th>
+                                                <th class="text-left py-1">เวลา</th>
+                                                <th class="text-right py-1">น้ำหนัก (กก.)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>`;
+                
+                loadsByScale[scaleId].forEach((load, index) => {
+                     printContent += `<tr class="border-b border-dotted">
+                                        <td class="py-1">${index + 1}</td>
+                                        <td class="py-1">${load.timestamp.toDate().toLocaleTimeString('th-TH')}</td>
+                                        <td class="py-1 text-right">${load.weight.toFixed(2)}</td>
+                                      </tr>`;
+                });
+
+                printContent += `   </tbody>
+                                </table>
+                             </div>`;
+            }
+
+            printContent += `<div class="mt-8 pt-4 border-t-4 border-double border-black text-right">
+                                <span class="text-lg font-bold">รวมน้ำหนักที่บันทึกทั้งหมด:</span>
+                                <span class="text-2xl font-bold ml-4">${totalLoadedWeight.toFixed(2)}</span>
+                                <span class="text-lg font-bold"> กก.</span>
+                           </div></div>`;
+            
+            ui.printArea.innerHTML = printContent;
+            window.print();
+        }
 
         function calculateTruckSummary() {
             const selectedDate = ui.truckSummaryDate.valueAsDate;
             if (!selectedDate) {
                 ui.truckSummaryContainer.innerHTML = '<p class="text-center text-stone-500 md:col-span-2">กรุณาเลือกวันที่เพื่อดูสรุป</p>';
                 ui.truckGrandTotalWeight.textContent = "0.00";
+                ui.truckTotalLoadedWeight.textContent = "0.00";
                 ui.truckLoadHistoryContainer.innerHTML = "";
                 return;
             };
@@ -667,13 +783,12 @@
                 return acc;
             }, {});
 
-            // Ensure all scales from sales have an entry in the summary, even if no loads yet
             Object.keys(summary).forEach(scaleId => {
                 if(!loadedSummary[scaleId]) loadedSummary[scaleId] = 0;
             });
 
             renderTruckSummary(summary, loadedSummary);
-            renderTruckLoadHistory();
+            renderTruckLoadHistory(loadsForDay);
         }
 
         function renderTruckSummary(salesSummary, loadedSummary) {
@@ -1595,7 +1710,7 @@
                  const backupObject = { 
                      sales: localSalesData, 
                      weighings: localWeighingData,
-                     truckLoads: localTruckLoads // Also backup truck loads
+                     truckLoads: localTruckLoads 
                  };
                 const jsonString = JSON.stringify(backupObject, null, 2);
                 const blob = new Blob([jsonString], { type: 'application/json' });
@@ -1642,7 +1757,6 @@
                             weighing.timestamp = new Date(weighing.timestamp.seconds * 1000);
                             restoreBatch.set(newDocRef, weighing);
                         });
-                        // Restore truckLoads if they exist in the backup file
                         if(data.truckLoads && Array.isArray(data.truckLoads)){
                              data.truckLoads.forEach(load => {
                                 const newDocRef = doc(truckLoadsCollectionRef);
@@ -1741,12 +1855,16 @@
             });
             ui.deleteAllDataBtn.addEventListener('click', confirmDeleteAllData);
             ui.truckSummaryDate.addEventListener('change', calculateTruckSummary);
+            
             ui.truckSummaryContainer.addEventListener('click', (e) => {
                 const target = e.target.closest('.save-load-btn');
                 if (target) {
                     handleSaveTruckLoad(e);
                 }
             });
+
+            ui.truckLoadHistoryContainer.addEventListener('click', handleTruckLoadHistoryClick);
+
             ui.receiptDateInput.valueAsDate = new Date();
             ui.truckSummaryDate.valueAsDate = new Date();
             updateDateDisplay();
