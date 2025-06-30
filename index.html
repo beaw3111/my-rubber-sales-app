@@ -117,6 +117,7 @@
                 <button data-tab="tab-weighing-3" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">6. รับวางยาง (ตาชั่ง 3)</button>
                 <button data-tab="tab-weighing-4" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">7. รับวางยาง (ตาชั่ง 4)</button>
                 <button data-tab="tab-weighing-summary" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">8. สรุปผลรวมตาชั่ง</button>
+                <button data-tab="tab-settings" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">9. ตั้งค่า</button>
             </nav>
         </div>
 
@@ -349,6 +350,35 @@
                     </div>
                 </section>
             </div>
+            
+            <div id="tab-settings" class="tab-content">
+                <section class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-2xl font-bold mb-6 border-b pb-3 text-stone-800">9. ตั้งค่าและจัดการข้อมูล</h2>
+                    <div class="space-y-8">
+                        <div class="bg-stone-50 border border-stone-200 p-6 rounded-xl">
+                            <h3 class="text-lg font-semibold text-stone-800">สำรองและกู้คืนข้อมูล</h3>
+                            <p class="text-sm text-stone-600 mt-1 mb-4">ใช้สำหรับดาวน์โหลดข้อมูลทั้งหมดเก็บไว้ หรือนำข้อมูลที่เคยสำรองไว้กลับเข้าระบบ</p>
+                            <div class="flex flex-wrap gap-4">
+                                <button id="backup-data-btn" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 transition-colors">
+                                    💾 สำรองข้อมูลทั้งหมด
+                                </button>
+                                <button id="restore-data-btn" class="bg-amber-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-amber-600 transition-colors">
+                                    📂 กู้คืนข้อมูลจากไฟล์
+                                </button>
+                                <input type="file" id="restore-file-input" class="hidden" accept=".json">
+                            </div>
+                        </div>
+
+                        <div class="bg-red-50 border border-red-200 p-6 rounded-xl">
+                            <h3 class="text-lg font-semibold text-red-800">เขตอันตราย (Danger Zone)</h3>
+                            <p class="text-sm text-red-600 mt-1 mb-4">การกระทำในส่วนนี้ไม่สามารถย้อนกลับได้ โปรดใช้ด้วยความระมัดระวังสูงสุด</p>
+                            <button id="delete-all-data-btn" class="bg-red-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
+                                🗑️ ลบข้อมูลทั้งหมดในระบบ
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </div>
         </main>
     </div>
     <div id="print-area" class="bg-white"></div>
@@ -474,6 +504,11 @@
             salesSummaryTodayTotal: document.getElementById('sales-summary-today-total'),
             summaryTodayTotalWeight: document.getElementById('summary-today-total-weight'),
             summaryTodayTotalAmount: document.getElementById('summary-today-total-amount'),
+            // New UI elements for settings
+            backupDataBtn: document.getElementById('backup-data-btn'),
+            restoreDataBtn: document.getElementById('restore-data-btn'),
+            restoreFileInput: document.getElementById('restore-file-input'),
+            deleteAllDataBtn: document.getElementById('delete-all-data-btn'),
         };
         // --- Core Application Logic ---
         function switchToTab(targetTabId) {
@@ -801,10 +836,8 @@
             });
         }
         
-        // --- [MODIFIED] This function contains the requested changes ---
         function createPrintableReceipt(sale) {
             const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
-            // ฟังก์ชันย่อยสำหรับสร้าง HTML ของใบเสร็จหนึ่งใบ
             const generateSingleReceiptHTML = (title, isCopy = false) => `
                 <div class="w-1/2 p-4 text-xs relative" style="border: 2px dashed #9ca3af; height: 12cm; float: left; page-break-inside: avoid;">
                     ${isCopy ? '<div class="watermark">สำเนา</div>' : ''}
@@ -840,7 +873,6 @@
                          <div><p class="pb-1">........................................</p><p>(ผู้จ่ายเงิน)</p></div>
                     </div>
                 </div>`;
-            // สร้างใบเสร็จต้นฉบับและสำเนา
             ui.printArea.innerHTML = `<div style="overflow: auto;">${generateSingleReceiptHTML('ใบเสร็จรับเงิน (ต้นฉบับ)')}${generateSingleReceiptHTML('ใบเสร็จรับเงิน (สำเนา)', true)}</div>`;
             window.print();
         }
@@ -1151,10 +1183,9 @@
                         if (!selectedDate) {
                              setTimeout(() => {
                                 showAlert('กรุณาเลือกวันที่ก่อน');
-                                // Re-show the main modal
                                 setTimeout(() => printWeighingHistory(scaleId), 350);
                             }, 10);
-                            return false; // Prevent modal from closing
+                            return false;
                         }
 
                         const reportData = scaleData
@@ -1193,8 +1224,8 @@
                                 </table>
                             </div>`;
                         ui.printArea.innerHTML = reportHTML;
-                        setTimeout(() => window.print(), 100); // Add a small delay for rendering
-                        return true; // Allow modal to close
+                        setTimeout(() => window.print(), 100);
+                        return true;
                     }
                 },
                 {
@@ -1391,7 +1422,7 @@
             }
         }
         async function fetchAndPopulateWeights(sellerName) {
-            if (!weighingsCollectionRef || editingId) return; // Do not fetch if editing a record
+            if (!weighingsCollectionRef || editingId) return;
             const q = query(weighingsCollectionRef, where("sellerName", "==", sellerName));
             const querySnapshot = await getDocs(q);
             const todayStart = new Date();
@@ -1403,7 +1434,6 @@
             const weights = todaysDocs.map(doc => doc.data().bags);
             const weightInputs = document.querySelectorAll('#weight-inputs-container .weight-input');
 
-            // Clear previous weights before populating
             weightInputs.forEach(input => input.value = '');
             weights.forEach((weight, index) => {
                 if (index < weightInputs.length) weightInputs[index].value = weight;
@@ -1558,7 +1588,6 @@
             });
             ui.reportDateSelect.value = currentValue;
         }
-        // --- NEW: Change Password Modal Logic ---
         function promptChangePassword() {
             const modalContentHTML = `
                 <div class="space-y-4 text-left">
@@ -1589,7 +1618,7 @@
                         if (oldPassword !== currentPassword) {
                             errorEl.textContent = 'รหัสผ่านเก่าไม่ถูกต้อง';
                             errorEl.classList.remove('hidden');
-                            return false; // Prevent modal from closing
+                            return false; 
                         }
                         if (newPassword.length < 4) {
                              errorEl.textContent = 'รหัสผ่านใหม่ต้องมีอย่างน้อย 4 ตัวอักษร';
@@ -1602,11 +1631,10 @@
                             return false;
                         }
 
-                        // Success
                         localStorage.setItem('customPassword', newPassword);
                         currentPassword = newPassword;
                         showAlert('เปลี่ยนรหัสผ่านสำเร็จแล้ว');
-                        return true; // Allow modal to close
+                        return true;
                     }
                 },
                 {
@@ -1615,8 +1643,104 @@
                 }
             ]);
         }
+        
+        // --- NEW FUNCTIONS FOR SETTINGS ---
+        async function backupData() {
+            showAlert('กำลังเตรียมข้อมูลสำรอง...');
+            try {
+                const backupObject = {
+                    sales: localSalesData,
+                    weighings: localWeighingData
+                };
+                const jsonString = JSON.stringify(backupObject, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const today = new Date().toISOString().slice(0, 10);
+                a.download = `cup-rubber-backup-${today}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                hideModal();
+            } catch (error) {
+               showAlert(`เกิดข้อผิดพลาดในการสำรองข้อมูล: ${error.message}`);
+            }
+        }
+
+        async function restoreDataFromFile(file) {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!data.sales || !data.weighings || !Array.isArray(data.sales) || !Array.isArray(data.weighings)) {
+                       throw new Error("ไฟล์ไม่ถูกต้องหรือมีโครงสร้างที่ไม่รู้จัก");
+                    }
+                    
+                    showConfirm(`คุณแน่ใจหรือไม่ว่าต้องการกู้คืนข้อมูลจากไฟล์? <strong>ข้อมูลที่มีอยู่ทั้งหมดจะถูกลบและแทนที่ด้วยข้อมูลจากไฟล์นี้</strong> การกระทำนี้ไม่สามารถย้อนกลับได้`, 
+                    async () => {
+                        showAlert('กำลังลบข้อมูลเก่าและกู้คืนข้อมูลใหม่... กรุณาอย่าปิดหน้านี้');
+                        
+                        // 1. Delete all old data in both collections
+                        const collections = [salesCollectionRef, weighingsCollectionRef];
+                        for (const collRef of collections) {
+                            const allDocsSnapshot = await getDocs(collRef);
+                            if (!allDocsSnapshot.empty) {
+                                const deleteBatch = writeBatch(db);
+                                allDocsSnapshot.forEach(doc => deleteBatch.delete(doc.ref));
+                                await deleteBatch.commit();
+                            }
+                        }
+
+                        // 2. Add new data from backup
+                        const restoreBatch = writeBatch(db);
+                        data.sales.forEach(sale => {
+                            const newDocRef = doc(salesCollectionRef);
+                            sale.date = new Date(sale.date.seconds * 1000);
+                            sale.timestamp = new Date(sale.timestamp.seconds * 1000);
+                            restoreBatch.set(newDocRef, sale);
+                        });
+                        data.weighings.forEach(weighing => {
+                            const newDocRef = doc(weighingsCollectionRef);
+                            weighing.timestamp = new Date(weighing.timestamp.seconds * 1000);
+                            restoreBatch.set(newDocRef, weighing);
+                        });
+                        await restoreBatch.commit();
+                        
+                        showAlert('กู้คืนข้อมูลสำเร็จ!');
+                    });
+
+                } catch (error) {
+                   showAlert(`เกิดข้อผิดพลาดในการอ่านไฟล์: ${error.message}`);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function confirmDeleteAllData() {
+            showConfirm("คุณแน่ใจจริงๆ หรือว่าต้องการลบข้อมูลทั้งหมด? การกระทำนี้ไม่สามารถย้อนกลับได้!", () => {
+                showConfirm("นี่คือการยืนยันครั้งสุดท้าย! ข้อมูลการขายและการรับวางยางทั้งหมดจะถูกลบถาวร กด 'ยืนยัน' เพื่อดำเนินการต่อ", async () => {
+                    showAlert('กำลังลบข้อมูลทั้งหมด...');
+                    try {
+                        const collections = [salesCollectionRef, weighingsCollectionRef];
+                        for (const collRef of collections) {
+                             const allDocsSnapshot = await getDocs(collRef);
+                             if (!allDocsSnapshot.empty) {
+                                const batch = writeBatch(db);
+                                allDocsSnapshot.forEach(doc => batch.delete(doc.ref));
+                                await batch.commit();
+                             }
+                        }
+                         showAlert('ลบข้อมูลทั้งหมดเรียบร้อยแล้ว');
+                    } catch (error) {
+                        showAlert(`เกิดข้อผิดพลาดในการลบข้อมูล: ${error.message}`);
+                    }
+                });
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
-            // --- Login and Session Handling ---
             const handleLogin = () => {
                  const username = ui.usernameInput.value.trim();
                  const password = ui.passwordInput.value.trim();
@@ -1657,8 +1781,6 @@
                 window.location.reload();
             });
             ui.changePasswordBtn.addEventListener('click', promptChangePassword);
-
-            // --- Main App Setup ---
             renderWeighingStations();
 
             ui.tabs.addEventListener('click', (e) => {
@@ -1700,6 +1822,19 @@
 
             ui.summaryMultiplierWeight.addEventListener('input', calculateSummaryTotalWeight);
             ui.deleteAllWeighingsBtn.addEventListener('click', deleteAllTodaysWeighings);
+            
+            // --- NEW Event Listeners for Settings ---
+            ui.backupDataBtn.addEventListener('click', backupData);
+            ui.restoreDataBtn.addEventListener('click', () => ui.restoreFileInput.click());
+            ui.restoreFileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if(file) {
+                    restoreDataFromFile(file);
+                }
+                e.target.value = ''; // Reset file input
+            });
+            ui.deleteAllDataBtn.addEventListener('click', confirmDeleteAllData);
+
 
             ui.receiptDateInput.valueAsDate = new Date();
             updateDateDisplay();
