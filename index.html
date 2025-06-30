@@ -187,7 +187,7 @@
                             ยกเลิก
                         </button>
                         <button id="save-button" class="bg-amber-600 text-white font-bold py-3 px-8 rounded-lg shadow-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-transform hover:scale-105">
-                            บันทึกและพิมพ์ใบเสร็จ
+                            บันทึกข้อมูล
                         </button>
                     </div>
 
@@ -622,17 +622,17 @@
                             if (isNaN(newWeight) || newWeight <= 0) {
                                 errorEl.textContent = 'กรุณาใส่น้ำหนักที่ถูกต้อง (ต้องเป็นตัวเลขมากกว่า 0)';
                                 errorEl.classList.remove('hidden');
-                                return false; // Keep modal open
+                                return false;
                             }
 
                             try {
                                 await updateDoc(doc(truckLoadsCollectionRef, loadId), { weight: newWeight });
                                 showAlert('แก้ไขน้ำหนักสำเร็จ');
-                                return true; // Close modal
+                                return true;
                             } catch (error) {
                                 errorEl.textContent = `เกิดข้อผิดพลาด: ${error.message}`;
                                 errorEl.classList.remove('hidden');
-                                return false; // Keep modal open
+                                return false;
                             }
                         }
                     },
@@ -1185,7 +1185,7 @@
             ui.weightInputsContainer.querySelectorAll('.weight-input').forEach(input => input.value = '');
             if (!isPriceLocked) { ui.pricePerKgInput.value = ''; }
             editingId = null;
-            ui.saveButton.textContent = 'บันทึกและพิมพ์ใบเสร็จ';
+            ui.saveButton.textContent = 'บันทึกข้อมูล';
             ui.cancelEditButton.classList.add('hidden');
             calculateTotals();
         }
@@ -1226,7 +1226,7 @@
                     if (originalDoc) {
                         saleData.dailyQueueNumber = originalDoc.dailyQueueNumber;
                         saleData.receiptId = originalDoc.receiptId;
-                        saleData.printCount = originalDoc.printCount || 0; // Preserve print count on edit
+                        saleData.printCount = originalDoc.printCount || 0;
                     }
                     await updateDoc(doc(salesCollectionRef, editingId), saleData);
                     showAlert('อัปเดตข้อมูลสำเร็จ');
@@ -1241,9 +1241,9 @@
                     const day = now.getDate().toString().padStart(2, '0');
                     const nextReceiptNumber = localSalesData.length + 1;
                     saleData.receiptId = `${year}${month}${day}-${String(nextReceiptNumber).padStart(4, '0')}`;
-                    saleData.printCount = 1; // First print
-                    const docRef = await addDoc(salesCollectionRef, saleData);
-                    createPrintableReceipt({ ...saleData, id: docRef.id });
+                    saleData.printCount = 0; // Set to 0, will be incremented from history tab
+                    await addDoc(salesCollectionRef, saleData);
+                    showAlert('บันทึกข้อมูลสำเร็จ');
                 }
                 clearForm();
             } catch (error) {
@@ -1283,11 +1283,10 @@
                 switchToTab('tab-receipt');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else if (target.classList.contains('reprint-btn')) {
-                showConfirm('ยืนยันการพิมพ์ซ้ำใช่หรือไม่? ระบบจะนับจำนวนครั้งที่พิมพ์', async () => {
+                showConfirm('ยืนยันการพิมพ์ใช่หรือไม่? ระบบจะนับจำนวนครั้งที่พิมพ์', async () => {
                     try {
                         const currentCount = saleToProcess.printCount || 0;
                         await updateDoc(doc(salesCollectionRef, id), { printCount: currentCount + 1 });
-                        // The onSnapshot listener will update localSalesData, but for immediate UI feedback on the receipt, we create a temporary updated object.
                         const updatedSaleDataForPrint = { ...saleToProcess, printCount: currentCount + 1 };
                         createPrintableReceipt(updatedSaleDataForPrint);
                     } catch (error) {
@@ -1697,7 +1696,7 @@
             const dateSet = new Set(localSalesData.map(sale => getUTCDateKey(sale.date.toDate())));
             const sortedDates = Array.from(dateSet).sort((a, b) => b.localeCompare(a));
             const currentValue = ui.reportDateSelect.value;
-            ui.reportDateSelect.innerHTML = '<option value="">--- เลือกวันที่ทำรายงาน ---</option>'; // Clear and add placeholder
+            ui.reportDateSelect.innerHTML = '<option value="">--- เลือกวันที่ทำรายงาน ---</option>';
             sortedDates.forEach(dateStr => {
                 const option = document.createElement('option');
                 option.value = dateStr;
