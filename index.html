@@ -63,7 +63,7 @@
             display: block;
         }
 
-        /* ADDED: Styling for sub-tab buttons in "ออกใบเสร็จ" */
+        /* Styling for sub-tab buttons in "ออกใบเสร็จ" */
         .receipt-sub-btn {
             transition: all 0.15s ease-in-out;
         }
@@ -871,13 +871,22 @@
                 const currentWeight = salesData.totalSalesWeight - loadedWeight;
                 grandTotal += currentWeight;
 
+                // MODIFIED: Logic to select colors for each card
+                let colors;
+                const scaleNum = parseInt(scale);
+                if (!isNaN(scaleNum) && scaleNum > 0) {
+                    colors = scaleColorPalette[(scaleNum - 1) % scaleColorPalette.length];
+                } else {
+                    colors = defaultScaleColor;
+                }
+
                 const card = document.createElement('div');
-                card.className = 'bg-sky-100 border border-sky-300 p-4 rounded-xl shadow-md flex flex-col';
+                card.className = `${colors.bg} border ${colors.border} p-4 rounded-xl shadow-md flex flex-col`;
                 card.innerHTML = `
-                    <h4 class="text-lg font-bold text-sky-800">ตาชั่งที่ ${scale}</h4>
+                    <h4 class="text-lg font-bold ${colors.textH}">ตาชั่งที่ ${scale}</h4>
                     <div class="flex-grow">
-                        <p class="text-4xl font-bold text-sky-900 mt-2 scale-total-weight">${currentWeight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span class="text-base font-normal">กก.</span></p>
-                        <p class="text-sm text-sky-700 mt-1">จาก ${salesData.count} รายการ</p>
+                        <p class="text-4xl font-bold ${colors.textP} mt-2 scale-total-weight">${currentWeight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span class="text-base font-normal">กก.</span></p>
+                        <p class="text-sm ${colors.textS} mt-1">จาก ${salesData.count} รายการ</p>
                     </div>
                     <button data-scale="${scale}" data-weight="${currentWeight}" class="save-load-btn w-full text-lg mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed" ${currentWeight <= 0 ? 'disabled' : ''}>
                         บันทึกน้ำหนักล็อตนี้
@@ -905,7 +914,6 @@
                 targetContent.classList.add('active');
             }
 
-            // If the main receipt tab is selected, ensure its first sub-tab is active
             if (targetTabId === 'tab-receipt') {
                 const firstSubTab = document.querySelector('#receipt-sub-tabs .receipt-sub-btn');
                 if (firstSubTab) {
@@ -2391,7 +2399,7 @@
             switchToWeighingSubTab('weighing-scale-1');
             // --- END: Weighing Tab Logic ---
 
-            // --- START: NEW Receipt Tab Logic ---
+            // --- START: Receipt Tab Logic ---
             const receiptSubTabsContainer = document.getElementById('receipt-sub-tabs');
             const receiptSubBtns = document.querySelectorAll('.receipt-sub-btn');
             const receiptSubContents = document.querySelectorAll('.receipt-sub-content');
@@ -2406,7 +2414,6 @@
                 if (targetContent) targetContent.classList.add('active');
                 if (targetBtn) targetBtn.classList.add('active');
                 
-                // If switching to truck summary, populate its data
                 if (targetId === 'receipt-truck-summary') {
                     const dateSelector = ui.truckSummaryDate;
                     if (dateSelector.options.length > 0 && dateSelector.options[0].value) {
@@ -2423,9 +2430,8 @@
                 }
             });
             
-            // Set a default sub-tab for receipt section
             switchToReceiptSubTab('receipt-form');
-            // --- END: NEW Receipt Tab Logic ---
+            // --- END: Receipt Tab Logic ---
 
         });
     </script>
