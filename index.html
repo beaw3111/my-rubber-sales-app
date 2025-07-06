@@ -1457,7 +1457,8 @@
             const date = ui.receiptDateInput.valueAsDate;
             ui.dateDisplay.textContent = `(${(date || new Date()).toLocaleDateString('th-TH')})`;
         }
-        // -- CHANGED -- : Updated table headers and added edit queue button
+        
+        // -- ADJUSTED -- : Adjusted table headers and column widths
         function createWeighingStationHTML(scaleId) {
             return `
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -1474,17 +1475,18 @@
                     </div>
                 </div>
                 <div class="mt-8 overflow-x-auto rounded-lg border">
-                    <table class="w-full text-sm text-left">
+                    <table class="w-full text-sm text-left table-fixed">
                         <thead class="bg-stone-100 sticky top-0">
                             <tr>
-                                <th class="px-4 py-3 text-center w-16">ลำดับ</th>
-                                <th class="px-4 py-3">ชื่อ</th>
-                                <th class="px-4 py-3 text-right">จำนวนถุง</th>
-                                <th class="px-4 py-3 text-center">จัดการ</th>
+                                <th class="px-2 py-3 text-center w-14">ลำดับ</th>
+                                <th class="px-2 py-3 w-48">ชื่อ</th>
+                                <th class="px-2 py-3 text-right w-24">จำนวนถุง</th>
+                                <th class="px-2 py-3 w-32">น้ำหนักที่ชั่ง</th>
+                                <th class="px-2 py-3 text-center">จัดการ</th>
                             </tr>
                         </thead>
                         <tbody id="weighing-table-body-${scaleId}">
-                            <tr><td colspan="4" class="text-center p-8 text-stone-400">ยังไม่มีรายการ</td></tr>
+                            <tr><td colspan="5" class="text-center p-8 text-stone-400">ยังไม่มีรายการ</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -1515,6 +1517,7 @@
             }
         }
 
+        // -- ADJUSTED -- : Adjusted printable report columns and widths
         function printWeighingHistory(scaleId) {
             if (!localWeighingData) return showAlert('ข้อมูลการวางยางยังไม่ถูกโหลด');
             const scaleData = localWeighingData.filter(record => record.scaleId == scaleId);
@@ -1546,14 +1549,19 @@
                         }, 10);
                         return false;
                     }
-                    const reportData = scaleData.filter(record => record.timestamp.toDate().toISOString().split('T')[0] === selectedDate).sort((a, b) => (a.dailyQueueNumber || 0) - (b.dailyQueueNumber || 0)); // -- CHANGED -- : Sort by queue
+                    const reportData = scaleData.filter(record => record.timestamp.toDate().toISOString().split('T')[0] === selectedDate).sort((a, b) => (a.dailyQueueNumber || 0) - (b.dailyQueueNumber || 0));
                     const formattedPrintDate = new Date(selectedDate).toLocaleDateString('th-TH', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric'
                     });
                     const tableRows = reportData.map(record => {
-                        return `<tr class="border-b"><td class="px-2 py-2 text-center">${record.dailyQueueNumber}</td><td class="px-2 py-2">${record.sellerName}</td><td class="px-2 py-2 text-right">${record.bags}</td></tr>`; // -- CHANGED -- : Show queue instead of time
+                        return `<tr class="border-b">
+                                    <td class="px-2 py-2 text-center">${record.dailyQueueNumber}</td>
+                                    <td class="px-2 py-2">${record.sellerName}</td>
+                                    <td class="px-2 py-2 text-right">${record.bags}</td>
+                                    <td class="px-2 py-2 border-l border-black"></td>
+                                </tr>`;
                     }).join('');
                     const reportHTML = `
                             <div class="p-8 bg-white text-black">
@@ -1565,9 +1573,10 @@
                                 <table class="w-full text-sm border-collapse border border-black">
                                     <thead class="bg-stone-200">
                                         <tr class="border-b-2 border-black">
-                                            <th class="px-2 py-2 border-r border-black" style="width: 20%;">ลำดับ</th>
-                                            <th class="px-2 py-2 border-r border-black" style="width: 60%;">ชื่อผู้ขาย</th>
-                                            <th class="px-2 py-2 border-r border-black" style="width: 20%;">จำนวนถุง</th>
+                                            <th class="px-2 py-2 border-r border-black" style="width: 10%;">ลำดับ</th>
+                                            <th class="px-2 py-2 border-r border-black" style="width: 40%;">ชื่อผู้ขาย</th>
+                                            <th class="px-2 py-2 border-r border-black text-right" style="width: 20%;">จำนวนถุง</th>
+                                            <th class="px-2 py-2 border-r border-black" style="width: 30%;">น้ำหนักที่ชั่ง (กก.)</th>
                                         </tr>
                                     </thead>
                                     <tbody>${tableRows}</tbody>
@@ -1663,7 +1672,6 @@
             const today = new Date().toISOString().slice(0, 10);
             XLSX.writeFile(wb, `daily-sales-report-${today}.xlsx`);
         }
-        // -- CHANGED -- : Added logic to assign queue numbers on new entry.
         async function saveWeighing(event) {
             if (!weighingsCollectionRef) return showAlert('ยังไม่พร้อมใช้งาน กรุณารอสักครู่');
             const scaleId = parseInt(event.target.dataset.scale);
@@ -1680,7 +1688,6 @@
                     });
                     editingWeighingId = null;
                 } else {
-                    // -- ADDED -- : Calculate daily queue number for the specific scale
                     const todayStart = new Date();
                     todayStart.setHours(0, 0, 0, 0);
                     const todaysEntriesOnScale = localWeighingData.filter(d => d.scaleId === scaleId && d.timestamp.toDate() >= todayStart);
@@ -1691,7 +1698,7 @@
                         scaleId,
                         timestamp: new Date(),
                         userId,
-                        dailyQueueNumber: newQueueNumber // -- ADDED --
+                        dailyQueueNumber: newQueueNumber
                     });
                 }
                 sellerNameInput.value = '';
@@ -1739,7 +1746,8 @@
                 }
             );
         }
-        // -- CHANGED -- : Updated table rendering to use queue number
+        
+        // -- ADJUSTED -- : Added empty cell for the new weight column
         function setupWeighingListeners() {
             if (!weighingsCollectionRef) return;
             for (let i = 1; i <= 4; i++) {
@@ -1759,18 +1767,17 @@
                     dailyWeighingData[i] = todaysDocs;
                     updateWeighingSummary();
                     if (todaysDocs.length === 0) {
-                        tableBody.innerHTML = '<tr><td colspan="4" class="text-center p-8 text-stone-400">ยังไม่มีรายการ</td></tr>';
+                        tableBody.innerHTML = '<tr><td colspan="5" class="text-center p-8 text-stone-400">ยังไม่มีรายการ</td></tr>';
                     } else {
-                        // -- CHANGED -- : Sort by dailyQueueNumber instead of timestamp
                         todaysDocs.sort((a, b) => (a.dailyQueueNumber || 999) - (b.dailyQueueNumber || 999)).forEach(data => {
                             const row = document.createElement('tr');
                             row.className = 'border-b odd:bg-stone-50';
-                            // -- CHANGED -- : Show queue number and add edit-queue-btn
                             row.innerHTML = `
-                                 <td class="px-4 py-3 text-center font-bold text-lg">${data.dailyQueueNumber || '-'}</td>
-                                 <td class="px-4 py-3 font-medium">${data.sellerName}</td>
-                                 <td class="px-4 py-3 text-right font-bold text-amber-700">${data.bags}</td>
-                                 <td class="px-4 py-3 text-center">
+                                 <td class="px-2 py-3 text-center font-bold text-lg">${data.dailyQueueNumber || '-'}</td>
+                                 <td class="px-2 py-3 font-medium truncate">${data.sellerName}</td>
+                                 <td class="px-2 py-3 text-right font-bold text-amber-700">${data.bags}</td>
+                                 <td class="px-2 py-3"></td>
+                                 <td class="px-2 py-3 text-center">
                                      <div class="flex items-center justify-center gap-1">
                                          <button class="edit-queue-btn text-green-600 p-2 rounded-md hover:bg-green-100" data-id="${data.id}" data-scale="${i}" data-current-queue="${data.dailyQueueNumber}" title="แก้ไขลำดับ">🔄</button>
                                          <button class="edit-weighing-btn text-blue-600 p-2 rounded-md hover:bg-blue-100" data-id="${data.id}" data-scale="${i}" title="แก้ไข">✏️</button>
@@ -1869,7 +1876,6 @@
                 showAlert(`เกิดข้อผิดพลาดในการเริ่มต้นระบบ: ${error.message}`);
             }
         }
-        // -- CHANGED -- : Added logic for edit-queue-btn
         async function handleWeighingTableClick(e) {
             const target = e.target.closest('button');
             if (!target) return;
@@ -1889,7 +1895,7 @@
                     editingWeighingId = id;
                     document.getElementById(`weighing-seller-${scaleId}`).focus();
                 }
-            } else if (target.classList.contains('edit-queue-btn')) { // -- ADDED -- block
+            } else if (target.classList.contains('edit-queue-btn')) {
                 const currentQueue = target.dataset.currentQueue;
                 const modalContentHTML = `
                     <p class="text-sm text-stone-500 mb-4 text-left">แก้ไขลำดับสำหรับรายการนี้ (ปัจจุบันคือ ${currentQueue})</p>
