@@ -43,27 +43,16 @@
             display: block;
         }
 
-        /* Add this to your existing <style> block */
+        /* 2. ADJUSTED: Styling for sub-tab buttons */
         .weighing-sub-btn {
-            border-color: transparent;
-            color: #78716c;
-            /* stone-500 */
-            transition: all 0.3s ease-in-out;
-        }
-
-        .weighing-sub-btn:hover {
-            border-color: #d6d3d1;
-            /* stone-300 */
-            color: #44403c;
-            /* stone-700 */
+            transition: all 0.15s ease-in-out;
         }
 
         .weighing-sub-btn.active {
-            border-color: #d97706;
-            /* amber-600 */
-            color: #92400e;
-            /* amber-800 */
-            font-weight: 700;
+            background-color: #b45309; /* amber-700 */
+            color: #ffffff;
+            transform: translateY(1px);
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.1);
         }
 
         .weighing-sub-content {
@@ -152,8 +141,8 @@
 
         <div class="mb-6 border-b border-stone-300 no-print">
             <nav id="tabs" class="flex flex-wrap -mb-px">
-                <button data-tab="tab-receipt" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">1. ออกใบเสร็จ</button>
-                <button data-tab="tab-weighing-consolidated" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">2. รับวางยาง</button>
+                <button data-tab="tab-weighing-consolidated" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">1. รับวางยาง</button>
+                <button data-tab="tab-receipt" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">2. ออกใบเสร็จ</button>
                 <button data-tab="tab-history" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">3. ประวัติและรายงาน</button>
                 <button data-tab="tab-dashboard" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">4. สรุปภาพรวม</button>
                 <button data-tab="tab-truck-summary" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">5. สรุปรวมขึ้นรถ</button>
@@ -164,7 +153,7 @@
         <main>
             <div id="tab-receipt" class="tab-content">
                 <section id="receipt-generator" class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
-                    <h2 class="text-2xl font-bold mb-2 border-b pb-3 text-stone-800">1. กรอกข้อมูลเพื่อออกใบเสร็จ</h2>
+                    <h2 class="text-2xl font-bold mb-2 border-b pb-3 text-stone-800">2. กรอกข้อมูลเพื่อออกใบเสร็จ</h2>
                     <p class="text-sm text-stone-500 mt-2 mb-6">ส่วนนี้คือศูนย์กลางการทำงาน สำหรับบันทึกข้อมูลการขาย ระบบจะคำนวณยอดรวมให้อัตโนมัติ และเมื่อบันทึกข้อมูลแล้วจะสร้างใบเสร็จสำหรับพิมพ์ได้ทันที</p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
                         <div>
@@ -325,15 +314,15 @@
 
             <div id="tab-weighing-consolidated" class="tab-content">
                 <section class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
-                    <h2 class="text-2xl font-bold mb-4 border-b pb-3 text-stone-800">2. รับวางยาง และสรุปผล</h2>
+                    <h2 class="text-2xl font-bold mb-4 border-b pb-3 text-stone-800">1. รับวางยาง และสรุปผล</h2>
 
-                    <div id="weighing-sub-tabs" class="mb-6 border-b border-stone-200">
-                        <nav class="flex flex-wrap -mb-px" aria-label="Tabs">
-                            <button data-subtab="weighing-scale-1" class="weighing-sub-btn p-4 border-b-2 font-medium text-center">ตาชั่ง 1</button>
-                            <button data-subtab="weighing-scale-2" class="weighing-sub-btn p-4 border-b-2 font-medium text-center">ตาชั่ง 2</button>
-                            <button data-subtab="weighing-scale-3" class="weighing-sub-btn p-4 border-b-2 font-medium text-center">ตาชั่ง 3</button>
-                            <button data-subtab="weighing-scale-4" class="weighing-sub-btn p-4 border-b-2 font-medium text-center">ตาชั่ง 4</button>
-                            <button data-subtab="weighing-summary" class="weighing-sub-btn p-4 border-b-2 font-medium text-center text-amber-600">สรุปผลรวม</button>
+                    <div id="weighing-sub-tabs" class="mb-6">
+                        <nav class="flex flex-wrap gap-2" aria-label="Tabs">
+                            <button data-subtab="weighing-scale-1" class="weighing-sub-btn py-2 px-5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold shadow-sm border border-stone-200">ตาชั่ง 1</button>
+                            <button data-subtab="weighing-scale-2" class="weighing-sub-btn py-2 px-5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold shadow-sm border border-stone-200">ตาชั่ง 2</button>
+                            <button data-subtab="weighing-scale-3" class="weighing-sub-btn py-2 px-5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold shadow-sm border border-stone-200">ตาชั่ง 3</button>
+                            <button data-subtab="weighing-scale-4" class="weighing-sub-btn py-2 px-5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold shadow-sm border border-stone-200">ตาชั่ง 4</button>
+                            <button data-subtab="weighing-summary" class="weighing-sub-btn py-2 px-5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold shadow-sm border border-amber-200">สรุปผลรวม</button>
                         </nav>
                     </div>
 
@@ -2309,7 +2298,10 @@
             ui.tabs.addEventListener('click', (e) => {
                 if (e.target.dataset.tab) switchToTab(e.target.dataset.tab);
             });
-            switchToTab('tab-receipt');
+            
+            // ADJUSTED: Change default tab to the new first tab
+            switchToTab('tab-weighing-consolidated');
+
             ui.sellerNameInput.addEventListener('blur', (e) => {
                 if (e.target.value.trim()) fetchAndPopulateWeights(e.target.value.trim());
             });
