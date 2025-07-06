@@ -68,6 +68,7 @@
         .receipt-sub-content.active {
             display: block;
         }
+        /* --- ADJUSTED FOR PRINTING --- */
         @media print {
             body * {
                 visibility: hidden;
@@ -81,7 +82,7 @@
                 left: 0;
                 top: 0;
                 width: 100%;
-                height: 100%;
+                /* height: 100%; REMOVED to allow content to define height */
                 padding: 0;
                 margin: 0;
             }
@@ -1242,7 +1243,8 @@
             ui.printArea.innerHTML = `<div style="overflow: auto;">${generateSingleReceiptHTML('ใบเสร็จรับเงิน (ต้นฉบับ)')}${generateSingleReceiptHTML('ใบเสร็จรับเงิน (สำเนา)', true)}</div>`;
             window.print();
         }
-
+        
+        // --- ADJUSTED FOR PRINTING ---
         function createDailySummaryReport() {
             const reportDateStr = ui.reportDateSelect.value;
             if (!reportDateStr) {
@@ -1278,9 +1280,10 @@
                     <td class="px-2 py-2 border-l"></td>
                 </tr>
             `).join('');
+            // Reduced padding from p-8 to p-4 for more compact printing
             const reportHTML = `
-                <div class="p-8 bg-white text-black">
-                    <div class="text-center mb-6">
+                <div class="p-4 bg-white text-black">
+                    <div class="text-center mb-4">
                         <h2 class="text-xl font-bold">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</h2>
                         <h3 class="text-lg">รายงานการชั่งยางประจำวันที่ ${formattedDate}</h3>
                     </div>
@@ -1458,7 +1461,6 @@
             ui.dateDisplay.textContent = `(${(date || new Date()).toLocaleDateString('th-TH')})`;
         }
         
-        // -- ADJUSTED -- : Adjusted table headers and column widths
         function createWeighingStationHTML(scaleId) {
             return `
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -1516,8 +1518,7 @@
                 }
             }
         }
-
-        // -- ADJUSTED -- : Adjusted printable report columns and widths
+        
         function printWeighingHistory(scaleId) {
             if (!localWeighingData) return showAlert('ข้อมูลการวางยางยังไม่ถูกโหลด');
             const scaleData = localWeighingData.filter(record => record.scaleId == scaleId);
@@ -1564,8 +1565,8 @@
                                 </tr>`;
                     }).join('');
                     const reportHTML = `
-                            <div class="p-8 bg-white text-black">
-                                <div class="text-center mb-6">
+                            <div class="p-4 bg-white text-black">
+                                <div class="text-center mb-4">
                                     <h2 class="text-xl font-bold">รายงานการรับวางยาง ประจำวันที่ ${formattedPrintDate}</h2>
                                     <h3 class="text-lg">ตาชั่งที่ ${scaleId}</h3>
                                     <p>สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</p>
@@ -1747,7 +1748,6 @@
             );
         }
         
-        // -- ADJUSTED -- : Added empty cell for the new weight column
         function setupWeighingListeners() {
             if (!weighingsCollectionRef) return;
             for (let i = 1; i <= 4; i++) {
