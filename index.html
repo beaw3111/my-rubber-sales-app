@@ -130,7 +130,7 @@
             <div class="space-y-4">
                 <div>
                     <label for="username-input" class="block text-sm font-medium text-stone-600">ชื่อผู้ใช้</label>
-                    <input type="text" id="username-input" value="admin" class="mt-1 w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500">
+                    <input type="text" id="username-input" class="mt-1 w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500">
                 </div>
                 <div>
                     <label for="password-input" class="block text-sm font-medium text-stone-600">รหัสผ่าน</label>
@@ -515,7 +515,16 @@
         };
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'cup-rubber-sales-app';
-        let currentPassword = localStorage.getItem('customPassword') || 'as54321';
+        
+        // --- NEW: User and Role Management ---
+        const users = {
+            'admin': { password: 'as54321', allowedTabs: ['all'] },
+            'bill':  { password: 'bill12345', allowedTabs: ['tab-receipt'] },
+            'rub':   { password: 'kaset1234', allowedTabs: ['tab-weighing-consolidated', 'tab-receipt'] }
+        };
+        let currentPassword = localStorage.getItem('customPassword') || users.admin.password;
+        users.admin.password = currentPassword;
+
         let localSalesData = [];
         let localWeighingData = [];
         let localTruckLoads = [];
@@ -871,7 +880,6 @@
                 const currentWeight = salesData.totalSalesWeight - loadedWeight;
                 grandTotal += currentWeight;
 
-                // MODIFIED: Logic to select colors for each card
                 let colors;
                 const scaleNum = parseInt(scale);
                 if (!isNaN(scaleNum) && scaleNum > 0) {
@@ -2181,6 +2189,7 @@
                         return false;
                     }
                     localStorage.setItem('customPassword', newPassword);
+                    users.admin.password = newPassword;
                     currentPassword = newPassword;
                     showAlert('เปลี่ยนรหัสผ่านสำเร็จแล้ว');
                     return true;
@@ -2288,16 +2297,62 @@
                 });
             });
         }
+        
+        // --- NEW: Role-Based Access Control ---
+        function applyUserPermissions() {
+            const username = sessionStorage.getItem('loggedInUser');
+            if (!username || !users[username]) {
+                // If no valid user, logout
+                sessionStorage.removeItem('loggedInUser');
+                window.location.reload();
+                return;
+            }
+
+            const permissions = users[username].allowedTabs;
+            const allTabButtons = document.querySelectorAll('#tabs .tab-btn');
+            let firstVisibleTab = null;
+
+            allTabButtons.forEach(btn => {
+                const tabId = btn.dataset.tab;
+                if (permissions.includes('all') || permissions.includes(tabId)) {
+                    btn.style.display = 'inline-block';
+                    if (!firstVisibleTab) {
+                        firstVisibleTab = tabId;
+                    }
+                } else {
+                    btn.style.display = 'none';
+                }
+            });
+
+            // Show/hide change password button
+            if (username === 'admin') {
+                ui.changePasswordBtn.style.display = 'block';
+            } else {
+                ui.changePasswordBtn.style.display = 'none';
+            }
+
+            // Switch to the first available tab for that user
+            if (firstVisibleTab) {
+                switchToTab(firstVisibleTab);
+            }
+        }
+
+
         document.addEventListener('DOMContentLoaded', () => {
             const handleLogin = () => {
-                const username = ui.usernameInput.value.trim();
+                const username = ui.usernameInput.value.trim().toLowerCase();
                 const password = ui.passwordInput.value.trim();
-                if (username === 'admin' && password === currentPassword) {
+                const user = users[username];
+
+                if (user && user.password === password) {
                     ui.loginScreen.classList.add('hidden');
                     ui.appContainer.classList.remove('hidden');
-                    sessionStorage.setItem('isLoggedIn', 'true');
+                    sessionStorage.setItem('loggedInUser', username);
                     ui.loginError.classList.add('hidden');
                     ui.passwordInput.value = '';
+
+                    applyUserPermissions(); // Apply permissions right after login
+
                     if (!isAppInitialized) {
                         initializeFirebaseAndAuth();
                     }
@@ -2308,14 +2363,18 @@
                     ui.passwordInput.focus();
                 }
             };
-            if (sessionStorage.getItem('isLoggedIn') === 'true') {
+
+            const loggedInUser = sessionStorage.getItem('loggedInUser');
+            if (loggedInUser && users[loggedInUser]) {
                 ui.loginScreen.classList.add('hidden');
                 ui.appContainer.classList.remove('hidden');
+                applyUserPermissions(); // Apply permissions on page load
                 initializeFirebaseAndAuth();
             } else {
                 ui.loginScreen.classList.remove('hidden');
                 ui.appContainer.classList.add('hidden');
             }
+            
             ui.loginButton.addEventListener('click', handleLogin);
             ui.passwordInput.addEventListener('keyup', (event) => {
                 if (event.key === 'Enter') {
@@ -2323,7 +2382,7 @@
                 }
             });
             ui.logoutButton.addEventListener('click', () => {
-                sessionStorage.removeItem('isLoggedIn');
+                sessionStorage.removeItem('loggedInUser');
                 window.location.reload();
             });
             ui.changePasswordBtn.addEventListener('click', promptChangePassword);
@@ -2331,8 +2390,6 @@
             ui.tabs.addEventListener('click', (e) => {
                 if (e.target.dataset.tab) switchToTab(e.target.dataset.tab);
             });
-            
-            switchToTab('tab-weighing-consolidated');
 
             ui.sellerNameInput.addEventListener('blur', (e) => {
                 if (e.target.value.trim()) fetchAndPopulateWeights(e.target.value.trim());
