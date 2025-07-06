@@ -42,8 +42,8 @@
         .tab-content.active {
             display: block;
         }
-
-        /* 2. ADJUSTED: Styling for sub-tab buttons */
+        
+        /* Styling for sub-tab buttons in "รับวางยาง" */
         .weighing-sub-btn {
             transition: all 0.15s ease-in-out;
         }
@@ -63,6 +63,25 @@
             display: block;
         }
 
+        /* ADDED: Styling for sub-tab buttons in "ออกใบเสร็จ" */
+        .receipt-sub-btn {
+            transition: all 0.15s ease-in-out;
+        }
+
+        .receipt-sub-btn.active {
+            background-color: #b45309; /* amber-700 */
+            color: #ffffff;
+            transform: translateY(1px);
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .receipt-sub-content {
+            display: none;
+        }
+
+        .receipt-sub-content.active {
+            display: block;
+        }
 
         @media print {
             body * {
@@ -142,100 +161,136 @@
         <div class="mb-6 border-b border-stone-300 no-print">
             <nav id="tabs" class="flex flex-wrap -mb-px">
                 <button data-tab="tab-weighing-consolidated" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">1. รับวางยาง</button>
-                <button data-tab="tab-receipt" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">2. ออกใบเสร็จ</button>
+                <button data-tab="tab-receipt" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">2. ออกใบเสร็จ และ สรุปขึ้นรถ</button>
                 <button data-tab="tab-history" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">3. ประวัติและรายงาน</button>
                 <button data-tab="tab-dashboard" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">4. สรุปภาพรวม</button>
-                <button data-tab="tab-truck-summary" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">5. สรุปรวมขึ้นรถ</button>
-                <button data-tab="tab-settings" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">6. ตั้งค่า</button>
+                <button data-tab="tab-settings" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">5. ตั้งค่า</button>
             </nav>
         </div>
 
         <main>
             <div id="tab-receipt" class="tab-content">
-                <section id="receipt-generator" class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
-                    <h2 class="text-2xl font-bold mb-2 border-b pb-3 text-stone-800">2. กรอกข้อมูลเพื่อออกใบเสร็จ</h2>
-                    <p class="text-sm text-stone-500 mt-2 mb-6">ส่วนนี้คือศูนย์กลางการทำงาน สำหรับบันทึกข้อมูลการขาย ระบบจะคำนวณยอดรวมให้อัตโนมัติ และเมื่อบันทึกข้อมูลแล้วจะสร้างใบเสร็จสำหรับพิมพ์ได้ทันที</p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
-                        <div>
-                            <label for="seller-name" class="block text-sm font-medium text-stone-700 mb-1">ชื่อ-สกุล ผู้ขาย</label>
-                            <input type="text" id="seller-name" class="w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500" placeholder="เช่น นายสมชาย ใจดี">
-                        </div>
-                        <div>
-                            <label for="scale-number" class="block text-sm font-medium text-stone-700 mb-1">ตาชั่งที่ (สำหรับใบเสร็จนี้)</label>
-                            <input type="number" id="scale-number" min="1" max="9" class="w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500" placeholder="1-9">
-                        </div>
-                        <div class="md:col-span-2">
-                            <label for="receipt-date" class="block text-sm font-medium text-stone-700 mb-1">วันที่ <span id="date-display" class="font-normal text-stone-500 ml-2"></span></label>
-                            <input type="date" id="receipt-date" class="w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-stone-700 mb-1">น้ำหนักที่บันทึก (กก.) - ใส่ได้สูงสุด 10 รายการ</label>
-                            <div id="weight-inputs-container" class="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-2">
-                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 1">
-                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 2">
-                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 3">
-                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 4">
-                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 5">
-                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 6">
-                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 7">
-                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 8">
-                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 9">
-                                <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 10">
+                <div id="receipt-sub-tabs" class="mb-6">
+                    <nav class="flex flex-wrap gap-2" aria-label="Receipt Tabs">
+                        <button data-subtab="receipt-form" class="receipt-sub-btn py-2 px-5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold shadow-sm border border-stone-200">ออกใบเสร็จ</button>
+                        <button data-subtab="receipt-truck-summary" class="receipt-sub-btn py-2 px-5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold shadow-sm border border-stone-200">สรุปรวมขึ้นรถ</button>
+                    </nav>
+                </div>
+
+                <div id="receipt-form-content" class="receipt-sub-content">
+                    <section id="receipt-generator" class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                        <h2 class="text-2xl font-bold mb-2 border-b pb-3 text-stone-800">2. กรอกข้อมูลเพื่อออกใบเสร็จ</h2>
+                        <p class="text-sm text-stone-500 mt-2 mb-6">ส่วนนี้คือศูนย์กลางการทำงาน สำหรับบันทึกข้อมูลการขาย ระบบจะคำนวณยอดรวมให้อัตโนมัติ และเมื่อบันทึกข้อมูลแล้วจะสร้างใบเสร็จสำหรับพิมพ์ได้ทันที</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+                            <div>
+                                <label for="seller-name" class="block text-sm font-medium text-stone-700 mb-1">ชื่อ-สกุล ผู้ขาย</label>
+                                <input type="text" id="seller-name" class="w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500" placeholder="เช่น นายสมชาย ใจดี">
                             </div>
-                        </div>
-                        <div class="md:col-span-2">
-                            <div class="relative">
-                                <label for="price-per-kg" class="block text-sm font-medium text-stone-700 mb-1">ราคาต่อหน่วย (บาท/กก.)</label>
-                                <input type="number" id="price-per-kg" class="w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors" placeholder="0.00">
-                                <button id="price-lock-btn" title="ล็อคราคา" class="absolute right-2.5 bottom-2 h-8 w-8 flex items-center justify-center rounded-lg text-white bg-gray-400 hover:bg-gray-500 transition-colors">
-                                    <span id="price-lock-icon">🔓</span>
-                                </button>
+                            <div>
+                                <label for="scale-number" class="block text-sm font-medium text-stone-700 mb-1">ตาชั่งที่ (สำหรับใบเสร็จนี้)</label>
+                                <input type="number" id="scale-number" min="1" max="9" class="w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500" placeholder="1-9">
                             </div>
-                        </div>
-                        <div class="md:col-span-2 bg-amber-50 border border-amber-200 p-4 rounded-lg space-y-4">
-                            <div class="flex justify-between items-center">
-                                <span class="font-medium text-stone-600">น้ำหนักรวม (กก.):</span>
-                                <span id="total-weight" class="text-2xl font-bold text-stone-800">0.00</span>
+                            <div class="md:col-span-2">
+                                <label for="receipt-date" class="block text-sm font-medium text-stone-700 mb-1">วันที่ <span id="date-display" class="font-normal text-stone-500 ml-2"></span></label>
+                                <input type="date" id="receipt-date" class="w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
                             </div>
-                            <div class="flex justify-between items-center">
-                                <span class="font-medium text-stone-600">รวมเป็นเงินทั้งสิ้น (บาท):</span>
-                                <span id="total-amount" class="text-3xl font-bold text-amber-600">0.00</span>
-                            </div>
-                            <div class="flex justify-between items-center text-right border-t border-amber-200 pt-3">
-                                <span class="font-medium text-stone-600">(ตัวอักษร):</span>
-                                <span id="total-amount-text" class="text-md text-stone-500">-</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-8 flex justify-end items-center gap-4">
-                        <button id="cancel-edit-button" class="hidden bg-stone-200 text-stone-700 font-bold py-3 px-6 rounded-lg hover:bg-stone-300 transition-colors">
-                            ยกเลิก
-                        </button>
-                        <button id="save-button" class="bg-amber-600 text-white font-bold py-3 px-8 rounded-lg shadow-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-transform hover:scale-105">
-                            บันทึกข้อมูล
-                        </button>
-                    </div>
-                    <div class="border-t pt-6 mt-8">
-                        <h3 class="text-xl font-semibold text-stone-700 mb-4">สรุปยอดขายแยกตามตาชั่ง (วันนี้)</h3>
-                        <div id="sales-summary-by-scale" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                        </div>
-                        <div id="sales-summary-today-total" class="mt-6 p-4 bg-amber-200 rounded-lg text-center hidden shadow">
-                            <h4 class="text-lg font-bold text-amber-800">ยอดรวมทั้งหมด (วันนี้)</h4>
-                            <div class="flex justify-center gap-x-8 gap-y-2 flex-wrap mt-2">
-                                <div>
-                                    <span class="text-md text-amber-700">น้ำหนักรวม: </span>
-                                    <span id="summary-today-total-weight" class="font-bold text-amber-900 text-xl">0.00</span>
-                                    <span class="text-md text-amber-700"> กก.</span>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-stone-700 mb-1">น้ำหนักที่บันทึก (กก.) - ใส่ได้สูงสุด 10 รายการ</label>
+                                <div id="weight-inputs-container" class="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-2">
+                                    <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 1">
+                                    <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 2">
+                                    <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 3">
+                                    <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 4">
+                                    <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 5">
+                                    <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 6">
+                                    <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 7">
+                                    <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 8">
+                                    <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 9">
+                                    <input type="number" class="weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" placeholder="ครั้งที่ 10">
                                 </div>
-                                <div>
-                                    <span class="text-md text-amber-700">ยอดเงินรวม: </span>
-                                    <span id="summary-today-total-amount" class="font-bold text-amber-900 text-xl">0.00</span>
-                                    <span class="text-md text-amber-700"> บาท</span>
+                            </div>
+                            <div class="md:col-span-2">
+                                <div class="relative">
+                                    <label for="price-per-kg" class="block text-sm font-medium text-stone-700 mb-1">ราคาต่อหน่วย (บาท/กก.)</label>
+                                    <input type="number" id="price-per-kg" class="w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors" placeholder="0.00">
+                                    <button id="price-lock-btn" title="ล็อคราคา" class="absolute right-2.5 bottom-2 h-8 w-8 flex items-center justify-center rounded-lg text-white bg-gray-400 hover:bg-gray-500 transition-colors">
+                                        <span id="price-lock-icon">🔓</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2 bg-amber-50 border border-amber-200 p-4 rounded-lg space-y-4">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium text-stone-600">น้ำหนักรวม (กก.):</span>
+                                    <span id="total-weight" class="text-2xl font-bold text-stone-800">0.00</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium text-stone-600">รวมเป็นเงินทั้งสิ้น (บาท):</span>
+                                    <span id="total-amount" class="text-3xl font-bold text-amber-600">0.00</span>
+                                </div>
+                                <div class="flex justify-between items-center text-right border-t border-amber-200 pt-3">
+                                    <span class="font-medium text-stone-600">(ตัวอักษร):</span>
+                                    <span id="total-amount-text" class="text-md text-stone-500">-</span>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </section>
+                        <div class="mt-8 flex justify-end items-center gap-4">
+                            <button id="cancel-edit-button" class="hidden bg-stone-200 text-stone-700 font-bold py-3 px-6 rounded-lg hover:bg-stone-300 transition-colors">
+                                ยกเลิก
+                            </button>
+                            <button id="save-button" class="bg-amber-600 text-white font-bold py-3 px-8 rounded-lg shadow-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-transform hover:scale-105">
+                                บันทึกข้อมูล
+                            </button>
+                        </div>
+                        <div class="border-t pt-6 mt-8">
+                            <h3 class="text-xl font-semibold text-stone-700 mb-4">สรุปยอดขายแยกตามตาชั่ง (วันนี้)</h3>
+                            <div id="sales-summary-by-scale" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                            </div>
+                            <div id="sales-summary-today-total" class="mt-6 p-4 bg-amber-200 rounded-lg text-center hidden shadow">
+                                <h4 class="text-lg font-bold text-amber-800">ยอดรวมทั้งหมด (วันนี้)</h4>
+                                <div class="flex justify-center gap-x-8 gap-y-2 flex-wrap mt-2">
+                                    <div>
+                                        <span class="text-md text-amber-700">น้ำหนักรวม: </span>
+                                        <span id="summary-today-total-weight" class="font-bold text-amber-900 text-xl">0.00</span>
+                                        <span class="text-md text-amber-700"> กก.</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-md text-amber-700">ยอดเงินรวม: </span>
+                                        <span id="summary-today-total-amount" class="font-bold text-amber-900 text-xl">0.00</span>
+                                        <span class="text-md text-amber-700"> บาท</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+                
+                <div id="receipt-truck-summary-content" class="receipt-sub-content">
+                     <section class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                        <h2 class="text-2xl font-bold mb-4 border-b pb-3 text-stone-800">สรุปรวมน้ำหนักขึ้นรถ</h2>
+                        <div class="flex flex-col sm:flex-row gap-4 items-center mb-6 bg-stone-50 p-4 rounded-lg border">
+                            <div>
+                                <label for="truck-summary-date" class="block text-sm font-medium text-stone-700">เลือกวันที่ต้องการสรุป</label>
+                                <select id="truck-summary-date" class="w-full sm:w-auto mt-1 p-2 border border-stone-300 rounded-lg shadow-sm bg-white"></select>
+                            </div>
+                        </div>
+                        <div id="truck-summary-container" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 border-t-2 border-stone-300 pt-6">
+                            <div class="bg-amber-100 border border-amber-300 p-6 rounded-xl text-center">
+                                <h3 class="text-xl font-bold text-amber-800">ยอดรวมน้ำหนักที่ยังไม่บันทึก</h3>
+                                <p id="truck-grand-total-weight" class="text-5xl font-extrabold text-amber-900 my-2">0.00</p>
+                                <p class="text-lg text-amber-800">กิโลกรัม</p>
+                            </div>
+                            <div class="bg-green-100 border border-green-300 p-6 rounded-xl text-center">
+                                <h3 class="text-xl font-bold text-green-800">ยอดรวมน้ำหนักที่บันทึกไปแล้ว</h3>
+                                <p id="truck-total-loaded-weight" class="text-5xl font-extrabold text-green-900 my-2">0.00</p>
+                                <p class="text-lg text-green-800">กิโลกรัม</p>
+                            </div>
+                        </div>
+                        <div id="truck-load-history-container" class="mt-8">
+                        </div>
+                    </section>
+                </div>
             </div>
             <div id="tab-history" class="tab-content">
                 <section id="sales-data" class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
@@ -380,7 +435,7 @@
             </div>
             <div id="tab-settings" class="tab-content">
                 <section class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
-                    <h2 class="text-2xl font-bold mb-6 border-b pb-3 text-stone-800">6. ตั้งค่าและจัดการข้อมูล</h2>
+                    <h2 class="text-2xl font-bold mb-6 border-b pb-3 text-stone-800">5. ตั้งค่าและจัดการข้อมูล</h2>
                     <div class="space-y-8">
                         <div class="bg-stone-50 border border-stone-200 p-6 rounded-xl">
                             <h3 class="text-lg font-semibold text-stone-800">สำรองและกู้คืนข้อมูล</h3>
@@ -402,33 +457,6 @@
                                 🗑️ ลบข้อมูลทั้งหมดในระบบ
                             </button>
                         </div>
-                    </div>
-                </section>
-            </div>
-            <div id="tab-truck-summary" class="tab-content">
-                <section class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
-                    <h2 class="text-2xl font-bold mb-4 border-b pb-3 text-stone-800">5. สรุปรวมน้ำหนักขึ้นรถ</h2>
-                    <div class="flex flex-col sm:flex-row gap-4 items-center mb-6 bg-stone-50 p-4 rounded-lg border">
-                        <div>
-                            <label for="truck-summary-date" class="block text-sm font-medium text-stone-700">เลือกวันที่ต้องการสรุป</label>
-                            <select id="truck-summary-date" class="w-full sm:w-auto mt-1 p-2 border border-stone-300 rounded-lg shadow-sm bg-white"></select>
-                        </div>
-                    </div>
-                    <div id="truck-summary-container" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 border-t-2 border-stone-300 pt-6">
-                        <div class="bg-amber-100 border border-amber-300 p-6 rounded-xl text-center">
-                            <h3 class="text-xl font-bold text-amber-800">ยอดรวมน้ำหนักที่ยังไม่บันทึก</h3>
-                            <p id="truck-grand-total-weight" class="text-5xl font-extrabold text-amber-900 my-2">0.00</p>
-                            <p class="text-lg text-amber-800">กิโลกรัม</p>
-                        </div>
-                        <div class="bg-green-100 border border-green-300 p-6 rounded-xl text-center">
-                            <h3 class="text-xl font-bold text-green-800">ยอดรวมน้ำหนักที่บันทึกไปแล้ว</h3>
-                            <p id="truck-total-loaded-weight" class="text-5xl font-extrabold text-green-900 my-2">0.00</p>
-                            <p class="text-lg text-green-800">กิโลกรัม</p>
-                        </div>
-                    </div>
-                    <div id="truck-load-history-container" class="mt-8">
                     </div>
                 </section>
             </div>
@@ -563,7 +591,7 @@
             truckLoadHistoryContainer: document.getElementById('truck-load-history-container'),
         };
 
-        // --- Functions for Truck Summary (Tab 10) ---
+        // --- Functions for Truck Summary ---
         function getUTCDateKey(date) {
             if (!date) return null;
             const year = date.getFullYear();
@@ -704,8 +732,8 @@
 
             for (const scaleId of sortedScales) {
                 historyHtml += `<div class="mb-4 bg-stone-50 p-4 rounded-lg border">
-                                 <h4 class="font-bold text-md text-stone-700">ตาชั่งที่ ${scaleId}</h4>
-                                 <ul class="list-none mt-2 space-y-2 text-stone-600">`;
+                                    <h4 class="font-bold text-md text-stone-700">ตาชั่งที่ ${scaleId}</h4>
+                                    <ul class="list-none mt-2 space-y-2 text-stone-600">`;
                 loadsByScale[scaleId].sort((a, b) => a.timestamp.toDate() - b.timestamp.toDate()).forEach((load, index) => {
                     historyHtml += `<li class="flex justify-between items-center border-b border-stone-200 py-1">
                                         <span>ครั้งที่ ${index + 1}: <strong class="text-stone-900">${load.weight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} กก.</strong> <span class="text-xs text-stone-500">(${load.timestamp.toDate().toLocaleTimeString('th-TH')})</span></span>
@@ -750,19 +778,19 @@
                                         <td class="py-1">${index + 1}</td>
                                         <td class="py-1">${load.timestamp.toDate().toLocaleTimeString('th-TH')}</td>
                                         <td class="py-1 text-right">${load.weight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                      </tr>`;
+                                    </tr>`;
                 });
 
                 printContent += `   </tbody>
-                                </table>
-                             </div>`;
+                                    </table>
+                                </div>`;
             }
 
             printContent += `<div class="mt-8 pt-4 border-t-4 border-double border-black text-right">
                                 <span class="text-lg font-bold">รวมน้ำหนักที่บันทึกทั้งหมด:</span>
                                 <span class="text-2xl font-bold ml-4">${totalLoadedWeight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                 <span class="text-lg font-bold"> กก.</span>
-                           </div></div>`;
+                            </div></div>`;
 
             ui.printArea.innerHTML = printContent;
             window.print();
@@ -877,15 +905,15 @@
                 targetContent.classList.add('active');
             }
 
-            if (targetTabId === 'tab-truck-summary') {
-                const dateSelector = ui.truckSummaryDate;
-                if (dateSelector.options.length > 0 && dateSelector.options[0].value) {
-                    dateSelector.value = dateSelector.options[0].value;
+            // If the main receipt tab is selected, ensure its first sub-tab is active
+            if (targetTabId === 'tab-receipt') {
+                const firstSubTab = document.querySelector('#receipt-sub-tabs .receipt-sub-btn');
+                if (firstSubTab) {
+                    switchToReceiptSubTab(firstSubTab.dataset.subtab);
                 }
-                calculateTruckSummary();
             }
         }
-
+        
         function showModal(title, message, buttons) {
             ui.modalTitle.textContent = title;
             ui.modalMessageContainer.innerHTML = message;
@@ -1480,7 +1508,6 @@
         }
 
         function createWeighingStationHTML(scaleId) {
-            // Removed the H2 title from here
             return `
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                     <div class="md:col-span-2">
@@ -1522,10 +1549,8 @@
 
         function renderWeighingStations() {
             for (let i = 1; i <= 4; i++) {
-                // The target is now the new sub-content div
                 const tabContent = document.getElementById(`weighing-scale-${i}-content`);
                 if (tabContent) {
-                    // We don't need the main H2 title anymore, as it's outside
                     tabContent.innerHTML = createWeighingStationHTML(i);
                     document.getElementById(`save-weighing-${i}`).addEventListener('click', saveWeighing);
                     document.getElementById(`weighing-table-body-${i}`).addEventListener('click', handleWeighingTableClick);
@@ -1670,7 +1695,7 @@
                     wch: 10
                 }];
                 for (let R = 1; R < exportData.length; ++R) {
-                    for (let C of[3, 4, 5]) {
+                    for (let C of [3, 4, 5]) {
                         const cell_ref = XLSX.utils.encode_cell({
                             c: C,
                             r: R
@@ -1792,7 +1817,7 @@
                                          <button class="delete-weighing-btn text-red-600 p-2 rounded-md hover:bg-red-100" data-id="${data.id}" title="ลบ">🗑️</button>
                                      </div>
                                  </td>
-                             `;
+                            `;
                             tableBody.appendChild(row);
                         });
                     }
@@ -2299,7 +2324,6 @@
                 if (e.target.dataset.tab) switchToTab(e.target.dataset.tab);
             });
             
-            // ADJUSTED: Change default tab to the new first tab
             switchToTab('tab-weighing-consolidated');
 
             ui.sellerNameInput.addEventListener('blur', (e) => {
@@ -2341,18 +2365,14 @@
             ui.receiptDateInput.valueAsDate = new Date();
             updateDateDisplay();
 
-            // --- START: New code for Consolidated Weighing Tab ---
+            // --- START: Weighing Tab Logic ---
             const weighingSubTabsContainer = document.getElementById('weighing-sub-tabs');
             const weighingSubBtns = document.querySelectorAll('.weighing-sub-btn');
             const weighingSubContents = document.querySelectorAll('.weighing-sub-content');
 
             function switchToWeighingSubTab(targetId) {
-                weighingSubContents.forEach(content => {
-                    content.classList.remove('active');
-                });
-                weighingSubBtns.forEach(btn => {
-                    btn.classList.remove('active');
-                });
+                weighingSubContents.forEach(content => content.classList.remove('active'));
+                weighingSubBtns.forEach(btn => btn.classList.remove('active'));
 
                 const targetContent = document.getElementById(targetId + '-content');
                 const targetBtn = document.querySelector(`.weighing-sub-btn[data-subtab="${targetId}"]`);
@@ -2368,9 +2388,45 @@
                 }
             });
 
-            // Set a default sub-tab to be active
             switchToWeighingSubTab('weighing-scale-1');
-            // --- END: New code for Consolidated Weighing Tab ---
+            // --- END: Weighing Tab Logic ---
+
+            // --- START: NEW Receipt Tab Logic ---
+            const receiptSubTabsContainer = document.getElementById('receipt-sub-tabs');
+            const receiptSubBtns = document.querySelectorAll('.receipt-sub-btn');
+            const receiptSubContents = document.querySelectorAll('.receipt-sub-content');
+
+            function switchToReceiptSubTab(targetId) {
+                receiptSubContents.forEach(content => content.classList.remove('active'));
+                receiptSubBtns.forEach(btn => btn.classList.remove('active'));
+
+                const targetContent = document.getElementById(targetId + '-content');
+                const targetBtn = document.querySelector(`.receipt-sub-btn[data-subtab="${targetId}"]`);
+
+                if (targetContent) targetContent.classList.add('active');
+                if (targetBtn) targetBtn.classList.add('active');
+                
+                // If switching to truck summary, populate its data
+                if (targetId === 'receipt-truck-summary') {
+                    const dateSelector = ui.truckSummaryDate;
+                    if (dateSelector.options.length > 0 && dateSelector.options[0].value) {
+                       dateSelector.value = dateSelector.options[0].value;
+                    }
+                    calculateTruckSummary();
+                }
+            }
+
+            receiptSubTabsContainer.addEventListener('click', (e) => {
+                const targetSubTabId = e.target.dataset.subtab;
+                if (targetSubTabId) {
+                    switchToReceiptSubTab(targetSubTabId);
+                }
+            });
+            
+            // Set a default sub-tab for receipt section
+            switchToReceiptSubTab('receipt-form');
+            // --- END: NEW Receipt Tab Logic ---
+
         });
     </script>
 </body>
