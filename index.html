@@ -291,6 +291,7 @@
 
                 const record = JSON.parse(selectedItem.dataset.record);
 
+                // Populate the form
                 ui.sellerNameInput.value = record.sellerName;
                 const weightInputs = ui.weightInputsContainer.querySelectorAll('.weight-input');
                 weightInputs.forEach(input => input.value = ''); 
@@ -301,6 +302,7 @@
                 calculateTotals();
                 hideModal();
 
+                // Confirm deletion from the weighing queue
                 const confirmMessage = `คุณได้เลือก <strong>${record.sellerName}</strong> (${record.bags} ถุง)<br><br><strong>ยืนยันเพื่อลบรายการนี้ออกจากคิววางยางหรือไม่?</strong> (เพื่อป้องกันการทำใบเสร็จซ้ำ)`;
                 showConfirm(confirmMessage, async () => {
                     try {
