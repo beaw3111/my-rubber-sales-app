@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -481,7 +480,8 @@
             getDocs,
             getDoc,
             writeBatch,
-            runTransaction // FIX: Import runTransaction
+            runTransaction,
+            serverTimestamp // [EDITED] 1. Import serverTimestamp
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
@@ -530,7 +530,6 @@
         let isPriceLocked = false;
         let isScaleLocked = false;
         let isAppInitialized = false;
-
         const ui = {
             loginScreen: document.getElementById('login-screen'),
             appContainer: document.getElementById('app'),
@@ -598,9 +597,9 @@
         // --- Functions for Truck Summary ---
         function getUTCDateKey(date) {
             if (!date) return null;
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
+            const year = date.getUTCFullYear();
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(date.getUTCDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
         }
         
@@ -640,7 +639,7 @@
                             scaleId: scaleId,
                             weight: weightToSave,
                             date: selectedDateStr,
-                            timestamp: new Date(),
+                            timestamp: serverTimestamp(), // [EDITED] 2. Use serverTimestamp
                             userId: userId,
                             vehicleRegistration: vehicleRegistration
                         });
@@ -1061,7 +1060,7 @@
                 }
                 row.innerHTML = `
                     <td class="px-4 py-4 text-center font-medium text-stone-700">${sale.dailyQueueNumber || '-'}</td>
-                    <td class="px-6 py-4">${saleDate.toLocaleDateString('th-TH')}</td>
+                    <td class="px-6 py-4">${saleDate.toLocaleDateString('th-TH', { timeZone: 'UTC' })}</td>
                     <td class="px-6 py-4 font-medium text-stone-900 whitespace-nowrap">${sale.seller}</td>
                     <td class="px-6 py-4 text-right">${sale.weight.toFixed(2)}</td>
                     <td class="px-6 py-4 text-right">${sale.price.toFixed(2)}</td>
@@ -1121,7 +1120,8 @@
             const labels = sortedDays.map(day => new Date(day).toLocaleDateString('th-TH', {
                 year: '2-digit',
                 month: 'short',
-                day: 'numeric'
+                day: 'numeric',
+                timeZone: 'UTC'
             }));
             const weightData = sortedDays.map(day => statsByDay[day].totalWeight);
             const priceData = sortedDays.map(day => {
@@ -1264,7 +1264,8 @@
                 const formattedDate = new Date(day).toLocaleDateString('th-TH', {
                     year: 'numeric',
                     month: 'long',
-                    day: 'numeric'
+                    day: 'numeric',
+                    timeZone: 'UTC'
                 });
                 const row = document.createElement('tr');
                 row.className = 'bg-white border-b hover:bg-stone-50';
@@ -1290,7 +1291,7 @@
                     </div>
                     <div class="border-y border-dotted border-stone-400 py-1 mb-2">
                         <div class="flex justify-between"><span>เลขที่:</span><span>${sale.receiptId || 'N/A'}</span></div>
-                        <div class="flex justify-between mt-1"><span>วันที่:</span><span>${saleDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</span></div>
+                        <div class="flex justify-between mt-1"><span>วันที่:</span><span>${saleDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })}</span></div>
                         <div class="flex justify-between mt-1"><span>ตาชั่งที่:</span><span>${sale.scaleNumber || '-'}</span></div>
                     </div>
                     <div class="mb-2"><strong>ผู้ขาย:</strong> <span class="font-bold text-xl">${sale.seller}</span></div>
@@ -1449,15 +1450,21 @@
             if (!salesCollectionRef || !countersDocRef) return showAlert('ยังไม่พร้อมใช้งาน กรุณารอสักครู่');
             
             const seller = ui.sellerNameInput.value.trim();
-            const date = ui.receiptDateInput.valueAsDate;
+            // [EDITED] 3. Change how date is handled to prevent timezone issues
+            const dateString = ui.receiptDateInput.value;
+            if (!dateString) {
+                return showAlert('กรุณาเลือกวันที่ในใบเสร็จ');
+            }
+            const date = new Date(dateString + 'T00:00:00.000Z'); // Create a UTC date
+            
             const scaleNumber = ui.scaleNumberInput.value;
             const weight = parseFloat(ui.totalWeightEl.textContent) || 0;
             const price = parseFloat(ui.pricePerKgInput.value) || 0;
             const total = parseFloat(ui.totalAmountEl.textContent.replace(/,/g, '')) || 0;
             const weightInputs = Array.from(ui.weightInputsContainer.querySelectorAll('.weight-input')).map(input => parseFloat(input.value) || 0).filter(v => v > 0);
             
-            if (weightInputs.length === 0 || !seller || !date || weight <= 0 || price <= 0) {
-                return showAlert('กรุณากรอกข้อมูลให้ครบถ้วน: ชื่อผู้ขาย, วันที่, น้ำหนัก และราคา');
+            if (weightInputs.length === 0 || !seller || weight <= 0 || price <= 0) {
+                return showAlert('กรุณากรอกข้อมูลให้ครบถ้วน: ชื่อผู้ขาย, น้ำหนัก และราคา');
             }
             if (total <= 0) {
                 return showAlert('ยอดรวมต้องมากกว่า 0 บาท');
@@ -1471,7 +1478,7 @@
                 weights: weightInputs,
                 price,
                 total,
-                timestamp: new Date(),
+                timestamp: serverTimestamp(), // [EDITED] 4. Use serverTimestamp
                 userId
             };
             
@@ -1487,6 +1494,8 @@
                         saleData.receiptId = originalDoc.receiptId;
                         saleData.printCount = originalDoc.printCount || 0;
                     }
+                    // For updates, we don't change the timestamp to keep the original creation time
+                    saleData.timestamp = originalDoc.timestamp;
                     await updateDoc(doc(salesCollectionRef, editingId), saleData);
                     showAlert('อัปเดตข้อมูลสำเร็จ');
                     clearForm();
@@ -1495,7 +1504,7 @@
                     await runTransaction(db, async (transaction) => {
                         const counterDoc = await transaction.get(countersDocRef);
                         
-                        const dateKey = getUTCDateKey(date); // YYYY-MM-DD
+                        const dateKey = getUTCDateKey(new Date()); // Always use current date for queue number
                         
                         let nextQueueNumber = 1;
                         if (counterDoc.exists() && counterDoc.data()[dateKey]) {
@@ -1558,7 +1567,13 @@
             } else if (target.classList.contains('edit-btn')) {
                 editingId = id;
                 ui.sellerNameInput.value = saleToProcess.seller;
-                ui.receiptDateInput.value = saleToProcess.date.toDate().toISOString().split('T')[0];
+                // [EDITED] 5. Ensure date input is set correctly from UTC date
+                const saleDate = saleToProcess.date.toDate();
+                const yyyy = saleDate.getUTCFullYear();
+                const mm = String(saleDate.getUTCMonth() + 1).padStart(2, '0');
+                const dd = String(saleDate.getUTCDate()).padStart(2, '0');
+                ui.receiptDateInput.value = `${yyyy}-${mm}-${dd}`;
+                
                 ui.scaleNumberInput.value = saleToProcess.scaleNumber || '';
                 ui.pricePerKgInput.value = saleToProcess.price;
                 const weightInputs = ui.weightInputsContainer.querySelectorAll('.weight-input');
@@ -1592,8 +1607,15 @@
         }
         
         function updateDateDisplay() {
-            const date = ui.receiptDateInput.valueAsDate;
-            ui.dateDisplay.textContent = `(${(date || new Date()).toLocaleDateString('th-TH')})`;
+            try {
+                const date = ui.receiptDateInput.valueAsDate;
+                 // Add timezone offset to display correct local date
+                const timezoneOffset = date.getTimezoneOffset() * 60000;
+                const localDate = new Date(date.getTime() + timezoneOffset);
+                ui.dateDisplay.textContent = `(${(localDate || new Date()).toLocaleDateString('th-TH')})`;
+            } catch(e) {
+                 ui.dateDisplay.textContent = '(เลือกวันที่)'
+            }
         }
         
         function createWeighingStationHTML(scaleId) {
@@ -1668,7 +1690,7 @@
                         <option value="">-- เลือกวันที่ --</option>
                         ${uniqueDates.map(dateStr => {
                             const dateObj = new Date(dateStr);
-                            const formattedDate = dateObj.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+                            const formattedDate = dateObj.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
                             return `<option value="${dateStr}">${formattedDate}</option>`;
                         }).join('')}
                     </select>
@@ -1689,7 +1711,8 @@
                     const formattedPrintDate = new Date(selectedDate).toLocaleDateString('th-TH', {
                         year: 'numeric',
                         month: 'long',
-                        day: 'numeric'
+                        day: 'numeric',
+                        timeZone: 'UTC'
                     });
                     const tableRows = reportData.map(record => {
                         return `<tr class="border-b">
@@ -1833,7 +1856,7 @@
                         sellerName,
                         bags,
                         scaleId,
-                        timestamp: new Date(),
+                        timestamp: serverTimestamp(), // [EDITED] 6. Use serverTimestamp
                         userId,
                         dailyQueueNumber: newQueueNumber
                     });
@@ -1944,10 +1967,16 @@
                 if (index < weightInputs.length) weightInputs[index].value = weight;
             });
             calculateTotals();
-            showConfirm(`พบข้อมูลวางยาง ${weights.reduce((a,b)=>a+b,0)} ถุง ของ <strong>${sellerName}</strong><br>ต้องการล้างข้อมูลนี้หลังจากบันทึกใบเสร็จหรือไม่?`, async () => {
+
+            // [EDITED] 7. Make the confirmation message clearer
+            const totalBags = weights.reduce((a, b) => a + b, 0);
+            const confirmMessage = `ระบบได้ดึงข้อมูลการวางยางของ <strong>${sellerName}</strong> (${totalBags} ถุง) มาใส่ในฟอร์มแล้ว<br><br><strong>ยืนยันเพื่อลบข้อมูลการวางยางนี้ออกจากคิว เพื่อป้องกันการทำใบเสร็จซ้ำหรือไม่?</strong>`;
+            
+            showConfirm(confirmMessage, async () => {
                 const batch = writeBatch(db);
                 todaysDocs.forEach(d => batch.delete(d.ref));
                 await batch.commit();
+                showAlert('ลบข้อมูลการวางยางออกจากคิวเรียบร้อยแล้ว');
             });
         }
         
@@ -1969,8 +1998,7 @@
                         salesCollectionRef = collection(db, `${appDataPath}/sales`);
                         weighingsCollectionRef = collection(db, `${appDataPath}/weighings`);
                         truckLoadsCollectionRef = collection(db, `${appDataPath}/truckLoads`);
-                        countersDocRef = doc(db, `${appDataPath}/counters`, 'salesCounter'); // FIX: Reference to the counter document
-
+                        countersDocRef = doc(db, `${appDataPath}/counters`, 'salesCounter');
                         if (unsubscribeSales) unsubscribeSales();
                         unsubscribeSales = onSnapshot(query(salesCollectionRef), (snapshot) => {
                             localSalesData = snapshot.docs.map(doc => ({
@@ -2362,7 +2390,6 @@
             }
         }
         
-        // FIX: Rewritten restoreDataFromFile function for better data integrity
         async function restoreDataFromFile(file) {
             const reader = new FileReader();
             reader.onload = async (e) => {
@@ -2373,7 +2400,6 @@
                     const isValid = (data.sales && Array.isArray(data.sales)) &&
                                     (data.weighings && Array.isArray(data.weighings)) &&
                                     (data.truckLoads && Array.isArray(data.truckLoads));
-
                     if (!isValid) {
                         throw new Error("ไฟล์มีโครงสร้างที่ไม่รู้จักหรือไม่สมบูรณ์ (ต้องมี sales, weighings, truckLoads เป็น array)");
                     }
@@ -2381,11 +2407,9 @@
                     if (data.sales.length > 0 && (typeof data.sales[0].seller === 'undefined' || typeof data.sales[0].total === 'undefined')) {
                          throw new Error("ข้อมูลใน 'sales' array ดูเหมือนจะไม่ถูกต้อง");
                     }
-
                 } catch (error) {
                     return showAlert(`ไฟล์สำรองข้อมูลไม่ถูกต้อง: ${error.message}`);
                 }
-
                 showConfirm(`คุณแน่ใจหรือไม่ว่าต้องการกู้คืนข้อมูลจากไฟล์? <strong>ข้อมูลที่มีอยู่ทั้งหมดจะถูกลบและแทนที่ด้วยข้อมูลจากไฟล์นี้</strong> การกระทำนี้ไม่สามารถย้อนกลับได้`,
                     async () => {
                         showAlert('กำลังประมวลผล... กรุณาอย่าปิดหน้านี้');
@@ -2401,7 +2425,6 @@
                                     await deleteBatch.commit();
                                 }
                             }
-
                             // Step 2: Restore new data using batch writes
                             const restoreBatch = writeBatch(db);
                             data.sales.forEach(sale => {
@@ -2491,8 +2514,6 @@
                 switchToTab(firstVisibleTab);
             }
         }
-
-        // FIX: Refactored to a single function to handle all sub-tabs
         function _switchToSubTab(type, targetId) {
             const context = {
                 'weighing': {
@@ -2504,7 +2525,6 @@
                     buttons: document.querySelectorAll('.receipt-sub-btn')
                 }
             }[type];
-
             if (!context) return;
             
             context.contents.forEach(content => content.classList.remove('active'));
@@ -2515,7 +2535,6 @@
             
             if (targetContent) targetContent.classList.add('active');
             if (targetBtn) targetBtn.classList.add('active');
-
             // Special logic for receipt truck summary tab
              if (targetId === 'receipt-truck-summary') {
                 const dateSelector = ui.truckSummaryDate;
@@ -2608,10 +2627,15 @@
                 }
             });
             ui.truckLoadHistoryContainer.addEventListener('click', handleTruckLoadHistoryClick);
-            ui.receiptDateInput.valueAsDate = new Date();
+            
+            // Set default date to today
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+            const dd = String(today.getDate()).padStart(2, '0');
+            ui.receiptDateInput.value = `${yyyy}-${mm}-${dd}`;
             updateDateDisplay();
-
-            // FIX: Use the new generic function for sub-tab events
+            
             ui.weighingSubTabs.addEventListener('click', (e) => {
                 const targetSubTabId = e.target.dataset.subtab;
                 if (targetSubTabId) {
