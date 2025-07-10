@@ -287,7 +287,6 @@
             writeBatch
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        // --- (firebaseConfig, users, etc. remain the same) ---
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyCNVxG6s46SRXOYAeT0rJHAtz_-3IPUJNE",
             authDomain: "coopksb001.firebaseapp.com",
@@ -322,7 +321,7 @@
         let dailyStatsChart;
         let editingId = null;
         let editingWeighingId = null;
-        let selectedWeighingId = null; // NEW: To store ID of weighing record selected for receipt
+        let selectedWeighingId = null;
         let db, auth, userId, salesCollectionRef, weighingsCollectionRef, truckLoadsCollectionRef;
         let unsubscribeSales = null;
         let unsubscribeAllWeighings = null;
@@ -346,7 +345,7 @@
             tabs: document.getElementById('tabs'),
             tabContents: document.querySelectorAll('.tab-content'),
             sellerNameInput: document.getElementById('seller-name'),
-            weighingSellersList: document.getElementById('weighing-sellers-list'), // NEW: Datalist UI element
+            weighingSellersList: document.getElementById('weighing-sellers-list'),
             receiptDateInput: document.getElementById('receipt-date'),
             dateDisplay: document.getElementById('date-display'),
             scaleNumberInput: document.getElementById('scale-number'),
@@ -396,38 +395,29 @@
             truckLoadHistoryContainer: document.getElementById('truck-load-history-container'),
         };
 
-        // --- (All other functions from previous version like handleSaveTruckLoad, handleTruckLoadHistoryClick, etc. should be here)
-        // [OMITTED FOR BREVITY - Paste all functions from the previous response here]
-
-        // --- NEW & MODIFIED Functions for this feature ---
+        // --- PASTE ALL FUNCTIONS FROM THE PREVIOUS RESPONSE HERE ---
+        // For example: getUTCDateKey, handleSaveTruckLoad, handleTruckLoadHistoryClick, etc.
+        // The following functions are NEW or MODIFIED for this specific request.
 
         function updateSellerSuggestions() {
             if (!ui.weighingSellersList) return;
-
             const todayStart = new Date();
             todayStart.setHours(0, 0, 0, 0);
-
-            // Filter for today's weighing entries that do not have a saleId yet
             const availableSellers = localWeighingData.filter(weighing => {
                 return weighing.timestamp.toDate() >= todayStart && !weighing.saleId;
             });
-            
-            ui.weighingSellersList.innerHTML = ''; // Clear existing options
-            
+            ui.weighingSellersList.innerHTML = ''; 
             availableSellers.forEach(seller => {
                 const option = document.createElement('option');
                 option.value = seller.sellerName;
-                // Store the weighing ID and scale number in data attributes
                 option.dataset.weighingId = seller.id;
                 option.dataset.scale = seller.scaleId;
-                // Set the display text
                 option.textContent = `(ตาชั่ง ${seller.scaleId})`; 
                 ui.weighingSellersList.appendChild(option);
             });
         }
         
         async function handleSave() {
-            // ... (initial validation code for seller, date, weight, price is the same)
             if (!salesCollectionRef) return showAlert('ยังไม่พร้อมใช้งาน กรุณารอสักครู่');
             const seller = ui.sellerNameInput.value.trim();
             const date = ui.receiptDateInput.valueAsDate;
@@ -436,6 +426,7 @@
             const price = parseFloat(ui.pricePerKgInput.value) || 0;
             const total = parseFloat(ui.totalAmountEl.textContent.replace(/,/g, '')) || 0;
             const weightInputs = Array.from(ui.weightInputsContainer.querySelectorAll('.weight-input')).map(input => parseFloat(input.value) || 0).filter(v => v > 0);
+
             if (weightInputs.length === 0 || !seller || !date || weight <= 0 || price <= 0) {
                 return showAlert('กรุณากรอกข้อมูลให้ครบถ้วน: ชื่อผู้ขาย, วันที่, น้ำหนัก และราคา');
             }
@@ -447,7 +438,6 @@
 
             try {
                 if (editingId) {
-                    // ... (update logic remains the same)
                     const originalDoc = localSalesData.find(s => s.id === editingId);
                     if (originalDoc) {
                         saleData.dailyQueueNumber = originalDoc.dailyQueueNumber;
@@ -457,7 +447,6 @@
                     await updateDoc(doc(salesCollectionRef, editingId), saleData);
                     showAlert('อัปเดตข้อมูลสำเร็จ');
                 } else {
-                    // --- This is for creating a NEW receipt ---
                     const recordDateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
                     const recordDateEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
                     const salesOnDate = localSalesData.filter(s => s.date.toDate() >= recordDateStart && s.date.toDate() <= recordDateEnd);
@@ -473,7 +462,6 @@
                     const newSaleDocRef = await addDoc(salesCollectionRef, saleData);
                     showAlert('บันทึกข้อมูลสำเร็จ');
 
-                    // MODIFIED: After saving receipt, update the weighing record if one was selected
                     if (selectedWeighingId) {
                         const weighingDocRef = doc(weighingsCollectionRef, selectedWeighingId);
                         await updateDoc(weighingDocRef, {
@@ -504,13 +492,13 @@
                     const todaysDocs = docs.filter(data => data.timestamp.toDate() >= todayStart);
                     dailyWeighingData[i] = todaysDocs;
                     updateWeighingSummary();
+                    updateSellerSuggestions(); // Re-build suggestions when weighing data changes
                     
                     if (todaysDocs.length === 0) {
                         tableBody.innerHTML = '<tr><td colspan="5" class="text-center p-8 text-stone-400">ยังไม่มีรายการ</td></tr>';
                     } else {
                         todaysDocs.sort((a, b) => (a.dailyQueueNumber || 999) - (b.dailyQueueNumber || 999)).forEach(data => {
                             const row = document.createElement('tr');
-                            // MODIFIED: Change row style and content based on whether a receipt was issued
                             const isProcessed = !!data.saleId;
                             row.className = `border-b ${isProcessed ? 'bg-green-100 text-stone-500' : 'odd:bg-stone-50'}`;
                             
@@ -544,35 +532,43 @@
                 ui.pricePerKgInput.value = '';
             }
             editingId = null;
-            selectedWeighingId = null; // NEW: Reset selected weighing ID
+            selectedWeighingId = null; 
             ui.saveButton.textContent = 'บันทึกข้อมูล';
             ui.cancelEditButton.classList.add('hidden');
             calculateTotals();
         }
-
-        // --- (Paste all other functions here again) ---
+        
+        // --- PASTE THE REST OF YOUR JAVASCRIPT FUNCTIONS HERE ---
+        // (This includes toggleScaleLock, togglePriceLock, handleTableClick, etc.)
+        // Ensure all previous functions are included.
 
         document.addEventListener('DOMContentLoaded', () => {
-            // ... (handleLogin, and other event listeners)
+            // ... (All other event listeners from previous response)
             
-            // MODIFIED: replace the blur event listener with an input event listener for seller name
+            // **REPLACE** the old 'blur' listener for sellerNameInput with this 'input' listener
             ui.sellerNameInput.addEventListener('input', (e) => {
                 const currentValue = e.target.value;
-                selectedWeighingId = null; // Reset on every input change
-                
-                // Find a matching option in the datalist
+                selectedWeighingId = null; 
                 const option = Array.from(ui.weighingSellersList.options).find(opt => opt.value === currentValue);
                 
                 if (option) {
-                    // If a match is found, store its ID and auto-fill the scale number
                     selectedWeighingId = option.dataset.weighingId;
                     if (!isScaleLocked) {
                         ui.scaleNumberInput.value = option.dataset.scale;
                     }
+                } else {
+                    // BUG FIX: If user clears the input or types a non-matching name, clear the scale number
+                    if (!isScaleLocked) {
+                        ui.scaleNumberInput.value = ''; 
+                    }
                 }
             });
-
-            // ... (rest of the event listeners)
+            
+            // Ensure you have all other listeners here
+            ui.loginButton.addEventListener('click', handleLogin);
+            ui.passwordInput.addEventListener('keyup', (event) => { if (event.key === 'Enter') handleLogin(); });
+            ui.logoutButton.addEventListener('click', () => { sessionStorage.removeItem('loggedInUser'); window.location.reload(); });
+            // ... and so on for all other event listeners
         });
     </script>
 </body>
