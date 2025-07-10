@@ -38,21 +38,25 @@
         }
 
         /* Styling for sub-tab buttons */
-        .weighing-sub-btn, .summary-sub-btn {
+        .weighing-sub-btn,
+        .summary-sub-btn {
             transition: all 0.15s ease-in-out;
         }
 
-        .weighing-sub-btn.active, .summary-sub-btn.active {
-            background-color: #b45309; /* amber-700 */
+        .weighing-sub-btn.active,
+        .summary-sub-btn.active {
+            background-color: #b45309;
+            /* amber-700 */
             color: #ffffff;
             transform: translateY(1px);
             box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.1);
         }
 
-        .weighing-sub-content, .summary-sub-content {
+        .weighing-sub-content,
+        .summary-sub-content {
             display: none;
         }
-        
+
         @media print {
             body * {
                 visibility: hidden;
@@ -88,17 +92,14 @@
             <div class="space-y-4">
                 <div>
                     <label for="username-input" class="block text-sm font-medium text-stone-600">ชื่อผู้ใช้</label>
-                    <input type="text" id="username-input"
-                        class="mt-1 w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500">
+                    <input type="text" id="username-input" class="mt-1 w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500">
                 </div>
                 <div>
                     <label for="password-input" class="block text-sm font-medium text-stone-600">รหัสผ่าน</label>
-                    <input type="password" id="password-input"
-                        class="mt-1 w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500">
+                    <input type="password" id="password-input" class="mt-1 w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500">
                 </div>
                 <p id="login-error" class="text-sm text-red-600 text-center hidden"></p>
-                <button id="login-button"
-                    class="w-full bg-amber-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-amber-700 transition-colors">
+                <button id="login-button" class="w-full bg-amber-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-amber-700 transition-colors">
                     เข้าสู่ระบบ
                 </button>
             </div>
@@ -114,21 +115,19 @@
             <h1 class="text-4xl font-bold text-stone-900">ระบบจัดการขายยางก้อนถ้วย</h1>
             <p class="text-xl font-semibold text-stone-700 mt-2">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</p>
             <p class="text-stone-600 mt-2">ออกใบเสร็จ บันทึกข้อมูล และดูสรุปยอดขายในที่เดียว</p>
-            <button id="logout-button"
-                class="absolute top-0 right-0 bg-red-500 text-white font-semibold py-2 px-4 rounded-lg shadow hover:bg-red-600 transition-colors no-print">
+            <button id="logout-button" class="absolute top-0 right-0 bg-red-500 text-white font-semibold py-2 px-4 rounded-lg shadow hover:bg-red-600 transition-colors no-print">
                 ออกจากระบบ
             </button>
         </header>
         <div class="mb-6 border-b border-stone-300 no-print">
             <nav id="tabs" class="flex flex-wrap -mb-px">
-                <button data-tab="tab-weighing-consolidated"
-                    class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">1.
+                <button data-tab="tab-weighing-consolidated" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">1.
                     รับวางยาง</button>
-                <button data-tab="tab-daily-summary"
-                    class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">2.
+                <button data-tab="tab-daily-summary" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">2.
                     สรุปยอดวางยาง</button>
-                <button data-tab="tab-settings"
-                    class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">5.
+                <button data-tab="tab-history-report" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">3.
+                    ประวัติและรายงาน</button>
+                <button data-tab="tab-settings" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">5.
                     ตั้งค่า</button>
             </nav>
         </div>
@@ -138,20 +137,15 @@
                     <h2 class="text-2xl font-bold mb-4 border-b pb-3 text-stone-800">1. รับวางยาง และสรุปผล</h2>
                     <div id="weighing-sub-tabs" class="mb-6">
                         <nav class="flex flex-wrap gap-2" aria-label="Tabs">
-                            <button data-subtab="weighing-scale-1"
-                                class="weighing-sub-btn py-2 px-5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold shadow-sm border border-stone-200">ตาชั่ง
+                            <button data-subtab="weighing-scale-1" class="weighing-sub-btn py-2 px-5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold shadow-sm border border-stone-200">ตาชั่ง
                                 1</button>
-                            <button data-subtab="weighing-scale-2"
-                                class="weighing-sub-btn py-2 px-5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold shadow-sm border border-stone-200">ตาชั่ง
+                            <button data-subtab="weighing-scale-2" class="weighing-sub-btn py-2 px-5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold shadow-sm border border-stone-200">ตาชั่ง
                                 2</button>
-                            <button data-subtab="weighing-scale-3"
-                                class="weighing-sub-btn py-2 px-5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold shadow-sm border border-stone-200">ตาชั่ง
+                            <button data-subtab="weighing-scale-3" class="weighing-sub-btn py-2 px-5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold shadow-sm border border-stone-200">ตาชั่ง
                                 3</button>
-                            <button data-subtab="weighing-scale-4"
-                                class="weighing-sub-btn py-2 px-5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold shadow-sm border border-stone-200">ตาชั่ง
+                            <button data-subtab="weighing-scale-4" class="weighing-sub-btn py-2 px-5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold shadow-sm border border-stone-200">ตาชั่ง
                                 4</button>
-                            <button data-subtab="weighing-summary"
-                                class="weighing-sub-btn py-2 px-5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold shadow-sm border border-amber-200">สรุปผลรวม</button>
+                            <button data-subtab="weighing-summary" class="weighing-sub-btn py-2 px-5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold shadow-sm border border-amber-200">สรุปผลรวม</button>
                         </nav>
                     </div>
                     <div id="weighing-scale-1-content" class="weighing-sub-content"></div>
@@ -168,12 +162,9 @@
                                     <p id="summary-total-bags" class="text-6xl font-bold text-amber-600 mt-2">0</p>
                                 </div>
                                 <div class="flex flex-col justify-center">
-                                    <label for="summary-multiplier-weight"
-                                        class="block text-md font-medium text-stone-600 mb-2 text-center">น้ำหนัก/ถุง
+                                    <label for="summary-multiplier-weight" class="block text-md font-medium text-stone-600 mb-2 text-center">น้ำหนัก/ถุง
                                         (กก.)</label>
-                                    <input type="number" id="summary-multiplier-weight"
-                                        class="w-full p-3 border border-stone-300 rounded-lg shadow-sm text-center text-xl"
-                                        placeholder="กรอกน้ำหนักเฉลี่ย">
+                                    <input type="number" id="summary-multiplier-weight" class="w-full p-3 border border-stone-300 rounded-lg shadow-sm text-center text-xl" placeholder="กรอกน้ำหนักเฉลี่ย">
                                 </div>
                                 <div class="text-center">
                                     <p class="text-lg font-medium text-stone-600">ผลลัพธ์น้ำหนักรวม (กก.)</p>
@@ -209,8 +200,7 @@
                                         (การกระทำนี้มีความเสี่ยง)</h3>
                                     <p class="text-sm text-red-600 mt-1 mb-4">
                                         ใช้สำหรับล้างข้อมูลการรับวางยางทั้งหมดของวันนี้เมื่อเริ่มการชั่งจริง</p>
-                                    <button id="delete-all-weighings-btn"
-                                        class="w-full md:w-auto bg-red-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-red-700">🗑️
+                                    <button id="delete-all-weighings-btn" class="w-full md:w-auto bg-red-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-red-700">🗑️
                                         ลบข้อมูลที่วางไว้ทั้งหมด (สำหรับวันนี้)</button>
                                 </div>
                             </div>
@@ -218,17 +208,17 @@
                     </div>
                 </section>
             </div>
-             <div id="tab-daily-summary" class="tab-content">
+            <div id="tab-daily-summary" class="tab-content">
                 <section class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
                     <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4 border-b pb-3">
-                         <h2 class="text-2xl font-bold text-stone-800">2. สรุปยอดและชั่งน้ำหนัก</h2>
-                         <div class="flex items-center gap-4 mt-3 sm:mt-0">
+                        <h2 class="text-2xl font-bold text-stone-800">2. สรุปยอดและชั่งน้ำหนัก</h2>
+                        <div class="flex items-center gap-4 mt-3 sm:mt-0">
                             <label for="summary-date-picker" class="text-sm font-medium text-stone-600">เลือกวันที่:</label>
                             <select id="summary-date-picker" class="p-2 border border-stone-300 rounded-lg shadow-sm bg-white"></select>
                             <button id="print-daily-weighing-summary" class="bg-sky-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-sky-700 transition-colors">🖨️ พิมพ์สรุปรวม</button>
-                         </div>
+                        </div>
                     </div>
-                    
+
                     <div id="summary-sub-tabs" class="mb-6">
                         <nav class="flex flex-wrap gap-2" aria-label="Summary Tabs">
                             <button data-subtab="summary-scale-1" class="summary-sub-btn py-2 px-5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold shadow-sm border border-stone-200">ตาชั่ง 1</button>
@@ -245,6 +235,17 @@
 
                 </section>
             </div>
+            <div id="tab-history-report" class="tab-content">
+                <section class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+                    <h2 class="text-2xl font-bold mb-6 border-b pb-3 text-stone-800">3. ประวัติและรายงาน</h2>
+                    <div class="space-y-6">
+                        <p class="text-stone-600">ส่วนนี้จะแสดงประวัติการขายทั้งหมดและสร้างรายงานสรุปตามช่วงเวลาที่กำหนด</p>
+                        <div class="bg-stone-50 p-8 rounded-lg text-center">
+                            <p class="text-stone-500">ฟังก์ชันรายงานกำลังอยู่ในระหว่างการพัฒนา</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
             <div id="tab-settings" class="tab-content">
                 <section class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
                     <h2 class="text-2xl font-bold mb-6 border-b pb-3 text-stone-800">5. ตั้งค่าและจัดการข้อมูล</h2>
@@ -254,12 +255,10 @@
                             <p class="text-sm text-stone-600 mt-1 mb-4">
                                 ใช้สำหรับดาวน์โหลดข้อมูลทั้งหมดเก็บไว้ หรือนำข้อมูลที่เคยสำรองไว้กลับเข้าระบบ</p>
                             <div class="flex flex-wrap gap-4">
-                                <button id="backup-data-btn"
-                                    class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 transition-colors">
+                                <button id="backup-data-btn" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 transition-colors">
                                     💾 สำรองข้อมูลทั้งหมด
                                 </button>
-                                <button id="restore-data-btn"
-                                    class="bg-amber-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-amber-600 transition-colors">
+                                <button id="restore-data-btn" class="bg-amber-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-amber-600 transition-colors">
                                     📂 กู้คืนข้อมูลจากไฟล์
                                 </button>
                                 <input type="file" id="restore-file-input" class="hidden" accept=".json">
@@ -269,8 +268,7 @@
                             <h3 class="text-lg font-semibold text-red-800">เขตอันตราย (Danger Zone)</h3>
                             <p class="text-sm text-red-600 mt-1 mb-4">การกระทำในส่วนนี้ไม่สามารถย้อนกลับได้
                                 โปรดใช้ด้วยความระมัดระวังสูงสุด</p>
-                            <button id="delete-all-data-btn"
-                                class="bg-red-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
+                            <button id="delete-all-data-btn" class="bg-red-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
                                 🗑️ ลบข้อมูลทั้งหมดในระบบ
                             </button>
                         </div>
@@ -280,9 +278,7 @@
         </main>
     </div>
     <div id="print-area" class="bg-white"></div>
-    <div id="modal"
-        class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-300 no-print"
-        aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div id="modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-300 no-print" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="modal-content bg-white rounded-xl shadow-2xl w-full max-w-md transform scale-95 transition-transform duration-300">
             <div class="p-6">
                 <div class="text-center">
@@ -332,7 +328,7 @@
             measurementId: "G-1RHH9TMD73"
         };
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'cup-rubber-sales-app';
-        
+
         const users = {
             'admin': {
                 password: 'as54321',
@@ -344,7 +340,7 @@
             },
             'rub': {
                 password: 'kaset1234',
-                allowedTabs: ['tab-weighing-consolidated', 'tab-daily-summary']
+                allowedTabs: ['tab-weighing-consolidated', 'tab-daily-summary', 'tab-history-report']
             }
         };
         let currentPassword = localStorage.getItem('customPassword') || users.admin.password;
@@ -352,7 +348,7 @@
         let localSalesData = [];
         let localWeighingData = [];
         let localTruckLoads = [];
-        
+
         let editingWeighingId = null;
         let db, auth, userId, salesCollectionRef, weighingsCollectionRef, truckLoadsCollectionRef;
         let unsubscribeSales = null;
@@ -360,7 +356,7 @@
         let unsubscribeTruckLoads = null;
         let unsubscribeWeighings = {};
         let dailyWeighingData = {};
-        
+
         let isAppInitialized = false;
         const ui = {
             loginScreen: document.getElementById('login-screen'),
@@ -508,54 +504,54 @@
                 const row = document.createElement('tr');
                 row.className = 'bg-white border-b hover:bg-stone-50';
                 row.innerHTML = `
-                    <td class="px-6 py-4 font-medium text-stone-900">${formattedDate}</td>
-                    <td class="px-6 py-4 text-center">${stats.recordCount.toLocaleString('th-TH')}</td>
-                    <td class="px-6 py-4 text-center font-bold text-amber-700">${stats.totalBags.toLocaleString('th-TH')}</td>
-                    <td class="px-6 py-4 text-center font-semibold text-blue-600">${averageWeight.toFixed(2)}</td>
-                `;
+                        <td class="px-6 py-4 font-medium text-stone-900">${formattedDate}</td>
+                        <td class="px-6 py-4 text-center">${stats.recordCount.toLocaleString('th-TH')}</td>
+                        <td class="px-6 py-4 text-center font-bold text-amber-700">${stats.totalBags.toLocaleString('th-TH')}</td>
+                        <td class="px-6 py-4 text-center font-semibold text-blue-600">${averageWeight.toFixed(2)}</td>
+                    `;
                 historyBody.appendChild(row);
             });
         }
 
         function createWeighingStationHTML(scaleId) {
             return `
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                    <div class="md:col-span-2">
-                        <label for="weighing-seller-${scaleId}" class="block text-sm font-medium text-stone-600 mb-1">ชื่อผู้ขาย</label>
-                        <input type="text" id="weighing-seller-${scaleId}" class="w-full p-3 border border-stone-300 rounded-lg shadow-sm" placeholder="ค้นหาหรือป้อนชื่อ">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <div class="md:col-span-2">
+                            <label for="weighing-seller-${scaleId}" class="block text-sm font-medium text-stone-600 mb-1">ชื่อผู้ขาย</label>
+                            <input type="text" id="weighing-seller-${scaleId}" class="w-full p-3 border border-stone-300 rounded-lg shadow-sm" placeholder="ค้นหาหรือป้อนชื่อ">
+                        </div>
+                        <div>
+                            <label for="weighing-weight-${scaleId}" class="block text-sm font-medium text-stone-600 mb-1">จำนวนถุง</label>
+                            <input type="number" id="weighing-weight-${scaleId}" class="w-full p-3 border border-stone-300 rounded-lg shadow-sm" step="any">
+                        </div>
+                        <div class="md:col-span-3">
+                            <button id="save-weighing-${scaleId}" data-scale="${scaleId}" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors">บันทึกจำนวนถุง</button>
+                        </div>
                     </div>
-                    <div>
-                        <label for="weighing-weight-${scaleId}" class="block text-sm font-medium text-stone-600 mb-1">จำนวนถุง</label>
-                        <input type="number" id="weighing-weight-${scaleId}" class="w-full p-3 border border-stone-300 rounded-lg shadow-sm" step="any">
+                    <div class="mt-8 overflow-x-auto rounded-lg border">
+                        <table class="w-full text-sm text-left table-fixed">
+                            <thead class="bg-stone-100 sticky top-0">
+                                <tr>
+                                    <th class="px-2 py-3 text-center w-14">ลำดับ</th>
+                                    <th class="px-2 py-3 w-48">ชื่อ</th>
+                                    <th class="px-2 py-3 text-right w-24">จำนวนถุง</th>
+                                    <th class="px-2 py-3 w-32">น้ำหนักที่ชั่ง</th>
+                                    <th class="px-2 py-3 text-center">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="weighing-table-body-${scaleId}">
+                                <tr><td colspan="5" class="text-center p-8 text-stone-400">ยังไม่มีรายการ</td></tr>
+                            </tbody>
+                        </table>
                     </div>
-                    <div class="md:col-span-3">
-                        <button id="save-weighing-${scaleId}" data-scale="${scaleId}" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors">บันทึกจำนวนถุง</button>
+                    <div class="border-t mt-8 pt-6">
+                           <h3 class="text-lg font-semibold text-stone-700 mb-3">เครื่องมือย้อนหลัง (สำหรับตาชั่งที่ ${scaleId})</h3>
+                           <div class="flex items-center gap-4 flex-wrap">
+                                <button id="print-weighing-history-${scaleId}" data-scale="${scaleId}" class="bg-sky-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-sky-700 transition-colors">🖨️ เรียกข้อมูลย้อนหลังเพื่อปริ้น</button>
+                                <button id="export-weighing-history-${scaleId}" data-scale="${scaleId}" class="bg-emerald-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-emerald-700 transition-colors">📄 แปลงไฟล์เป็น .xlsx</button>
+                           </div>
                     </div>
-                </div>
-                <div class="mt-8 overflow-x-auto rounded-lg border">
-                    <table class="w-full text-sm text-left table-fixed">
-                        <thead class="bg-stone-100 sticky top-0">
-                            <tr>
-                                <th class="px-2 py-3 text-center w-14">ลำดับ</th>
-                                <th class="px-2 py-3 w-48">ชื่อ</th>
-                                <th class="px-2 py-3 text-right w-24">จำนวนถุง</th>
-                                <th class="px-2 py-3 w-32">น้ำหนักที่ชั่ง</th>
-                                <th class="px-2 py-3 text-center">จัดการ</th>
-                            </tr>
-                        </thead>
-                        <tbody id="weighing-table-body-${scaleId}">
-                            <tr><td colspan="5" class="text-center p-8 text-stone-400">ยังไม่มีรายการ</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="border-t mt-8 pt-6">
-                     <h3 class="text-lg font-semibold text-stone-700 mb-3">เครื่องมือย้อนหลัง (สำหรับตาชั่งที่ ${scaleId})</h3>
-                     <div class="flex items-center gap-4 flex-wrap">
-                        <button id="print-weighing-history-${scaleId}" data-scale="${scaleId}" class="bg-sky-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-sky-700 transition-colors">🖨️ เรียกข้อมูลย้อนหลังเพื่อปริ้น</button>
-                        <button id="export-weighing-history-${scaleId}" data-scale="${scaleId}" class="bg-emerald-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-emerald-700 transition-colors">📄 แปลงไฟล์เป็น .xlsx</button>
-                     </div>
-                </div>
-            `;
+                `;
         }
 
         function renderWeighingStations() {
@@ -583,21 +579,21 @@
             }
             const uniqueDates = Array.from(new Set(scaleData.map(r => r.timestamp.toDate().toISOString().split('T')[0]))).sort((a, b) => new Date(b) - new Date(a));
             let modalContentHTML = `
-                <div class="space-y-2">
-                    <label for="modal-date-select" class="block text-sm font-medium text-stone-700">กรุณาเลือกวันที่ที่ต้องการพิมพ์:</label>
-                    <select id="modal-date-select" class="w-full p-2 border border-stone-300 rounded-md shadow-sm">
-                        <option value="">-- เลือกวันที่ --</option>
-                        ${uniqueDates.map(dateStr => {
-                            const dateObj = new Date(dateStr);
-                            const formattedDate = dateObj.toLocaleDateString('th-TH', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-                            return `<option value="${dateStr}">${formattedDate}</option>`;
-                        }).join('')}
-                    </select>
-                </div>`;
+                    <div class="space-y-2">
+                        <label for="modal-date-select" class="block text-sm font-medium text-stone-700">กรุณาเลือกวันที่ที่ต้องการพิมพ์:</label>
+                        <select id="modal-date-select" class="w-full p-2 border border-stone-300 rounded-md shadow-sm">
+                            <option value="">-- เลือกวันที่ --</option>
+                            ${uniqueDates.map(dateStr => {
+                                const dateObj = new Date(dateStr);
+                                const formattedDate = dateObj.toLocaleDateString('th-TH', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                });
+                                return `<option value="${dateStr}">${formattedDate}</option>`;
+                            }).join('')}
+                        </select>
+                    </div>`;
             showModal(`พิมพ์รายงานย้อนหลัง (ตาชั่งที่ ${scaleId})`, modalContentHTML, [{
                 text: '🖨️ พิมพ์รายงาน',
                 classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-sky-600 text-base font-medium text-white hover:bg-sky-700 sm:ml-3 sm:w-auto sm:text-sm',
@@ -618,31 +614,31 @@
                     });
                     const tableRows = reportData.map(record => {
                         return `<tr class="border-b">
-                                    <td class="px-2 py-2 text-center">${record.dailyQueueNumber}</td>
-                                    <td class="px-2 py-2">${record.sellerName}</td>
-                                    <td class="px-2 py-2 text-right">${record.bags}</td>
-                                    <td class="px-2 py-2 border-l border-black"></td>
-                                </tr>`;
+                                        <td class="px-2 py-2 text-center">${record.dailyQueueNumber}</td>
+                                        <td class="px-2 py-2">${record.sellerName}</td>
+                                        <td class="px-2 py-2 text-right">${record.bags}</td>
+                                        <td class="px-2 py-2 border-l border-black"></td>
+                                    </tr>`;
                     }).join('');
                     const reportHTML = `
-                            <div class="p-8 bg-white text-black">
-                                <div class="text-center mb-6">
-                                    <h2 class="text-xl font-bold">รายงานการรับวางยาง ประจำวันที่ ${formattedPrintDate}</h2>
-                                    <h3 class="text-lg">ตาชั่งที่ ${scaleId}</h3>
-                                    <p>สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</p>
-                                </div>
-                                <table class="w-full text-sm border-collapse border border-black">
-                                    <thead class="bg-stone-200">
-                                        <tr class="border-b-2 border-black">
-                                            <th class="px-2 py-2 border-r border-black" style="width: 10%;">ลำดับ</th>
-                                            <th class="px-2 py-2 border-r border-black" style="width: 40%;">ชื่อผู้ขาย</th>
-                                            <th class="px-2 py-2 border-r border-black text-right" style="width: 20%;">จำนวนถุง</th>
-                                            <th class="px-2 py-2 border-r border-black" style="width: 30%;">น้ำหนักที่ชั่ง (กก.)</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>${tableRows}</tbody>
-                                </table>
-                            </div>`;
+                                <div class="p-8 bg-white text-black">
+                                    <div class="text-center mb-6">
+                                        <h2 class="text-xl font-bold">รายงานการรับวางยาง ประจำวันที่ ${formattedPrintDate}</h2>
+                                        <h3 class="text-lg">ตาชั่งที่ ${scaleId}</h3>
+                                        <p>สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</p>
+                                    </div>
+                                    <table class="w-full text-sm border-collapse border border-black">
+                                        <thead class="bg-stone-200">
+                                            <tr class="border-b-2 border-black">
+                                                <th class="px-2 py-2 border-r border-black" style="width: 10%;">ลำดับ</th>
+                                                <th class="px-2 py-2 border-r border-black" style="width: 40%;">ชื่อผู้ขาย</th>
+                                                <th class="px-2 py-2 border-r border-black text-right" style="width: 20%;">จำนวนถุง</th>
+                                                <th class="px-2 py-2 border-r border-black" style="width: 30%;">น้ำหนักที่ชั่ง (กก.)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>${tableRows}</tbody>
+                                    </table>
+                                </div>`;
                     ui.printArea.innerHTML = reportHTML;
                     setTimeout(() => window.print(), 100);
                     return true;
@@ -780,33 +776,33 @@
                             const row = document.createElement('tr');
                             row.className = 'border-b odd:bg-stone-50';
                             row.innerHTML = `
-                                 <td class="px-2 py-3 text-center font-bold text-lg">${data.dailyQueueNumber || '-'}</td>
-                                 <td class="px-2 py-3 font-medium truncate">${data.sellerName}</td>
-                                 <td class="px-2 py-3 text-right font-bold text-amber-700">${data.bags}</td>
-                                 <td class="px-2 py-3"></td>
-                                 <td class="px-2 py-3 text-center">
-                                     <div class="flex items-center justify-center gap-1">
-                                         <button class="edit-queue-btn text-green-600 p-2 rounded-md hover:bg-green-100" data-id="${data.id}" data-scale="${i}" data-current-queue="${data.dailyQueueNumber}" title="แก้ไขลำดับ">🔄</button>
-                                         <button class="edit-weighing-btn text-blue-600 p-2 rounded-md hover:bg-blue-100" data-id="${data.id}" data-scale="${i}" title="แก้ไข">✏️</button>
-                                         <button class="delete-weighing-btn text-red-600 p-2 rounded-md hover:bg-red-100" data-id="${data.id}" title="ลบ">🗑️</button>
-                                     </div>
-                                 </td>
-                            `;
+                                       <td class="px-2 py-3 text-center font-bold text-lg">${data.dailyQueueNumber || '-'}</td>
+                                       <td class="px-2 py-3 font-medium truncate">${data.sellerName}</td>
+                                       <td class="px-2 py-3 text-right font-bold text-amber-700">${data.bags}</td>
+                                       <td class="px-2 py-3"></td>
+                                       <td class="px-2 py-3 text-center">
+                                           <div class="flex items-center justify-center gap-1">
+                                               <button class="edit-queue-btn text-green-600 p-2 rounded-md hover:bg-green-100" data-id="${data.id}" data-scale="${i}" data-current-queue="${data.dailyQueueNumber}" title="แก้ไขลำดับ">🔄</button>
+                                               <button class="edit-weighing-btn text-blue-600 p-2 rounded-md hover:bg-blue-100" data-id="${data.id}" data-scale="${i}" title="แก้ไข">✏️</button>
+                                               <button class="delete-weighing-btn text-red-600 p-2 rounded-md hover:bg-red-100" data-id="${data.id}" title="ลบ">🗑️</button>
+                                           </div>
+                                       </td>
+                                   `;
                             tableBody.appendChild(row);
                         });
                     }
                 });
             }
         }
-        
+
         function populateWeighingSummaryDateSelector() {
             if (!localWeighingData) return;
             const dateSet = new Set(localWeighingData.map(d => getUTCDateKey(d.timestamp.toDate())));
-            const sortedDates = Array.from(dateSet).sort((a, b) => b.localeCompare(a)); 
+            const sortedDates = Array.from(dateSet).sort((a, b) => b.localeCompare(a));
 
             const selector = ui.summaryDatePicker;
             const currentValue = selector.value;
-            selector.innerHTML = ''; 
+            selector.innerHTML = '';
 
             if (sortedDates.length === 0) {
                 selector.innerHTML = '<option value="">ไม่มีข้อมูล</option>';
@@ -834,7 +830,7 @@
                 selector.value = sortedDates[0];
             }
         }
-        
+
         function updateScaleFooter(panelElement) {
             const rows = panelElement.querySelectorAll('.weighing-row');
             let totalWeight = 0;
@@ -848,8 +844,8 @@
             const totalWeightEl = panelElement.querySelector('.scale-total-weight');
             const totalAmountEl = panelElement.querySelector('.scale-total-amount');
 
-            if(totalWeightEl) totalWeightEl.textContent = `${totalWeight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} กก.`;
-            if(totalAmountEl) totalAmountEl.textContent = `${totalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท`;
+            if (totalWeightEl) totalWeightEl.textContent = `${totalWeight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} กก.`;
+            if (totalAmountEl) totalAmountEl.textContent = `${totalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท`;
         }
 
         function renderDailyWeighingSummary() {
@@ -857,7 +853,7 @@
             if (!selectedDateStr) {
                 for (let i = 1; i <= 4; i++) {
                     const panel = document.getElementById(`summary-scale-${i}-content`);
-                    if(panel) panel.innerHTML = '<table class="w-full text-sm"><tbody><tr><td class="p-8 text-center text-stone-400">กรุณาเลือกวันที่</td></tr></tbody></table>';
+                    if (panel) panel.innerHTML = '<table class="w-full text-sm"><tbody><tr><td class="p-8 text-center text-stone-400">กรุณาเลือกวันที่</td></tr></tbody></table>';
                 }
                 return;
             }
@@ -876,7 +872,7 @@
                 if (!panel) continue;
 
                 const dataForScale = dataForDay.filter(d => d.scaleId == i)
-                                               .sort((a, b) => (a.dailyQueueNumber || 999) - (b.dailyQueueNumber || 999));
+                    .sort((a, b) => (a.dailyQueueNumber || 999) - (b.dailyQueueNumber || 999));
 
                 const masterPriceControlHTML = `
                     <div class="p-2 bg-stone-50 border-b flex items-center justify-end gap-2 no-print">
@@ -911,44 +907,44 @@
 
                 dataForScale.forEach(item => {
                     tableHTML += `
-                        <tr class="weighing-row">
-                            <td class="px-2 py-2 text-center font-medium">${item.dailyQueueNumber || '-'}</td>
-                            <td class="px-4 py-2 font-medium whitespace-nowrap">${item.sellerName}</td>
-                            <td class="px-2 py-2 text-right font-bold text-amber-700">${item.bags.toLocaleString('th-TH')}</td>
-                            <td class="px-1 py-1">
-                                <input type="text" data-id="${item.id}" class="weighed-weight-input w-full p-2 border rounded text-center" value="${item.actualWeight || ''}" placeholder="0.00">
-                            </td>
-                            <td class="px-1 py-1">
-                                <input type="number" step="0.01" data-id="${item.id}" class="price-per-kg-input w-full p-2 border rounded text-center" value="${item.price || ''}" placeholder="0.00">
-                            </td>
-                            <td class="px-4 py-2 text-right font-bold text-blue-600">
-                                <span class="total-amount-display">${(item.total || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                            </td>
-                            <td class="px-1 py-1 text-center">
-                                <button data-id="${item.id}" class="save-actual-weight-btn bg-green-600 text-white font-bold py-2 px-3 rounded-lg shadow w-full">บันทึก</button>
-                            </td>
-                        </tr>
-                    `;
-                });
-                
-                 tableHTML += `
-                        </tbody>
-                        <tfoot class="font-bold bg-stone-200 border-t-2">
-                            <tr>
-                                <td colspan="3" class="px-4 py-3 text-right">รวม:</td>
-                                <td class="px-2 py-3 text-right text-green-800 text-base scale-total-weight">0.00 กก.</td>
-                                <td class="px-2 py-3"></td>
-                                <td class="px-4 py-3 text-right text-blue-800 text-base scale-total-amount">0.00 บาท</td>
-                                <td></td>
+                            <tr class="weighing-row">
+                                <td class="px-2 py-2 text-center font-medium">${item.dailyQueueNumber || '-'}</td>
+                                <td class="px-4 py-2 font-medium whitespace-nowrap">${item.sellerName}</td>
+                                <td class="px-2 py-2 text-right font-bold text-amber-700">${item.bags.toLocaleString('th-TH')}</td>
+                                <td class="px-1 py-1">
+                                    <input type="text" data-id="${item.id}" class="weighed-weight-input w-full p-2 border rounded text-center" value="${item.actualWeight || ''}" placeholder="0.00">
+                                </td>
+                                <td class="px-1 py-1">
+                                    <input type="number" step="0.01" data-id="${item.id}" class="price-per-kg-input w-full p-2 border rounded text-center" value="${item.price || ''}" placeholder="0.00">
+                                </td>
+                                <td class="px-4 py-2 text-right font-bold text-blue-600">
+                                    <span class="total-amount-display">${(item.total || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                </td>
+                                <td class="px-1 py-1 text-center">
+                                    <button data-id="${item.id}" class="save-actual-weight-btn bg-green-600 text-white font-bold py-2 px-3 rounded-lg shadow w-full">บันทึก</button>
+                                </td>
                             </tr>
-                        </tfoot>
-                    </table>
-                `;
+                        `;
+                });
+
+                tableHTML += `
+                            </tbody>
+                            <tfoot class="font-bold bg-stone-200 border-t-2">
+                                <tr>
+                                    <td colspan="3" class="px-4 py-3 text-right">รวม:</td>
+                                    <td class="px-2 py-3 text-right text-green-800 text-base scale-total-weight">0.00 กก.</td>
+                                    <td class="px-2 py-3"></td>
+                                    <td class="px-4 py-3 text-right text-blue-800 text-base scale-total-amount">0.00 บาท</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    `;
                 panel.innerHTML = masterPriceControlHTML + tableHTML;
                 updateScaleFooter(panel);
             }
         }
-        
+
         async function handleSaveActualWeight(event) {
             const button = event.target.closest('.save-actual-weight-btn');
             if (!button) return;
@@ -956,14 +952,14 @@
             const weighingId = button.dataset.id;
             const row = button.closest('.weighing-row');
             if (!weighingId || !row) return;
-            
+
             const weightInput = row.querySelector('.weighed-weight-input');
             const priceInput = row.querySelector('.price-per-kg-input');
 
             const weight = parseFloat(weightInput.value) || 0;
             const price = parseFloat(priceInput.value) || 0;
             const total = weight * price;
-            
+
             if (weight <= 0) {
                 showAlert('กรุณาป้อนน้ำหนักที่ถูกต้อง (มากกว่า 0)');
                 weightInput.focus();
@@ -980,10 +976,10 @@
                     price: price,
                     total: total
                 });
-                
+
                 button.textContent = 'บันทึกแล้ว';
                 button.classList.replace('bg-green-600', 'bg-sky-600');
-                
+
                 setTimeout(() => {
                     button.textContent = 'บันทึก';
                     button.classList.replace('bg-sky-600', 'bg-green-600');
@@ -997,7 +993,7 @@
                 button.disabled = false;
             }
         }
-        
+
         function handleWeightCalculation(event) {
             const inputEl = event.target;
             if (!inputEl.classList.contains('weighed-weight-input')) {
@@ -1014,7 +1010,9 @@
                     }, 0);
                     if (sum > 0) {
                         inputEl.value = sum.toFixed(2);
-                        inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+                        inputEl.dispatchEvent(new Event('input', {
+                            bubbles: true
+                        }));
                     } else {
                         inputEl.value = '';
                     }
@@ -1032,9 +1030,12 @@
                 const weight = parseFloat(row.querySelector('.weighed-weight-input').value) || 0;
                 const price = parseFloat(row.querySelector('.price-per-kg-input').value) || 0;
                 const totalDisplay = row.querySelector('.total-amount-display');
-                
-                totalDisplay.textContent = (weight * price).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                
+
+                totalDisplay.textContent = (weight * price).toLocaleString('th-TH', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+
                 const panel = row.closest('.summary-sub-content');
                 updateScaleFooter(panel);
             }
@@ -1071,7 +1072,9 @@
                     input.value = priceToSet.toFixed(2);
                     input.readOnly = true;
                     input.classList.add('bg-stone-200', 'cursor-not-allowed');
-                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.dispatchEvent(new Event('input', {
+                        bubbles: true
+                    }));
                 });
                 masterPriceInput.readOnly = true;
                 icon.textContent = '🔒';
@@ -1091,15 +1094,20 @@
             const dataForDay = localWeighingData.filter(d => d.timestamp.toDate() >= dayStart && d.timestamp.toDate() <= dayEnd);
 
             if (dataForDay.length === 0) return showAlert('ไม่มีข้อมูลให้พิมพ์สำหรับวันที่เลือก');
-            
-            const formattedPrintDate = dayStart.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+
+            const formattedPrintDate = dayStart.toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                timeZone: 'UTC'
+            });
             let reportHTML = `
-                <div class="p-8 bg-white text-black">
-                    <div class="text-center mb-6">
-                        <h2 class="text-xl font-bold">สรุปรายการรับวางและชั่งน้ำหนักยาง</h2>
-                        <h3 class="text-lg">ประจำวันที่ ${formattedPrintDate}</h3>
-                        <p>สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</p>
-                    </div>`;
+                    <div class="p-8 bg-white text-black">
+                        <div class="text-center mb-6">
+                            <h2 class="text-xl font-bold">สรุปรายการรับวางและชั่งน้ำหนักยาง</h2>
+                            <h3 class="text-lg">ประจำวันที่ ${formattedPrintDate}</h3>
+                            <p>สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</p>
+                        </div>`;
 
             let grandTotalBags = 0;
             let grandTotalWeight = 0;
@@ -1107,25 +1115,27 @@
 
             for (let i = 1; i <= 4; i++) {
                 const dataForScale = dataForDay.filter(d => d.scaleId == i)
-                                               .sort((a, b) => (a.dailyQueueNumber || 999) - (b.dailyQueueNumber || 999));
+                    .sort((a, b) => (a.dailyQueueNumber || 999) - (b.dailyQueueNumber || 999));
                 if (dataForScale.length === 0) continue;
 
                 reportHTML += `<div class="mb-6" style="page-break-inside: avoid;">
-                                <h4 class="text-md font-bold text-stone-800 border-b-2 border-black pb-1 mb-2">ตาชั่งที่ ${i}</h4>
-                                <table class="w-full text-sm">
-                                    <thead>
-                                        <tr>
-                                            <th class="text-center py-1" style="width:10%">คิว</th>
-                                            <th class="text-left py-1" style="width:35%">ชื่อผู้ขาย</th>
-                                            <th class="text-right py-1" style="width:15%">จำนวนถุง</th>
-                                            <th class="text-right py-1" style="width:15%">น้ำหนัก (กก.)</th>
-                                            <th class="text-right py-1" style="width:10%">ราคา</th>
-                                            <th class="text-right py-1" style="width:15%">ยอดรวม</th>
-                                        </tr>
-                                    </thead><tbody>`;
+                                    <h4 class="text-md font-bold text-stone-800 border-b-2 border-black pb-1 mb-2">ตาชั่งที่ ${i}</h4>
+                                    <table class="w-full text-sm">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center py-1" style="width:10%">คิว</th>
+                                                <th class="text-left py-1" style="width:35%">ชื่อผู้ขาย</th>
+                                                <th class="text-right py-1" style="width:15%">จำนวนถุง</th>
+                                                <th class="text-right py-1" style="width:15%">น้ำหนัก (กก.)</th>
+                                                <th class="text-right py-1" style="width:10%">ราคา</th>
+                                                <th class="text-right py-1" style="width:15%">ยอดรวม</th>
+                                            </tr>
+                                        </thead><tbody>`;
 
-                let totalBagsForScale = 0, totalWeightForScale = 0, totalAmountForScale = 0;
-                
+                let totalBagsForScale = 0,
+                    totalWeightForScale = 0,
+                    totalAmountForScale = 0;
+
                 dataForScale.forEach(item => {
                     const weight = item.actualWeight || 0;
                     const price = item.price || 0;
@@ -1135,45 +1145,45 @@
                     totalAmountForScale += total;
 
                     reportHTML += `<tr class="border-b border-dotted">
-                                    <td class="py-1 text-center">${item.dailyQueueNumber || '-'}</td>
-                                    <td class="py-1">${item.sellerName}</td>
-                                    <td class="py-1 text-right">${item.bags.toLocaleString('th-TH')}</td>
-                                    <td class="py-1 text-right">${weight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                    <td class="py-1 text-right">${price.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                    <td class="py-1 text-right">${total.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                   </tr>`;
+                                            <td class="py-1 text-center">${item.dailyQueueNumber || '-'}</td>
+                                            <td class="py-1">${item.sellerName}</td>
+                                            <td class="py-1 text-right">${item.bags.toLocaleString('th-TH')}</td>
+                                            <td class="py-1 text-right">${weight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                            <td class="py-1 text-right">${price.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                            <td class="py-1 text-right">${total.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                           </tr>`;
                 });
                 grandTotalBags += totalBagsForScale;
                 grandTotalWeight += totalWeightForScale;
                 grandTotalAmount += totalAmountForScale;
 
                 reportHTML += `</tbody>
-                                <tfoot class="font-bold border-t-2 border-black">
-                                    <tr>
-                                        <td colspan="2" class="py-1 text-right">รวม:</td>
-                                        <td class="py-1 text-right">${totalBagsForScale.toLocaleString('th-TH')} ถุง</td>
-                                        <td class="py-1 text-right">${totalWeightForScale.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} กก.</td>
-                                        <td></td>
-                                        <td class="py-1 text-right">${totalAmountForScale.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</td>
-                                    </tr>
-                                </tfoot>
-                               </table></div>`;
+                                        <tfoot class="font-bold border-t-2 border-black">
+                                            <tr>
+                                                <td colspan="2" class="py-1 text-right">รวม:</td>
+                                                <td class="py-1 text-right">${totalBagsForScale.toLocaleString('th-TH')} ถุง</td>
+                                                <td class="py-1 text-right">${totalWeightForScale.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} กก.</td>
+                                                <td></td>
+                                                <td class="py-1 text-right">${totalAmountForScale.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</td>
+                                            </tr>
+                                        </tfoot>
+                                       </table></div>`;
             }
-            
+
             reportHTML += `<div class="mt-8 pt-4 border-t-4 border-double border-black text-right space-y-2">
-                            <div>
-                                <span class="text-lg font-bold">รวมจำนวนถุงทั้งหมด:</span>
-                                <span class="text-xl font-bold ml-4">${grandTotalBags.toLocaleString('th-TH')} ถุง</span>
-                            </div>
-                            <div>
-                                <span class="text-lg font-bold">รวมน้ำหนักทั้งหมด:</span>
-                                <span class="text-xl font-bold ml-4">${grandTotalWeight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} กก.</span>
-                            </div>
-                             <div>
-                                <span class="text-lg font-bold">ยอดเงินรวมทั้งหมด:</span>
-                                <span class="text-xl font-bold ml-4">${grandTotalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span>
-                            </div>
-                           </div></div>`;
+                                <div>
+                                    <span class="text-lg font-bold">รวมจำนวนถุงทั้งหมด:</span>
+                                    <span class="text-xl font-bold ml-4">${grandTotalBags.toLocaleString('th-TH')} ถุง</span>
+                                </div>
+                                <div>
+                                    <span class="text-lg font-bold">รวมน้ำหนักทั้งหมด:</span>
+                                    <span class="text-xl font-bold ml-4">${grandTotalWeight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} กก.</span>
+                                </div>
+                                 <div>
+                                    <span class="text-lg font-bold">ยอดเงินรวมทั้งหมด:</span>
+                                    <span class="text-xl font-bold ml-4">${grandTotalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span>
+                                </div>
+                               </div></div>`;
 
             ui.printArea.innerHTML = reportHTML;
             window.print();
@@ -1262,32 +1272,32 @@
                         if (isNaN(newQueue) || newQueue <= 0) {
                             errorEl.textContent = 'กรุณาใส่ลำดับที่ถูกต้อง (ต้องเป็นตัวเลขมากกว่า 0)';
                             errorEl.classList.remove('hidden');
-                            return false; 
+                            return false;
                         }
-                        
+
                         const todayStart = new Date();
                         todayStart.setHours(0, 0, 0, 0);
                         const isDuplicate = localWeighingData.some(d =>
-                            d.id !== id && 
-                            d.scaleId === scaleId && 
-                            d.timestamp.toDate() >= todayStart && 
-                            d.dailyQueueNumber === newQueue 
+                            d.id !== id &&
+                            d.scaleId === scaleId &&
+                            d.timestamp.toDate() >= todayStart &&
+                            d.dailyQueueNumber === newQueue
                         );
                         if (isDuplicate) {
                             errorEl.textContent = `ลำดับที่ ${newQueue} มีอยู่แล้ว กรุณาใช้เลขอื่น`;
                             errorEl.classList.remove('hidden');
-                            return false; 
+                            return false;
                         }
                         try {
                             await updateDoc(doc(weighingsCollectionRef, id), {
                                 dailyQueueNumber: newQueue
                             });
                             showAlert('แก้ไขลำดับสำเร็จ');
-                            return true; 
+                            return true;
                         } catch (error) {
                             errorEl.textContent = `เกิดข้อผิดพลาด: ${error.message}`;
                             errorEl.classList.remove('hidden');
-                            return false; 
+                            return false;
                         }
                     }
                 }, {
@@ -1299,12 +1309,12 @@
 
         function promptChangePassword() {
             const modalContentHTML = `
-                <div class="space-y-4 text-left">
-                    <div><label for="old-password-input" class="block text-sm font-medium text-stone-600">รหัสผ่านเก่า</label><input type="password" id="old-password-input" class="mt-1 w-full p-3 border border-stone-300 rounded-lg shadow-sm"></div>
-                    <div><label for="new-password-input" class="block text-sm font-medium text-stone-600">รหัสผ่านใหม่</label><input type="password" id="new-password-input" class="mt-1 w-full p-3 border border-stone-300 rounded-lg shadow-sm"></div>
-                    <div><label for="confirm-password-input" class="block text-sm font-medium text-stone-600">ยืนยันรหัสผ่านใหม่</label><input type="password" id="confirm-password-input" class="mt-1 w-full p-3 border border-stone-300 rounded-lg shadow-sm"></div>
-                    <p id="change-password-error" class="text-sm text-red-600 text-center hidden"></p>
-                </div>`;
+                    <div class="space-y-4 text-left">
+                        <div><label for="old-password-input" class="block text-sm font-medium text-stone-600">รหัสผ่านเก่า</label><input type="password" id="old-password-input" class="mt-1 w-full p-3 border border-stone-300 rounded-lg shadow-sm"></div>
+                        <div><label for="new-password-input" class="block text-sm font-medium text-stone-600">รหัสผ่านใหม่</label><input type="password" id="new-password-input" class="mt-1 w-full p-3 border border-stone-300 rounded-lg shadow-sm"></div>
+                        <div><label for="confirm-password-input" class="block text-sm font-medium text-stone-600">ยืนยันรหัสผ่านใหม่</label><input type="password" id="confirm-password-input" class="mt-1 w-full p-3 border border-stone-300 rounded-lg shadow-sm"></div>
+                        <p id="change-password-error" class="text-sm text-red-600 text-center hidden"></p>
+                    </div>`;
             showModal('เปลี่ยนรหัสผ่าน', modalContentHTML, [{
                 text: 'ยืนยันการเปลี่ยนแปลง',
                 classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-amber-600 text-base font-medium text-white hover:bg-amber-700 sm:ml-3 sm:w-auto sm:text-sm',
@@ -1437,7 +1447,7 @@
                 });
             });
         }
-        
+
         function applyUserPermissions() {
             const username = sessionStorage.getItem('loggedInUser');
             if (!username || !users[username]) {
@@ -1481,7 +1491,7 @@
                     sessionStorage.setItem('loggedInUser', username);
                     ui.loginError.classList.add('hidden');
                     ui.passwordInput.value = '';
-                    applyUserPermissions(); 
+                    applyUserPermissions();
                     if (!isAppInitialized) {
                         initializeFirebaseAndAuth();
                     }
@@ -1496,7 +1506,7 @@
             if (loggedInUser && users[loggedInUser]) {
                 ui.loginScreen.classList.add('hidden');
                 ui.appContainer.classList.remove('hidden');
-                applyUserPermissions(); 
+                applyUserPermissions();
                 initializeFirebaseAndAuth();
             } else {
                 ui.loginScreen.classList.remove('hidden');
@@ -1530,10 +1540,10 @@
                 e.target.value = '';
             });
             ui.deleteAllDataBtn.addEventListener('click', confirmDeleteAllData);
-            
+
             ui.summaryDatePicker.addEventListener('change', renderDailyWeighingSummary);
             ui.printDailyWeighingSummaryBtn.addEventListener('click', printDailyWeighingSummaryReport);
-            
+
             ui.mainContent.addEventListener('click', (e) => {
                 handleSaveActualWeight(e);
                 handleScalePriceLock(e);
