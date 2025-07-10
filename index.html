@@ -1227,11 +1227,11 @@
                                      ค่ายางก้อนถ้วย
                                      <span class="block text-xs text-stone-600">น้ำหนัก: ${sale.weight.toFixed(2)} กก. @ ${sale.price.toFixed(2)} บาท/กก.</span>
                                  </td>
-                                 <td class="text-right align-top pt-2">${sale.total.toLocaleString('th-TH', { maximumFractionDigits: 0 })}</td>
+                                 <td class="text-right align-top pt-2">${Math.trunc(sale.total).toLocaleString('th-TH')}</td>
                              </tr>
                         </tbody>
                         <tfoot>
-                            <tr class="font-bold"><td class="py-2 text-base">รวมเป็นเงิน</td><td class="text-right text-xl">${sale.total.toLocaleString('th-TH', { maximumFractionDigits: 0 })}</td></tr>
+                            <tr class="font-bold"><td class="py-2 text-base">รวมเป็นเงิน</td><td class="text-right text-xl">${Math.trunc(sale.total).toLocaleString('th-TH')}</td></tr>
                         </tfoot>
                     </table>
                     <div class="flex-grow"></div>
