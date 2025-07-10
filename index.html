@@ -937,7 +937,7 @@
                 `;
 
                 if (dataForScale.length === 0) {
-                    panel.innerHTML = `${masterPriceControlHTML}<table class="w-full text-sm"><tbody><tr><td colspan="7" class="p-8 text-center text-stone-400">ไม่พบข้อมูลสำหรับตาชั่งนี้ในวันที่เลือก</td></tr></tbody></table>`;
+                    panel.innerHTML = `${masterPriceControlHTML}<table class="w-full text-sm"><tbody><tr><td colspan="8" class="p-8 text-center text-stone-400">ไม่พบข้อมูลสำหรับตาชั่งนี้ในวันที่เลือก</td></tr></tbody></table>`;
                     continue;
                 }
 
@@ -945,11 +945,12 @@
                     <table class="w-full text-sm text-left text-stone-600">
                         <thead class="text-xs text-stone-700 uppercase bg-stone-100">
                             <tr>
-                                <th class="px-2 py-3 text-center" style="width: 8%;">คิว</th>
-                                <th class="px-4 py-3" style="width: 27%;">ชื่อผู้ขาย</th>
+                                <th class="px-2 py-3 text-center" style="width: 5%;">คิว</th>
+                                <th class="px-4 py-3" style="width: 25%;">ชื่อผู้ขาย</th>
                                 <th class="px-2 py-3 text-right" style="width: 10%;">จำนวนถุง</th>
+                                <th class="px-2 py-3 text-center" style="width: 10%;">ตาชั่ง</th>
                                 <th class="px-2 py-3 text-center" style="width: 15%;">น้ำหนัก (กก.)</th>
-                                <th class="px-2 py-3 text-center" style="width: 15%;">ราคา/กก.</th>
+                                <th class="px-2 py-3 text-center" style="width: 10%;">ราคา/กก.</th>
                                 <th class="px-2 py-3 text-right" style="width: 15%;">ยอดรวม (บาท)</th>
                                 <th class="px-2 py-3 text-center" style="width: 10%;">จัดการ</th>
                             </tr>
@@ -963,6 +964,9 @@
                             <td class="px-2 py-2 text-center font-medium">${item.dailyQueueNumber || '-'}</td>
                             <td class="px-4 py-2 font-medium whitespace-nowrap">${item.sellerName}</td>
                             <td class="px-2 py-2 text-right font-bold text-amber-700">${item.bags.toLocaleString('th-TH')}</td>
+                            <td class="px-1 py-1">
+                                <input type="number" min="1" max="4" data-id="${item.id}" class="scale-number-input w-full p-2 border rounded text-center" value="${item.scaleId}">
+                            </td>
                             <td class="px-1 py-1">
                                 <input type="text" data-id="${item.id}" class="weighed-weight-input w-full p-2 border rounded text-center" value="${item.actualWeight || ''}" placeholder="0.00">
                             </td>
@@ -983,9 +987,9 @@
                         </tbody>
                         <tfoot class="font-bold bg-stone-200 border-t-2">
                             <tr>
-                                <td colspan="3" class="px-4 py-3 text-right">รวม:</td>
+                                <td colspan="4" class="px-4 py-3 text-right">รวม:</td>
                                 <td class="px-2 py-3 text-right text-green-800 text-base scale-total-weight">0.00 กก.</td>
-                                <td class="px-2 py-3"></td>
+                                <td></td>
                                 <td class="px-4 py-3 text-right text-blue-800 text-base scale-total-amount">0.00 บาท</td>
                                 <td></td>
                             </tr>
@@ -1007,11 +1011,18 @@
             
             const weightInput = row.querySelector('.weighed-weight-input');
             const priceInput = row.querySelector('.price-per-kg-input');
+            const scaleInput = row.querySelector('.scale-number-input');
 
             const weight = parseFloat(weightInput.value) || 0;
             const price = parseFloat(priceInput.value) || 0;
+            const newScaleId = parseInt(scaleInput.value) || 0;
             const total = weight * price;
             
+            if (newScaleId < 1 || newScaleId > 4) {
+                 showAlert('กรุณาป้อนเลขตาชั่งที่ถูกต้อง (1-4)');
+                 scaleInput.focus();
+                 return;
+            }
             if (weight <= 0) {
                 showAlert('กรุณาป้อนน้ำหนักที่ถูกต้อง (มากกว่า 0)');
                 weightInput.focus();
@@ -1026,7 +1037,8 @@
                 await updateDoc(weighingDocRef, {
                     actualWeight: weight,
                     price: price,
-                    total: total
+                    total: total,
+                    scaleId: newScaleId
                 });
                 
                 button.textContent = 'บันทึกแล้ว';
@@ -1661,4 +1673,73 @@
             ui.deleteAllWeighingsBtn.addEventListener('click', deleteAllTodaysWeighings);
             ui.backupDataBtn.addEventListener('click', backupData);
             ui.restoreDataBtn.addEventListener('click', () => ui.restoreFileInput.click());
-            ui.restoreFileInput.addEventListener('change',
+            ui.restoreFileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    restoreDataFromFile(file);
+                }
+                e.target.value = '';
+            });
+            ui.deleteAllDataBtn.addEventListener('click', confirmDeleteAllData);
+            
+            ui.summaryDatePicker.addEventListener('change', renderDailyWeighingSummary);
+            ui.printDailyWeighingSummaryBtn.addEventListener('click', printDailyWeighingSummaryReport);
+            
+            ui.mainContent.addEventListener('click', (e) => {
+                handleSaveActualWeight(e);
+                handleScalePriceLock(e);
+                handleHistoryTableClick(e);
+            });
+            ui.mainContent.addEventListener('focusout', handleWeightCalculation);
+            ui.mainContent.addEventListener('input', handleCalculationTrigger);
+            
+            ui.historySearchBox.addEventListener('input', renderHistoryTable);
+            ui.historyDateSelect.addEventListener('change', renderHistoryTable);
+            ui.historyPrintReportBtn.addEventListener('click', createHistorySummaryReport);
+            ui.historyExportExcelBtn.addEventListener('click', exportHistoryToExcel);
+
+
+            const weighingSubTabsContainer = document.getElementById('weighing-sub-tabs');
+            const weighingSubBtns = document.querySelectorAll('.weighing-sub-btn');
+            const weighingSubContents = document.querySelectorAll('.weighing-sub-content');
+
+            function switchToWeighingSubTab(targetId) {
+                weighingSubContents.forEach(content => content.style.display = 'none');
+                weighingSubBtns.forEach(btn => btn.classList.remove('active'));
+                const targetContent = document.getElementById(targetId + '-content');
+                const targetBtn = document.querySelector(`.weighing-sub-btn[data-subtab="${targetId}"]`);
+                if (targetContent) targetContent.style.display = 'block';
+                if (targetBtn) targetBtn.classList.add('active');
+            }
+            weighingSubTabsContainer.addEventListener('click', (e) => {
+                const targetSubTabId = e.target.dataset.subtab;
+                if (targetSubTabId) {
+                    switchToWeighingSubTab(targetSubTabId);
+                }
+            });
+            switchToWeighingSubTab('weighing-scale-1');
+
+            const summarySubTabsContainer = document.getElementById('summary-sub-tabs');
+            const summarySubBtns = document.querySelectorAll('.summary-sub-btn');
+            const summarySubContents = document.querySelectorAll('.summary-sub-content');
+
+            function switchToSummarySubTab(targetId) {
+                summarySubContents.forEach(content => content.style.display = 'none');
+                summarySubBtns.forEach(btn => btn.classList.remove('active'));
+                const targetContent = document.getElementById(targetId + '-content');
+                const targetBtn = document.querySelector(`.summary-sub-btn[data-subtab="${targetId}"]`);
+                if (targetContent) targetContent.style.display = 'block';
+                if (targetBtn) targetBtn.classList.add('active');
+            }
+            summarySubTabsContainer.addEventListener('click', (e) => {
+                const targetSubTabId = e.target.dataset.subtab;
+                if (targetSubTabId) {
+                    switchToSummarySubTab(targetSubTabId);
+                }
+            });
+            switchToSummarySubTab('summary-scale-1');
+        });
+    </script>
+</body>
+
+</html>
