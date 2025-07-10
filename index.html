@@ -316,7 +316,8 @@
             where,
             getDocs,
             getDoc,
-            writeBatch
+            writeBatch,
+            FieldValue
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyCNVxG6s46SRXOYAeT0rJHAtz_-3IPUJNE",
@@ -935,6 +936,13 @@
                 `;
 
                 dataForScale.forEach(item => {
+                    let actionCellHTML = '';
+                    if (item.originalScaleId) {
+                        actionCellHTML = `<button data-id="${item.id}" class="revert-move-btn bg-orange-500 text-white font-bold py-2 px-3 rounded-lg shadow w-full hover:bg-orange-600">แก้ไข</button>`;
+                    } else {
+                        actionCellHTML = `<button data-id="${item.id}" data-original-scale-id="${item.scaleId}" class="save-actual-weight-btn bg-green-600 text-white font-bold py-2 px-3 rounded-lg shadow w-full">บันทึก</button>`;
+                    }
+
                     tableHTML += `
                             <tr class="weighing-row">
                                 <td class="px-2 py-2 text-center font-medium">${item.dailyQueueNumber || '-'}</td>
@@ -953,7 +961,7 @@
                                     <input type="number" data-id="${item.id}" class="summary-scale-key-input w-full p-2 border rounded text-center" value="${item.scaleId}" min="1" max="4">
                                 </td>
                                 <td class="px-1 py-1 text-center">
-                                    <button data-id="${item.id}" data-original-scale-id="${item.scaleId}" class="save-actual-weight-btn bg-green-600 text-white font-bold py-2 px-3 rounded-lg shadow w-full">บันทึก</button>
+                                    ${actionCellHTML}
                                 </td>
                             </tr>
                         `;
@@ -1018,6 +1026,18 @@
                 };
 
                 if (targetScaleId !== originalScaleId) {
+                    const docSnap = await getDoc(weighingDocRef);
+                    if (!docSnap.exists()) {
+                        showAlert('ไม่พบข้อมูลที่จะย้าย');
+                        return;
+                    }
+                    const currentData = docSnap.data();
+
+                    if (!currentData.originalScaleId) {
+                        updateData.originalScaleId = currentData.scaleId;
+                        updateData.originalQueueNumber = currentData.dailyQueueNumber;
+                    }
+
                     const selectedDateStr = ui.summaryDatePicker.value;
                     const dateParts = selectedDateStr.split('-');
                     const dayStart = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2]));
@@ -1051,6 +1071,46 @@
                 showAlert(`เกิดข้อผิดพลาด: ${error.message}`);
                 if (button && document.body.contains(button)) {
                     button.textContent = 'บันทึก';
+                    button.disabled = false;
+                }
+            }
+        }
+
+        async function handleRevertMove(event) {
+            const button = event.target.closest('.revert-move-btn');
+            if (!button) return;
+
+            const weighingId = button.dataset.id;
+            if (!weighingId) return;
+
+            button.textContent = 'กำลังย้ายกลับ...';
+            button.disabled = true;
+
+            try {
+                const weighingDocRef = doc(weighingsCollectionRef, weighingId);
+                const docSnap = await getDoc(weighingDocRef);
+
+                if (!docSnap.exists() || !docSnap.data().originalScaleId) {
+                    showAlert('ไม่พบข้อมูลดั้งเดิมที่จะย้ายกลับ');
+                    button.textContent = 'แก้ไข';
+                    button.disabled = false;
+                    return;
+                }
+
+                const originalData = docSnap.data();
+
+                await updateDoc(weighingDocRef, {
+                    scaleId: originalData.originalScaleId,
+                    dailyQueueNumber: originalData.originalQueueNumber,
+                    originalScaleId: FieldValue.delete(),
+                    originalQueueNumber: FieldValue.delete()
+                });
+
+            } catch (error) {
+                console.error("Error reverting move:", error);
+                showAlert(`เกิดข้อผิดพลาดในการย้ายกลับ: ${error.message}`);
+                if (button && document.body.contains(button)) {
+                    button.textContent = 'แก้ไข';
                     button.disabled = false;
                 }
             }
@@ -1611,6 +1671,7 @@
             ui.mainContent.addEventListener('click', (e) => {
                 handleSaveActualWeight(e);
                 handleScalePriceLock(e);
+                handleRevertMove(e);
             });
             ui.mainContent.addEventListener('focusout', handleWeightCalculation);
             ui.mainContent.addEventListener('input', handleCalculationTrigger);
