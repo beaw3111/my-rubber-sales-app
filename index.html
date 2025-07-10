@@ -886,7 +886,7 @@
                             <td class="px-6 py-4 font-medium text-stone-900 whitespace-nowrap">${item.sellerName}</td>
                             <td class="px-6 py-4 text-right font-bold text-amber-700">${item.bags.toLocaleString('th-TH')}</td>
                             <td class="px-2 py-2">
-                                <input type="number" data-id="${item.id}" class="weighed-weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" value="${item.actualWeight || ''}" placeholder="0.00">
+                                <input type="text" data-id="${item.id}" class="weighed-weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" value="${item.actualWeight || ''}" placeholder="0.00">
                             </td>
                             <td class="px-2 py-2 text-center">
                                 <button data-id="${item.id}" class="save-actual-weight-btn bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors w-full">
@@ -961,6 +961,31 @@
             }
         }
         
+        function handleWeightCalculation(event) {
+            const inputEl = event.target;
+            if (!inputEl.classList.contains('weighed-weight-input')) {
+                return;
+            }
+            let value = inputEl.value.trim();
+            if (value.includes('+') && value.length > 1) {
+                try {
+                    value = value.replace(/\s+/g, '').replace(/\+$/, '');
+                    const parts = value.split('+');
+                    const sum = parts.reduce((total, part) => {
+                        const num = parseFloat(part);
+                        return total + (isNaN(num) ? 0 : num);
+                    }, 0);
+                    if (sum > 0) {
+                        inputEl.value = sum.toFixed(2);
+                    } else {
+                        inputEl.value = '';
+                    }
+                } catch (error) {
+                    console.error("Error calculating weight:", error);
+                }
+            }
+        }
+
         function printDailyWeighingSummaryReport() {
             const selectedDateStr = ui.summaryDatePicker.value;
             if (!selectedDateStr) return showAlert('กรุณาเลือกวันที่ก่อนพิมพ์');
@@ -1396,7 +1421,9 @@
             ui.summaryDatePicker.addEventListener('change', renderDailyWeighingSummary);
             ui.printDailyWeighingSummaryBtn.addEventListener('click', printDailyWeighingSummaryReport);
             
-            document.querySelector('main').addEventListener('click', handleSaveActualWeight);
+            const mainContent = document.querySelector('main');
+            mainContent.addEventListener('click', handleSaveActualWeight);
+            mainContent.addEventListener('focusout', handleWeightCalculation);
 
             const weighingSubTabsContainer = document.getElementById('weighing-sub-tabs');
             const weighingSubBtns = document.querySelectorAll('.weighing-sub-btn');
