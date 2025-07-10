@@ -373,6 +373,7 @@
             changePasswordBtn: document.getElementById('change-password-btn'),
             weighingHistoryBody: document.getElementById('weighing-history-body'),
             tabs: document.getElementById('tabs'),
+            mainContent: document.querySelector('main'),
             tabContents: document.querySelectorAll('.tab-content'),
             printArea: document.getElementById('print-area'),
             modal: document.getElementById('modal'),
@@ -834,6 +835,23 @@
             }
         }
         
+        function updateScaleFooter(panelElement) {
+            const rows = panelElement.querySelectorAll('.weighing-row');
+            let totalWeight = 0;
+            let totalAmount = 0;
+            rows.forEach(row => {
+                const weight = parseFloat(row.querySelector('.weighed-weight-input').value) || 0;
+                const price = parseFloat(row.querySelector('.price-per-kg-input').value) || 0;
+                totalWeight += weight;
+                totalAmount += weight * price;
+            });
+            const totalWeightEl = panelElement.querySelector('.scale-total-weight');
+            const totalAmountEl = panelElement.querySelector('.scale-total-amount');
+
+            if(totalWeightEl) totalWeightEl.textContent = `${totalWeight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} กก.`;
+            if(totalAmountEl) totalAmountEl.textContent = `${totalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท`;
+        }
+
         function renderDailyWeighingSummary() {
             const selectedDateStr = ui.summaryDatePicker.value;
             if (!selectedDateStr) {
@@ -860,20 +878,32 @@
                 const dataForScale = dataForDay.filter(d => d.scaleId == i)
                                                .sort((a, b) => (a.dailyQueueNumber || 999) - (b.dailyQueueNumber || 999));
 
+                const masterPriceControlHTML = `
+                    <div class="p-2 bg-stone-50 border-b flex items-center justify-end gap-2 no-print">
+                        <label for="master-price-${i}" class="text-sm font-medium text-stone-600">กำหนดราคาสำหรับตาชั่งนี้:</label>
+                        <input type="number" id="master-price-${i}" class="scale-master-price w-24 p-1 border border-stone-300 rounded-md" placeholder="ราคา">
+                        <button data-scale-id="${i}" class="scale-price-lock-btn p-2 rounded-lg text-white bg-gray-400 hover:bg-gray-500">
+                            <span class="lock-icon">🔓</span>
+                        </button>
+                    </div>
+                `;
+
                 if (dataForScale.length === 0) {
-                    panel.innerHTML = '<table class="w-full text-sm"><tbody><tr><td colspan="5" class="p-8 text-center text-stone-400">ไม่พบข้อมูลสำหรับตาชั่งนี้ในวันที่เลือก</td></tr></tbody></table>';
+                    panel.innerHTML = `${masterPriceControlHTML}<table class="w-full text-sm"><tbody><tr><td colspan="7" class="p-8 text-center text-stone-400">ไม่พบข้อมูลสำหรับตาชั่งนี้ในวันที่เลือก</td></tr></tbody></table>`;
                     continue;
                 }
 
                 let tableHTML = `
                     <table class="w-full text-sm text-left text-stone-600">
-                        <thead class="text-xs text-stone-700 uppercase bg-stone-200">
+                        <thead class="text-xs text-stone-700 uppercase bg-stone-100">
                             <tr>
-                                <th scope="col" class="px-4 py-3 text-center" style="width: 10%;">คิว</th>
-                                <th scope="col" class="px-6 py-3" style="width: 40%;">ชื่อผู้ขาย</th>
-                                <th scope="col" class="px-6 py-3 text-right" style="width: 15%;">จำนวนถุง</th>
-                                <th scope="col" class="px-4 py-3 text-center" style="width: 20%;">น้ำหนักที่ชั่ง (กก.)</th>
-                                <th scope="col" class="px-4 py-3 text-center" style="width: 15%;">จัดการ</th>
+                                <th class="px-2 py-3 text-center" style="width: 8%;">คิว</th>
+                                <th class="px-4 py-3" style="width: 27%;">ชื่อผู้ขาย</th>
+                                <th class="px-2 py-3 text-right" style="width: 10%;">จำนวนถุง</th>
+                                <th class="px-2 py-3 text-center" style="width: 15%;">น้ำหนัก (กก.)</th>
+                                <th class="px-2 py-3 text-center" style="width: 15%;">ราคา/กก.</th>
+                                <th class="px-2 py-3 text-right" style="width: 15%;">ยอดรวม (บาท)</th>
+                                <th class="px-2 py-3 text-center" style="width: 10%;">จัดการ</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -881,38 +911,41 @@
 
                 dataForScale.forEach(item => {
                     tableHTML += `
-                        <tr class="bg-white border-b hover:bg-stone-50">
-                            <td class="px-4 py-4 text-center font-medium text-stone-800">${item.dailyQueueNumber || '-'}</td>
-                            <td class="px-6 py-4 font-medium text-stone-900 whitespace-nowrap">${item.sellerName}</td>
-                            <td class="px-6 py-4 text-right font-bold text-amber-700">${item.bags.toLocaleString('th-TH')}</td>
-                            <td class="px-2 py-2">
-                                <input type="text" data-id="${item.id}" class="weighed-weight-input w-full p-2 border border-stone-300 rounded-md shadow-sm text-center" value="${item.actualWeight || ''}" placeholder="0.00">
+                        <tr class="weighing-row">
+                            <td class="px-2 py-2 text-center font-medium">${item.dailyQueueNumber || '-'}</td>
+                            <td class="px-4 py-2 font-medium whitespace-nowrap">${item.sellerName}</td>
+                            <td class="px-2 py-2 text-right font-bold text-amber-700">${item.bags.toLocaleString('th-TH')}</td>
+                            <td class="px-1 py-1">
+                                <input type="text" data-id="${item.id}" class="weighed-weight-input w-full p-2 border rounded text-center" value="${item.actualWeight || ''}" placeholder="0.00">
                             </td>
-                            <td class="px-2 py-2 text-center">
-                                <button data-id="${item.id}" class="save-actual-weight-btn bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors w-full">
-                                    บันทึก
-                                </button>
+                            <td class="px-1 py-1">
+                                <input type="number" step="0.01" data-id="${item.id}" class="price-per-kg-input w-full p-2 border rounded text-center" value="${item.price || ''}" placeholder="0.00">
+                            </td>
+                            <td class="px-4 py-2 text-right font-bold text-blue-600">
+                                <span class="total-amount-display">${(item.total || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </td>
+                            <td class="px-1 py-1 text-center">
+                                <button data-id="${item.id}" class="save-actual-weight-btn bg-green-600 text-white font-bold py-2 px-3 rounded-lg shadow w-full">บันทึก</button>
                             </td>
                         </tr>
                     `;
                 });
                 
-                const totalBagsForScale = dataForScale.reduce((sum, item) => sum + item.bags, 0);
-                const totalActualWeight = dataForScale.reduce((sum, item) => sum + (item.actualWeight || 0), 0);
-
-                tableHTML += `
+                 tableHTML += `
                         </tbody>
-                        <tfoot class="font-bold bg-stone-200 border-t-2 border-stone-300">
+                        <tfoot class="font-bold bg-stone-200 border-t-2">
                             <tr>
-                                <td colspan="2" class="px-6 py-3 text-right">รวม:</td>
-                                <td class="px-6 py-3 text-right text-amber-800 text-base">${totalBagsForScale.toLocaleString('th-TH')} ถุง</td>
-                                <td class="px-4 py-3 text-right text-green-800 text-base">${totalActualWeight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} กก.</td>
+                                <td colspan="3" class="px-4 py-3 text-right">รวม:</td>
+                                <td class="px-2 py-3 text-right text-green-800 text-base scale-total-weight">0.00 กก.</td>
+                                <td class="px-2 py-3"></td>
+                                <td class="px-4 py-3 text-right text-blue-800 text-base scale-total-amount">0.00 บาท</td>
                                 <td></td>
                             </tr>
                         </tfoot>
                     </table>
                 `;
-                panel.innerHTML = tableHTML;
+                panel.innerHTML = masterPriceControlHTML + tableHTML;
+                updateScaleFooter(panel);
             }
         }
         
@@ -921,15 +954,19 @@
             if (!button) return;
 
             const weighingId = button.dataset.id;
-            const inputEl = document.querySelector(`.weighed-weight-input[data-id="${weighingId}"]`);
+            const row = button.closest('.weighing-row');
+            if (!weighingId || !row) return;
             
-            if (!weighingId || !inputEl) return;
+            const weightInput = row.querySelector('.weighed-weight-input');
+            const priceInput = row.querySelector('.price-per-kg-input');
 
-            const weight = parseFloat(inputEl.value);
-
-            if (isNaN(weight) || weight < 0) {
-                showAlert('กรุณาป้อนน้ำหนักเป็นตัวเลขที่ถูกต้อง');
-                inputEl.focus();
+            const weight = parseFloat(weightInput.value) || 0;
+            const price = parseFloat(priceInput.value) || 0;
+            const total = weight * price;
+            
+            if (weight <= 0) {
+                showAlert('กรุณาป้อนน้ำหนักที่ถูกต้อง (มากกว่า 0)');
+                weightInput.focus();
                 return;
             }
 
@@ -939,22 +976,22 @@
             try {
                 const weighingDocRef = doc(weighingsCollectionRef, weighingId);
                 await updateDoc(weighingDocRef, {
-                    actualWeight: weight
+                    actualWeight: weight,
+                    price: price,
+                    total: total
                 });
                 
                 button.textContent = 'บันทึกแล้ว';
                 button.classList.replace('bg-green-600', 'bg-sky-600');
-                button.classList.replace('hover:bg-green-700', 'hover:bg-sky-700');
                 
                 setTimeout(() => {
                     button.textContent = 'บันทึก';
                     button.classList.replace('bg-sky-600', 'bg-green-600');
-                    button.classList.replace('hover:bg-sky-700', 'hover:bg-green-700');
                     button.disabled = false;
                 }, 2000);
 
             } catch (error) {
-                console.error("Error saving actual weight:", error);
+                console.error("Error saving data:", error);
                 showAlert(`เกิดข้อผิดพลาด: ${error.message}`);
                 button.textContent = 'บันทึก';
                 button.disabled = false;
@@ -977,6 +1014,7 @@
                     }, 0);
                     if (sum > 0) {
                         inputEl.value = sum.toFixed(2);
+                        inputEl.dispatchEvent(new Event('input', { bubbles: true }));
                     } else {
                         inputEl.value = '';
                     }
@@ -985,6 +1023,63 @@
                 }
             }
         }
+
+        function handleCalculationTrigger(event) {
+            if (event.target.matches('.weighed-weight-input, .price-per-kg-input')) {
+                const row = event.target.closest('.weighing-row');
+                if (!row) return;
+
+                const weight = parseFloat(row.querySelector('.weighed-weight-input').value) || 0;
+                const price = parseFloat(row.querySelector('.price-per-kg-input').value) || 0;
+                const totalDisplay = row.querySelector('.total-amount-display');
+                
+                totalDisplay.textContent = (weight * price).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                
+                const panel = row.closest('.summary-sub-content');
+                updateScaleFooter(panel);
+            }
+        }
+
+        function handleScalePriceLock(event) {
+            const button = event.target.closest('.scale-price-lock-btn');
+            if (!button) return;
+
+            const scaleId = button.dataset.scaleId;
+            const panel = document.getElementById(`summary-scale-${scaleId}-content`);
+            const masterPriceInput = document.getElementById(`master-price-${scaleId}`);
+            const priceInputs = panel.querySelectorAll('.price-per-kg-input');
+            const icon = button.querySelector('.lock-icon');
+
+            const isLocked = button.dataset.locked === 'true';
+
+            if (isLocked) { // Unlock
+                priceInputs.forEach(input => {
+                    input.readOnly = false;
+                    input.classList.remove('bg-stone-200', 'cursor-not-allowed');
+                });
+                masterPriceInput.readOnly = false;
+                icon.textContent = '🔓';
+                button.classList.replace('bg-sky-500', 'bg-gray-400');
+                button.dataset.locked = 'false';
+            } else { // Lock
+                const priceToSet = parseFloat(masterPriceInput.value);
+                if (isNaN(priceToSet) || priceToSet <= 0) {
+                    showAlert('กรุณากำหนดราคาที่ถูกต้องก่อนล็อก');
+                    return;
+                }
+                priceInputs.forEach(input => {
+                    input.value = priceToSet.toFixed(2);
+                    input.readOnly = true;
+                    input.classList.add('bg-stone-200', 'cursor-not-allowed');
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                });
+                masterPriceInput.readOnly = true;
+                icon.textContent = '🔒';
+                button.classList.replace('bg-gray-400', 'bg-sky-500');
+                button.dataset.locked = 'true';
+            }
+        }
+
 
         function printDailyWeighingSummaryReport() {
             const selectedDateStr = ui.summaryDatePicker.value;
@@ -1008,6 +1103,8 @@
 
             let grandTotalBags = 0;
             let grandTotalWeight = 0;
+            let grandTotalAmount = 0;
+
             for (let i = 1; i <= 4; i++) {
                 const dataForScale = dataForDay.filter(d => d.scaleId == i)
                                                .sort((a, b) => (a.dailyQueueNumber || 999) - (b.dailyQueueNumber || 999));
@@ -1019,26 +1116,36 @@
                                     <thead>
                                         <tr>
                                             <th class="text-center py-1" style="width:10%">คิว</th>
-                                            <th class="text-left py-1" style="width:40%">ชื่อผู้ขาย</th>
+                                            <th class="text-left py-1" style="width:35%">ชื่อผู้ขาย</th>
                                             <th class="text-right py-1" style="width:15%">จำนวนถุง</th>
-                                            <th class="text-right py-1" style="width:25%">น้ำหนักที่ชั่ง (กก.)</th>
+                                            <th class="text-right py-1" style="width:15%">น้ำหนัก (กก.)</th>
+                                            <th class="text-right py-1" style="width:10%">ราคา</th>
+                                            <th class="text-right py-1" style="width:15%">ยอดรวม</th>
                                         </tr>
                                     </thead><tbody>`;
 
-                let totalBagsForScale = 0;
-                let totalWeightForScale = 0;
+                let totalBagsForScale = 0, totalWeightForScale = 0, totalAmountForScale = 0;
+                
                 dataForScale.forEach(item => {
+                    const weight = item.actualWeight || 0;
+                    const price = item.price || 0;
+                    const total = item.total || 0;
                     totalBagsForScale += item.bags;
-                    totalWeightForScale += (item.actualWeight || 0);
+                    totalWeightForScale += weight;
+                    totalAmountForScale += total;
+
                     reportHTML += `<tr class="border-b border-dotted">
                                     <td class="py-1 text-center">${item.dailyQueueNumber || '-'}</td>
                                     <td class="py-1">${item.sellerName}</td>
                                     <td class="py-1 text-right">${item.bags.toLocaleString('th-TH')}</td>
-                                    <td class="py-1 text-right">${(item.actualWeight || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                    <td class="py-1 text-right">${weight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                    <td class="py-1 text-right">${price.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                    <td class="py-1 text-right">${total.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                    </tr>`;
                 });
                 grandTotalBags += totalBagsForScale;
                 grandTotalWeight += totalWeightForScale;
+                grandTotalAmount += totalAmountForScale;
 
                 reportHTML += `</tbody>
                                 <tfoot class="font-bold border-t-2 border-black">
@@ -1046,6 +1153,8 @@
                                         <td colspan="2" class="py-1 text-right">รวม:</td>
                                         <td class="py-1 text-right">${totalBagsForScale.toLocaleString('th-TH')} ถุง</td>
                                         <td class="py-1 text-right">${totalWeightForScale.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} กก.</td>
+                                        <td></td>
+                                        <td class="py-1 text-right">${totalAmountForScale.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</td>
                                     </tr>
                                 </tfoot>
                                </table></div>`;
@@ -1059,6 +1168,10 @@
                             <div>
                                 <span class="text-lg font-bold">รวมน้ำหนักทั้งหมด:</span>
                                 <span class="text-xl font-bold ml-4">${grandTotalWeight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} กก.</span>
+                            </div>
+                             <div>
+                                <span class="text-lg font-bold">ยอดเงินรวมทั้งหมด:</span>
+                                <span class="text-xl font-bold ml-4">${grandTotalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span>
                             </div>
                            </div></div>`;
 
@@ -1421,9 +1534,12 @@
             ui.summaryDatePicker.addEventListener('change', renderDailyWeighingSummary);
             ui.printDailyWeighingSummaryBtn.addEventListener('click', printDailyWeighingSummaryReport);
             
-            const mainContent = document.querySelector('main');
-            mainContent.addEventListener('click', handleSaveActualWeight);
-            mainContent.addEventListener('focusout', handleWeightCalculation);
+            ui.mainContent.addEventListener('click', (e) => {
+                handleSaveActualWeight(e);
+                handleScalePriceLock(e);
+            });
+            ui.mainContent.addEventListener('focusout', handleWeightCalculation);
+            ui.mainContent.addEventListener('input', handleCalculationTrigger);
 
             const weighingSubTabsContainer = document.getElementById('weighing-sub-tabs');
             const weighingSubBtns = document.querySelectorAll('.weighing-sub-btn');
