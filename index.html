@@ -187,7 +187,7 @@
                                 <input type="date" id="receipt-date" class="w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
                             </div>
                             <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-stone-700 mb-1">ประเภทของ</label>
+                                <label class="block text-sm font-medium text-stone-700 mb-1">ประเภทของยางพารา</label>
                                 <div class="relative flex items-center gap-4 p-3 border border-stone-300 rounded-lg">
                                     <div id="receipt-type-container" class="flex flex-wrap gap-x-4 gap-y-2">
                                         <div class="flex items-center"><input type="radio" name="receipt_type" value="NON EUDR" class="receipt-type-radio h-4 w-4 text-amber-600 focus:ring-amber-500 border-stone-300"> <label class="ml-2 text-sm text-stone-600">NON EUDR</label></div>
@@ -681,7 +681,6 @@
             const ws = XLSX.utils.aoa_to_sheet(exportData);
             ws['!cols'] = [{ wch: 10 }, { wch: 40 }, { wch: 20 }];
              
-            // Format weight column as number
             for (let i = 1; i < exportData.length; i++) {
                 const cellRef = XLSX.utils.encode_cell({ c: 2, r: i });
                 if (ws[cellRef]) {
@@ -806,7 +805,6 @@
             const totalWeight = salesInBatch.reduce((sum, sale) => sum + sale.weight, 0);
             modalContentHTML += `</tbody><tfoot><tr class="font-bold border-t-2"><td class="p-2" colspan="2">รวม</td><td class="p-2 text-right">${totalWeight.toFixed(2)}</td></tr></tfoot></table></div>`;
             
-            // MODIFIED: Added Print and Export buttons to the modal
             const modalButtons = [
                 {
                     text: '🖨️ พิมพ์รายงาน',
@@ -959,7 +957,6 @@
             document.getElementById('print-truck-history-btn').addEventListener('click', () => printTruckLoadHistory(loadsByScale, formattedDate, totalLoadedWeight));
         }
         
-        // MODIFIED: Removed cooperative name/address
         function printTruckLoadHistory(loadsByScale, formattedDate, totalLoadedWeight) {
             let printContent = `
                 <div class="p-8 bg-white text-black">
@@ -1184,7 +1181,6 @@
             return intText + fracText;
         }
         
-        // MODIFIED: `bahttext` now uses the floored total
         function calculateTotals() {
             let totalWeight = 0;
             const weightInputs = ui.weightInputsContainer.querySelectorAll('.weight-input');
@@ -1387,16 +1383,18 @@
             });
         }
         
-        // MODIFIED: All changes for receipt formatting are here
+        // MODIFIED: Added back cooperative name and address
         function createPrintableReceipt(sale) {
             const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
-            const roundedTotal = Math.floor(sale.total); // Round down total
+            const roundedTotal = Math.floor(sale.total);
 
             const generateSingleReceiptHTML = (title, isCopy = false) => `
                 <div style="width: 50%; padding: 0.5rem; text-align: left; font-size: 11px; border: 2px dashed #9ca3af; height: 11cm; display: flex; flex-direction: column; box-sizing: border-box;">
                     ${isCopy ? '<div class="watermark">สำเนา</div>' : ''}
-                    <div class="text-center mb-2">
-                        <h2 class="text-base font-bold">${title}</h2>
+                    <div class="text-center mb-2" style="text-align: center; margin-bottom: 0.5rem;">
+                        <h2 style="font-size: 1rem; font-weight: 700;">${title}</h2>
+                        <h3 style="font-size: 0.875rem; font-weight: 600; margin-top: 0.25rem;">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</h3>
+                        <p style="font-size: 0.75rem;">15/1 ม.6 ต.หนองโพนงาม อ.เกษตรสมบูรณ์ จ.ชัยภูมิ</p>
                     </div>
                     <div class="border-y border-dotted border-stone-400 py-1 mb-2">
                         <div style="display: flex; justify-content: space-between;"><span>เลขที่:</span><span>${sale.receiptId || 'N/A'}</span></div>
@@ -1428,12 +1426,10 @@
                     </div>
                 </div>`;
 
-            // MODIFIED: Using flexbox for side-by-side layout
             ui.printArea.innerHTML = `<div style="display: flex; width: 100%;">${generateSingleReceiptHTML('ใบเสร็จรับเงิน (ต้นฉบับ)')}${generateSingleReceiptHTML('ใบเสร็จรับเงิน (สำเนา)', true)}</div>`;
             window.print();
         }
 
-        // MODIFIED: Removed cooperative name header
         function createDailySummaryReport() {
             const reportDateStr = ui.reportDateSelect.value;
             if (!reportDateStr) {
@@ -1725,7 +1721,6 @@
             }
         }
         
-        // MODIFIED: Removed cooperative name header
         function printWeighingHistory(scaleId) {
             if (!localWeighingData) return showAlert('ข้อมูลการวางยางยังไม่ถูกโหลด');
             const scaleData = localWeighingData.filter(record => record.scaleId == scaleId);
