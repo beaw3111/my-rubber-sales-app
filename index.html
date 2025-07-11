@@ -237,16 +237,24 @@
             </div>
             <div id="tab-history-report" class="tab-content">
                 <section class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
-                    <h2 class="text-2xl font-bold mb-4 border-b pb-3 text-stone-800">3. ประวัติและรายงาน (คิวออกใบเสร็จ)</h2>
+                    <h2 class="text-2xl font-bold mb-4 border-b pb-3 text-stone-800">3. ออกใบเสร็จ</h2>
                     <div id="receipt-queue-section">
                         <h3 class="text-xl font-semibold text-stone-700 mb-4">รายการรอออกใบเสร็จ</h3>
                         <div id="receipt-queue-table-container" class="overflow-x-auto rounded-lg border">
-                            </div>
+                        </div>
                     </div>
                     <div id="receipt-issued-section" class="mt-10">
-                        <h3 class="text-xl font-semibold text-stone-700 mb-4">รายการที่ออกใบเสร็จแล้ว</h3>
-                        <div id="receipt-issued-table-container" class="overflow-x-auto rounded-lg border">
+                        <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+                            <h3 class="text-xl font-semibold text-stone-700">รายการที่ออกใบเสร็จแล้ว</h3>
+                            <div class="flex items-center gap-2">
+                                <label for="issued-report-date" class="text-sm font-medium">เลือกวันที่:</label>
+                                <input type="date" id="issued-report-date" class="p-2 border border-stone-300 rounded-lg shadow-sm">
+                                <button id="print-issued-report-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-blue-700">พิมพ์รายงาน</button>
+                                <button id="export-issued-excel-btn" class="bg-emerald-600 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-emerald-700">Excel</button>
                             </div>
+                        </div>
+                        <div id="receipt-issued-table-container" class="overflow-x-auto rounded-lg border">
+                        </div>
                     </div>
                 </section>
             </div>
@@ -394,6 +402,9 @@
             printDailyWeighingSummaryBtn: document.getElementById('print-daily-weighing-summary'),
             receiptQueueContainer: document.getElementById('receipt-queue-table-container'),
             receiptIssuedContainer: document.getElementById('receipt-issued-table-container'),
+            issuedReportDate: document.getElementById('issued-report-date'),
+            printIssuedReportBtn: document.getElementById('print-issued-report-btn'),
+            exportIssuedExcelBtn: document.getElementById('export-issued-excel-btn'),
         };
 
         function getUTCDateKey(date) {
@@ -1597,7 +1608,7 @@
 
             const createTable = (data, isQueue) => {
                 if (data.length === 0) {
-                    return `<table class="w-full text-sm"><tbody><tr><td class="p-8 text-center text-stone-400">${isQueue ? 'ไม่มีรายการรอออกใบเสร็จ' : 'ยังไม่มีการออกใบเสร็จ'}</td></tr></tbody></table>`;
+                    return `<table class="w-full text-sm"><tbody><tr><td class="p-8 text-center text-stone-400">${isQueue ? 'ไม่มีรายการรอออกใบเสร็จ' : 'ยังไม่มีการออกใบเสร็จในวันที่เลือก'}</td></tr></tbody></table>`;
                 }
 
                 const headers = `
@@ -1614,16 +1625,25 @@
 
                 const rows = data.map(item => {
                     const formattedDate = item.timestamp.toDate().toLocaleString('th-TH');
+                    const printCount = item.receiptPrintCount || 0;
+                    let statusHTML, actionHTML;
+
+                    if (isQueue) {
+                        statusHTML = `<span class="font-semibold text-amber-600">รอพิมพ์</span>`;
+                        actionHTML = `<button class="issue-receipt-btn bg-sky-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-sky-700" data-id="${item.id}">🖨️ ออกใบเสร็จ</button>`;
+                    } else {
+                        statusHTML = `<span class="font-semibold text-green-600">พิมพ์แล้ว (${printCount} ครั้ง)</span>`;
+                        actionHTML = `<button class="reprint-receipt-btn bg-orange-500 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-orange-600" data-id="${item.id}">พิมพ์ซ้ำ</button>`;
+                    }
+
                     return `
                     <tr class="border-b">
                         <td class="px-3 py-3 font-medium">${formattedDate}</td>
                         <td class="px-3 py-3">${item.sellerName}</td>
                         <td class="px-3 py-3 text-right font-semibold">${(item.actualWeight || 0).toFixed(2)}</td>
                         <td class="px-3 py-3 text-right font-bold text-blue-600">${(item.total || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</td>
-                        <td class="px-3 py-3 text-center">${isQueue ? `<span class="font-semibold text-amber-600">รอพิมพ์</span>` : `<span class="font-semibold text-green-600">เรียบร้อย</span>`}</td>
-                        <td class="px-3 py-3 text-center">
-                            ${isQueue ? `<button class="issue-receipt-btn bg-sky-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-sky-700" data-id="${item.id}">🖨️ ออกใบเสร็จ</button>` : '-'}
-                        </td>
+                        <td class="px-3 py-3 text-center">${statusHTML}</td>
+                        <td class="px-3 py-3 text-center">${actionHTML}</td>
                     </tr>`;
                 }).join('');
 
@@ -1631,11 +1651,25 @@
             };
 
             ui.receiptQueueContainer.innerHTML = createTable(receiptQueue, true);
-            ui.receiptIssuedContainer.innerHTML = createTable(issuedReceipts, false);
+
+            const selectedDate = ui.issuedReportDate.value;
+            let filteredIssuedReceipts = issuedReceipts;
+            if (selectedDate) {
+                const start = new Date(selectedDate);
+                start.setHours(0, 0, 0, 0);
+                const end = new Date(selectedDate);
+                end.setHours(23, 59, 59, 999);
+                filteredIssuedReceipts = issuedReceipts.filter(item => {
+                    const itemDate = item.timestamp.toDate();
+                    return itemDate >= start && itemDate <= end;
+                });
+            }
+
+            ui.receiptIssuedContainer.innerHTML = createTable(filteredIssuedReceipts, false);
         }
 
-        async function handleIssueReceipt(event) {
-            const button = event.target.closest('.issue-receipt-btn');
+        async function handleReceiptPrinting(event) {
+            const button = event.target.closest('.issue-receipt-btn, .reprint-receipt-btn');
             if (!button) return;
 
             button.disabled = true;
@@ -1650,50 +1684,131 @@
             }
 
             const date = itemData.timestamp.toDate();
-            const receiptHTML = `
-                <div class="p-8 bg-white text-black" style="width: 80mm; font-family: 'Sarabun', sans-serif;">
-                    <div class="text-center mb-4">
-                        <h2 class="text-lg font-bold">ใบเสร็จรับเงิน</h2>
-                        <p class="text-sm">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</p>
-                    </div>
-                    <div class="text-sm space-y-1 mb-4">
-                        <p><strong>วันที่:</strong> ${date.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric'})}</p>
-                        <p><strong>เวลา:</strong> ${date.toLocaleTimeString('th-TH')}</p>
-                        <p><strong>ผู้ขาย:</strong> ${itemData.sellerName}</p>
-                    </div>
-                    <table class="w-full text-sm my-4">
-                       <thead>
-                         <tr class="border-t border-b border-black border-dashed">
-                           <th class="py-1 text-left">รายการ</th>
-                           <th class="py-1 text-right">จำนวน</th>
-                           <th class="py-1 text-right">ราคา</th>
-                           <th class="py-1 text-right">รวม</th>
-                         </tr>
-                       </thead>
-                       <tbody>
-                         <tr class="border-b border-black border-dashed">
-                           <td class="py-1">ยางก้อนถ้วย</td>
-                           <td class="py-1 text-right">${(itemData.actualWeight || 0).toFixed(2)} กก.</td>
-                           <td class="py-1 text-right">${(itemData.price || 0).toFixed(2)}</td>
-                           <td class="py-1 text-right">${(itemData.total || 0).toFixed(2)}</td>
-                         </tr>
-                       </tbody>
-                    </table>
-                     <div class="text-right mt-4">
-                        <p class="text-md">ยอดรวมสุทธิ</p>
-                        <p class="text-2xl font-bold">${(itemData.total || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท</p>
-                    </div>
-                    <div class="text-center mt-6 text-xs">
-                        <p>ขอบคุณที่ใช้บริการ</p>
-                    </div>
-                </div>`;
+            const flooredTotal = Math.floor(itemData.total || 0);
+            const sellerNameUpper = itemData.sellerName.toUpperCase();
 
-            ui.printArea.innerHTML = receiptHTML;
+            const singleReceiptContent = `
+                <div class="text-center mb-4">
+                    <h2 class="text-lg font-bold">ใบเสร็จรับเงิน</h2>
+                    <p class="text-sm">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</p>
+                </div>
+                <div class="text-sm space-y-1 mb-4">
+                    <p><strong>วันที่:</strong> ${date.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric'})}</p>
+                    <p><strong>เวลา:</strong> ${date.toLocaleTimeString('th-TH')}</p>
+                    <p><strong>ผู้ขาย:</strong> ${sellerNameUpper}</p>
+                </div>
+                <table class="w-full text-sm my-4">
+                   <thead>
+                     <tr class="border-t border-b border-black border-dashed">
+                       <th class="py-1 text-left">รายการ</th>
+                       <th class="py-1 text-right">จำนวน</th>
+                       <th class="py-1 text-right">ราคา</th>
+                       <th class="py-1 text-right">รวม</th>
+                     </tr>
+                   </thead>
+                   <tbody>
+                     <tr class="border-b border-black border-dashed">
+                       <td class="py-1">ยางก้อนถ้วย</td>
+                       <td class="py-1 text-right">${(itemData.actualWeight || 0).toFixed(2)} กก.</td>
+                       <td class="py-1 text-right">${(itemData.price || 0).toFixed(2)}</td>
+                       <td class="py-1 text-right">${(itemData.total || 0).toFixed(2)}</td>
+                     </tr>
+                   </tbody>
+                </table>
+                 <div class="text-right mt-4">
+                    <p class="text-md">ยอดรวมสุทธิ</p>
+                    <p class="text-2xl font-bold">${flooredTotal.toLocaleString('th-TH')} บาท</p>
+                </div>
+                <div class="text-center mt-6 text-xs">
+                    <p>ขอบคุณที่ใช้บริการ</p>
+                </div>
+            `;
+
+            const originalReceipt = `<div class="mb-4 border-b-2 border-dashed pb-4"><h3 class="text-center font-bold">ต้นฉบับ</h3>${singleReceiptContent}</div>`;
+            const copyReceipt = `<div><h3 class="text-center font-bold">สำเนา</h3>${singleReceiptContent}</div>`;
+
+            ui.printArea.innerHTML = `<div class="p-4 bg-white text-black" style="width: 80mm; font-family: 'Sarabun', sans-serif;">${originalReceipt}${copyReceipt}</div>`;
             window.print();
 
+            const currentCount = itemData.receiptPrintCount || 0;
             await updateDoc(doc(weighingsCollectionRef, weighingId), {
-                receiptIssued: true
+                receiptIssued: true,
+                receiptPrintCount: currentCount + 1
             });
+        }
+
+        function handleIssuedReports(isExport) {
+            const selectedDateStr = ui.issuedReportDate.value;
+            if (!selectedDateStr) {
+                showAlert('กรุณาเลือกวันที่สำหรับทำรายงานก่อน');
+                return;
+            }
+
+            const start = new Date(selectedDateStr);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(selectedDateStr);
+            end.setHours(23, 59, 59, 999);
+
+            const dataForReport = localWeighingData.filter(item => {
+                const itemDate = item.timestamp.toDate();
+                return item.receiptIssued && itemDate >= start && itemDate <= end;
+            });
+
+            if (dataForReport.length === 0) {
+                showAlert('ไม่พบข้อมูลที่ออกใบเสร็จแล้วในวันที่เลือก');
+                return;
+            }
+
+            if (isExport) {
+                const exportData = dataForReport.map(item => ({
+                    'วันที่': item.timestamp.toDate().toLocaleDateString('th-TH'),
+                    'เวลา': item.timestamp.toDate().toLocaleTimeString('th-TH'),
+                    'ชื่อผู้ขาย': item.sellerName,
+                    'น้ำหนัก (กก.)': item.actualWeight,
+                    'ราคาต่อกก.': item.price,
+                    'ยอดรวม': item.total,
+                    'จำนวนพิมพ์': item.receiptPrintCount || 0
+                }));
+                const ws = XLSX.utils.json_to_sheet(exportData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, `ใบเสร็จวันที่ ${selectedDateStr}`);
+                XLSX.writeFile(wb, `issued-report-${selectedDateStr}.xlsx`);
+            } else {
+                let totalWeight = 0,
+                    totalAmount = 0;
+                const tableRows = dataForReport.map(item => {
+                    totalWeight += item.actualWeight || 0;
+                    totalAmount += item.total || 0;
+                    return `<tr class="border-b">
+                                <td class="px-2 py-2">${item.sellerName}</td>
+                                <td class="px-2 py-2 text-right">${(item.actualWeight || 0).toFixed(2)}</td>
+                                <td class="px-2 py-2 text-right">${(item.total || 0).toFixed(2)}</td>
+                                <td class="px-2 py-2 text-center">${item.receiptPrintCount || 0}</td>
+                           </tr>`;
+                }).join('');
+
+                const reportHTML = `
+                <div class="p-8 bg-white text-black">
+                    <div class="text-center mb-6">
+                        <h2 class="text-xl font-bold">รายงานสรุปยอดออกใบเสร็จ</h2>
+                        <h3 class="text-lg">ประจำวันที่ ${start.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric'})}</h3>
+                    </div>
+                    <table class="w-full text-sm">
+                        <thead><tr class="border-b-2 border-black"><th class="text-left">ชื่อผู้ขาย</th><th class="text-right">น้ำหนัก (กก.)</th><th class="text-right">ยอดรวม (บาท)</th><th class="text-center">จำนวนพิมพ์</th></tr></thead>
+                        <tbody>${tableRows}</tbody>
+                        <tfoot class="font-bold border-t-2 border-black">
+                          <tr>
+                            <td class="py-2">รวม</td>
+                            <td class="py-2 text-right">${totalWeight.toFixed(2)}</td>
+                            <td class="py-2 text-right">${totalAmount.toFixed(2)}</td>
+                            <td></td>
+                          </tr>
+                        </tfoot>
+                    </table>
+                </div>`;
+                ui.printArea.innerHTML = reportHTML;
+                window.print();
+            }
         }
 
 
@@ -1730,6 +1845,8 @@
             }
         }
         document.addEventListener('DOMContentLoaded', () => {
+            ui.issuedReportDate.valueAsDate = new Date();
+
             const handleLogin = () => {
                 const username = ui.usernameInput.value.trim().toLowerCase();
                 const password = ui.passwordInput.value.trim();
@@ -1797,10 +1914,14 @@
                 handleSaveActualWeight(e);
                 handleScalePriceLock(e);
                 handleRevertMove(e);
-                handleIssueReceipt(e);
+                handleReceiptPrinting(e);
             });
             ui.mainContent.addEventListener('focusout', handleWeightCalculation);
             ui.mainContent.addEventListener('input', handleCalculationTrigger);
+
+            ui.issuedReportDate.addEventListener('change', renderHistoryAndReports);
+            ui.printIssuedReportBtn.addEventListener('click', () => handleIssuedReports(false));
+            ui.exportIssuedExcelBtn.addEventListener('click', () => handleIssuedReports(true));
 
             const weighingSubTabsContainer = document.getElementById('weighing-sub-tabs');
             const weighingSubBtns = document.querySelectorAll('.weighing-sub-btn');
