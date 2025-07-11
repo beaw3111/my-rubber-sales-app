@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -151,27 +150,24 @@
             <div id="tab-receipt" class="tab-content">
                 <div id="receipt-sub-tabs" class="mb-6 no-print">
                     <nav class="flex flex-wrap gap-2" aria-label="Receipt Tabs">
-                        <button data-subtab="receipt-form" class="receipt-sub-btn py-2 px-5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold shadow-sm border border-stone-200">ออกใบเสร็จ</button>
+                        <button data-subtab="receipt-scale-1" class="receipt-sub-btn py-2 px-5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold shadow-sm border border-stone-200">ตาชั่ง 1</button>
+                        <button data-subtab="receipt-scale-2" class="receipt-sub-btn py-2 px-5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold shadow-sm border border-stone-200">ตาชั่ง 2</button>
+                        <button data-subtab="receipt-scale-3" class="receipt-sub-btn py-2 px-5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold shadow-sm border border-stone-200">ตาชั่ง 3</button>
+                        <button data-subtab="receipt-scale-4" class="receipt-sub-btn py-2 px-5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold shadow-sm border border-stone-200">ตาชั่ง 4</button>
                         <button data-subtab="receipt-truck-summary" class="receipt-sub-btn py-2 px-5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold shadow-sm border border-stone-200">สรุปรวมขึ้นรถ</button>
                     </nav>
                 </div>
                 <div id="receipt-form-content" class="receipt-sub-content">
                     <section id="receipt-generator" class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
-                        <h2 class="text-2xl font-bold mb-2 border-b pb-3 text-stone-800">2. กรอกข้อมูลเพื่อออกใบเสร็จ</h2>
+                        <h2 class="text-2xl font-bold mb-2 border-b pb-3 text-stone-800">2. กรอกข้อมูลเพื่อออกใบเสร็จ (ตาชั่งที่ <span id="receipt-title-scale-number">1</span>)</h2>
                         <p class="text-sm text-stone-500 mt-2 mb-6">ส่วนนี้คือศูนย์กลางการทำงาน สำหรับบันทึกข้อมูลการขาย ระบบจะคำนวณยอดรวมให้อัตโนมัติ และเมื่อบันทึกข้อมูลแล้วจะสร้างใบเสร็จสำหรับพิมพ์ได้ทันที</p>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
                             <div>
                                 <label for="seller-name" class="block text-sm font-medium text-stone-700 mb-1">ชื่อ-สกุล ผู้ขาย</label>
                                 <input type="text" id="seller-name" class="w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500" placeholder="เช่น นายสมชาย ใจดี">
                             </div>
-                            <div class="relative">
-                                <label for="scale-number" class="block text-sm font-medium text-stone-700 mb-1">ตาชั่งที่ (สำหรับใบเสร็จนี้)</label>
-                                <input type="number" id="scale-number" min="1" max="9" class="w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500" placeholder="1-9">
-                                <button id="scale-lock-btn" title="ล็อคตาชั่ง" class="absolute right-2.5 bottom-2 h-8 w-8 flex items-center justify-center rounded-lg text-white bg-gray-400 hover:bg-gray-500 transition-colors">
-                                    <span id="scale-lock-icon">🔓</span>
-                                </button>
-                            </div>
-                            <div class="md:col-span-2">
+
+                            <div class="md:col-span-1">
                                 <label for="receipt-date" class="block text-sm font-medium text-stone-700 mb-1">วันที่ <span id="date-display" class="font-normal text-stone-500 ml-2"></span></label>
                                 <input type="date" id="receipt-date" class="w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
                             </div>
@@ -481,9 +477,9 @@
             getDocs,
             getDoc,
             writeBatch,
-            runTransaction // FIX: Import runTransaction
+            runTransaction
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        
+
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyCNVxG6s46SRXOYAeT0rJHAtz_-3IPUJNE",
             authDomain: "coopksb001.firebaseapp.com",
@@ -494,7 +490,7 @@
             measurementId: "G-1RHH9TMD73"
         };
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'cup-rubber-sales-app';
-        
+
         const users = {
             'admin': {
                 password: 'as54321',
@@ -509,26 +505,26 @@
                 allowedTabs: ['tab-weighing-consolidated', 'tab-receipt']
             }
         };
-        
+
         let currentPassword = localStorage.getItem('customPassword') || users.admin.password;
         users.admin.password = currentPassword;
-        
+
         let localSalesData = [];
         let localWeighingData = [];
         let localTruckLoads = [];
         let dailyStatsChart;
         let editingId = null;
         let editingWeighingId = null;
-        
+
         let db, auth, userId, salesCollectionRef, weighingsCollectionRef, truckLoadsCollectionRef, countersDocRef;
         let unsubscribeSales = null;
         let unsubscribeAllWeighings = null;
         let unsubscribeTruckLoads = null;
         let unsubscribeWeighings = {};
-        
+
         let dailyWeighingData = {};
         let isPriceLocked = false;
-        let isScaleLocked = false;
+        let activeReceiptScale = 1; // New state for receipt scale
         let isAppInitialized = false;
 
         const ui = {
@@ -546,9 +542,7 @@
             sellerNameInput: document.getElementById('seller-name'),
             receiptDateInput: document.getElementById('receipt-date'),
             dateDisplay: document.getElementById('date-display'),
-            scaleNumberInput: document.getElementById('scale-number'),
-            scaleLockBtn: document.getElementById('scale-lock-btn'),
-            scaleLockIcon: document.getElementById('scale-lock-icon'),
+            receiptTitleScaleNumber: document.getElementById('receipt-title-scale-number'), // New UI element
             weightInputsContainer: document.getElementById('weight-inputs-container'),
             pricePerKgInput: document.getElementById('price-per-kg'),
             priceLockBtn: document.getElementById('price-lock-btn'),
@@ -593,8 +587,10 @@
             truckLoadHistoryContainer: document.getElementById('truck-load-history-container'),
             weighingSubTabs: document.getElementById('weighing-sub-tabs'),
             receiptSubTabs: document.getElementById('receipt-sub-tabs'),
+            receiptFormContent: document.getElementById('receipt-form-content'),
+            receiptTruckSummaryContent: document.getElementById('receipt-truck-summary-content'),
         };
-        
+
         // --- Functions for Truck Summary ---
         function getUTCDateKey(date) {
             if (!date) return null;
@@ -603,7 +599,7 @@
             const day = String(date.getDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
         }
-        
+
         async function handleSaveTruckLoad(event) {
             const scaleId = event.target.dataset.scale;
             const weightToSave = parseFloat(event.target.dataset.weight);
@@ -658,7 +654,7 @@
                 classes: 'mt-3 w-full inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 sm:mt-0 sm:w-auto sm:text-sm'
             }]);
         }
-        
+
         async function handleTruckLoadHistoryClick(e) {
             const target = e.target.closest('button');
             if (!target) return;
@@ -728,7 +724,7 @@
                 }]);
             }
         }
-        
+
         function renderTruckLoadHistory(loadsForDay) {
             const container = ui.truckLoadHistoryContainer;
             container.innerHTML = '';
@@ -768,24 +764,24 @@
                                     <ul class="list-none mt-2 space-y-2 text-stone-600">`;
                 loadsByScale[scaleId].sort((a, b) => a.timestamp.toDate() - b.timestamp.toDate()).forEach((load, index) => {
                     historyHtml += `<li class="flex justify-between items-center border-b border-stone-200 py-2">
-                                        <div>
-                                            <span class="font-medium">ครั้งที่ ${index + 1}:</span>
-                                            <strong class="text-stone-900 ml-2">${load.weight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} กก.</strong>
-                                            <span class="block text-sm text-sky-700 font-semibold">${load.vehicleRegistration || 'ไม่ระบุทะเบียน'}</span>
-                                            <span class="text-xs text-stone-500">(${load.timestamp.toDate().toLocaleTimeString('th-TH')})</span>
-                                        </div>
-                                        <div class="space-x-2">
-                                            <button class="edit-load-btn text-blue-600 hover:text-blue-800 p-1 rounded-md text-lg no-print" data-id="${load.id}" title="แก้ไข">✏️</button>
-                                            <button class="delete-load-btn text-red-600 hover:text-red-800 p-1 rounded-md text-lg no-print" data-id="${load.id}" title="ลบ">🗑️</button>
-                                        </div>
-                                    </li>`;
+                                            <div>
+                                                <span class="font-medium">ครั้งที่ ${index + 1}:</span>
+                                                <strong class="text-stone-900 ml-2">${load.weight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} กก.</strong>
+                                                <span class="block text-sm text-sky-700 font-semibold">${load.vehicleRegistration || 'ไม่ระบุทะเบียน'}</span>
+                                                <span class="text-xs text-stone-500">(${load.timestamp.toDate().toLocaleTimeString('th-TH')})</span>
+                                            </div>
+                                            <div class="space-x-2">
+                                                <button class="edit-load-btn text-blue-600 hover:text-blue-800 p-1 rounded-md text-lg no-print" data-id="${load.id}" title="แก้ไข">✏️</button>
+                                                <button class="delete-load-btn text-red-600 hover:text-red-800 p-1 rounded-md text-lg no-print" data-id="${load.id}" title="ลบ">🗑️</button>
+                                            </div>
+                                        </li>`;
                 });
                 historyHtml += `</ul></div>`;
             }
             container.innerHTML = historyHtml;
             document.getElementById('print-truck-history-btn').addEventListener('click', () => printTruckLoadHistory(loadsByScale, formattedDate, totalLoadedWeight));
         }
-        
+
         function printTruckLoadHistory(loadsByScale, formattedDate, totalLoadedWeight) {
             let printContent = `
                 <div class="p-8 bg-white text-black">
@@ -811,25 +807,25 @@
                                         <tbody>`;
                 loadsByScale[scaleId].forEach((load, index) => {
                     printContent += `<tr class="border-b border-dotted">
-                                        <td class="py-1">${index + 1}</td>
-                                        <td class="py-1 font-semibold">${load.vehicleRegistration || ''}</td>
-                                        <td class="py-1">${load.timestamp.toDate().toLocaleTimeString('th-TH')}</td>
-                                        <td class="py-1 text-right">${load.weight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                    </tr>`;
+                                            <td class="py-1">${index + 1}</td>
+                                            <td class="py-1 font-semibold">${load.vehicleRegistration || ''}</td>
+                                            <td class="py-1">${load.timestamp.toDate().toLocaleTimeString('th-TH')}</td>
+                                            <td class="py-1 text-right">${load.weight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                        </tr>`;
                 });
                 printContent += `   </tbody>
                                     </table>
                                 </div>`;
             }
             printContent += `<div class="mt-8 pt-4 border-t-4 border-double border-black text-right">
-                                <span class="text-lg font-bold">รวมน้ำหนักที่บันทึกทั้งหมด:</span>
-                                <span class="text-2xl font-bold ml-4">${totalLoadedWeight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                <span class="text-lg font-bold"> กก.</span>
-                            </div></div>`;
+                                    <span class="text-lg font-bold">รวมน้ำหนักที่บันทึกทั้งหมด:</span>
+                                    <span class="text-2xl font-bold ml-4">${totalLoadedWeight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    <span class="text-lg font-bold"> กก.</span>
+                                </div></div>`;
             ui.printArea.innerHTML = printContent;
             window.print();
         }
-        
+
         function calculateTruckSummary() {
             const selectedDateStr = ui.truckSummaryDate.value;
             if (!selectedDateStr) {
@@ -873,7 +869,7 @@
             renderTruckSummary(summary, loadedSummary);
             renderTruckLoadHistory(loadsForDay);
         }
-        
+
         function renderTruckSummary(salesSummary, loadedSummary) {
             ui.truckSummaryContainer.innerHTML = '';
             let grandTotal = 0;
@@ -920,7 +916,7 @@
                 maximumFractionDigits: 2
             });
         }
-        
+
         function switchToTab(targetTabId) {
             ui.tabs.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             ui.tabContents.forEach(content => content.classList.remove('active'));
@@ -932,21 +928,21 @@
             if (targetContent) {
                 targetContent.classList.add('active');
             }
-            
+
             // Auto-select first sub-tab when switching to a main tab that has them
             if (targetTabId === 'tab-receipt') {
                 const firstSubTab = ui.receiptSubTabs.querySelector('.receipt-sub-btn');
                 if (firstSubTab) {
-                    _switchToSubTab('receipt', firstSubTab.dataset.subtab);
+                    _switchToReceiptSubTab(firstSubTab.dataset.subtab);
                 }
             } else if (targetTabId === 'tab-weighing-consolidated') {
-                 const firstSubTab = ui.weighingSubTabs.querySelector('.weighing-sub-btn');
+                const firstSubTab = ui.weighingSubTabs.querySelector('.weighing-sub-btn');
                 if (firstSubTab) {
                     _switchToSubTab('weighing', firstSubTab.dataset.subtab);
                 }
             }
         }
-        
+
         function showModal(title, message, buttons) {
             ui.modalTitle.textContent = title;
             ui.modalMessageContainer.innerHTML = message;
@@ -969,20 +965,20 @@
                 ui.modal.querySelector('.modal-content').classList.remove('scale-95');
             }, 10);
         }
-        
+
         function hideModal() {
             ui.modal.classList.add('opacity-0');
             ui.modal.querySelector('.modal-content').classList.add('scale-95');
             setTimeout(() => ui.modal.classList.add('hidden'), 300);
         }
-        
+
         function showAlert(message) {
             showModal('แจ้งเตือน', `<p class="text-sm text-stone-500">${message}</p>`, [{
                 text: 'ตกลง',
                 classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-amber-600 text-base font-medium text-white hover:bg-amber-700 sm:w-auto sm:text-sm'
             }]);
         }
-        
+
         function showConfirm(message, onConfirm) {
             showModal('ยืนยันการดำเนินการ', `<p class="text-sm text-stone-500">${message}</p>`, [{
                 text: 'ยืนยัน',
@@ -993,7 +989,7 @@
                 classes: 'mt-3 w-full inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 sm:mt-0 sm:w-auto sm:text-sm'
             }]);
         }
-        
+
         function bahttext(number) {
             number = Number(number).toFixed(2);
             let [integer,
@@ -1025,7 +1021,7 @@
             if (!fracText && intText) fracText = 'ถ้วน';
             return intText + fracText;
         }
-        
+
         function calculateTotals() {
             let totalWeight = 0;
             const weightInputs = ui.weightInputsContainer.querySelectorAll('.weight-input');
@@ -1041,7 +1037,7 @@
             });
             ui.totalAmountTextEl.textContent = bahttext(totalAmount);
         }
-        
+
         function renderTable(dataToRender) {
             ui.salesTableBody.innerHTML = '';
             if (dataToRender.length === 0) {
@@ -1078,7 +1074,7 @@
                 ui.salesTableBody.appendChild(row);
             });
         }
-        
+
         function renderSummary() {
             if (!localSalesData || localSalesData.length === 0) {
                 ui.summaryTotalSellers.textContent = '0';
@@ -1099,11 +1095,11 @@
                 maximumFractionDigits: 2
             });
         }
-        
+
         function renderDashboard() {
             renderDailyStatsChart();
         }
-        
+
         function renderDailyStatsChart() {
             const statsByDay = localSalesData.reduce((acc, sale) => {
                 const day = sale.date.toDate().toISOString().split('T')[0];
@@ -1224,7 +1220,7 @@
                 });
             }
         }
-        
+
         function renderWeighingHistory() {
             const historyBody = ui.weighingHistoryBody;
             if (!historyBody) return;
@@ -1277,7 +1273,7 @@
                 historyBody.appendChild(row);
             });
         }
-        
+
         function createPrintableReceipt(sale) {
             const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
             const generateSingleReceiptHTML = (title, isCopy = false) => `
@@ -1320,7 +1316,7 @@
             ui.printArea.innerHTML = `<div style="overflow: auto;">${generateSingleReceiptHTML('ใบเสร็จรับเงิน (ต้นฉบับ)')}${generateSingleReceiptHTML('ใบเสร็จรับเงิน (สำเนา)', true)}</div>`;
             window.print();
         }
-        
+
         function createDailySummaryReport() {
             const reportDateStr = ui.reportDateSelect.value;
             if (!reportDateStr) {
@@ -1389,12 +1385,9 @@
             ui.printArea.innerHTML = reportHTML;
             window.print();
         }
-        
+
         function clearForm() {
             ui.sellerNameInput.value = '';
-            if (!isScaleLocked) {
-                ui.scaleNumberInput.value = '';
-            }
             ui.weightInputsContainer.querySelectorAll('.weight-input').forEach(input => input.value = '');
             if (!isPriceLocked) {
                 ui.pricePerKgInput.value = '';
@@ -1404,27 +1397,7 @@
             ui.cancelEditButton.classList.add('hidden');
             calculateTotals();
         }
-        
-        function toggleScaleLock() {
-            isScaleLocked = !isScaleLocked;
-            if (isScaleLocked) {
-                ui.scaleNumberInput.readOnly = true;
-                ui.scaleNumberInput.classList.add('bg-stone-200', 'cursor-not-allowed');
-                ui.scaleLockIcon.textContent = '🔒';
-                ui.scaleLockBtn.title = 'ปลดล็อคตาชั่ง';
-                ui.scaleLockBtn.classList.replace('bg-gray-400', 'bg-sky-500');
-                ui.scaleLockBtn.classList.replace('hover:bg-gray-500', 'hover:bg-sky-600');
-            } else {
-                ui.scaleNumberInput.readOnly = false;
-                ui.scaleNumberInput.classList.remove('bg-stone-200', 'cursor-not-allowed');
-                ui.scaleLockIcon.textContent = '🔓';
-                ui.scaleLockBtn.title = 'ล็อคตาชั่ง';
-                ui.scaleLockBtn.classList.replace('bg-sky-500', 'bg-gray-400');
-                ui.scaleLockBtn.classList.replace('hover:bg-sky-600', 'hover:bg-gray-500');
-                ui.scaleNumberInput.focus();
-            }
-        }
-        
+
         function togglePriceLock() {
             isPriceLocked = !isPriceLocked;
             if (isPriceLocked) {
@@ -1444,25 +1417,25 @@
                 ui.pricePerKgInput.focus();
             }
         }
-        
+
         async function handleSave() {
             if (!salesCollectionRef || !countersDocRef) return showAlert('ยังไม่พร้อมใช้งาน กรุณารอสักครู่');
-            
+
             const seller = ui.sellerNameInput.value.trim();
             const date = ui.receiptDateInput.valueAsDate;
-            const scaleNumber = ui.scaleNumberInput.value;
+            const scaleNumber = activeReceiptScale; // Use state variable
             const weight = parseFloat(ui.totalWeightEl.textContent) || 0;
             const price = parseFloat(ui.pricePerKgInput.value) || 0;
             const total = parseFloat(ui.totalAmountEl.textContent.replace(/,/g, '')) || 0;
             const weightInputs = Array.from(ui.weightInputsContainer.querySelectorAll('.weight-input')).map(input => parseFloat(input.value) || 0).filter(v => v > 0);
-            
+
             if (weightInputs.length === 0 || !seller || !date || weight <= 0 || price <= 0) {
                 return showAlert('กรุณากรอกข้อมูลให้ครบถ้วน: ชื่อผู้ขาย, วันที่, น้ำหนัก และราคา');
             }
             if (total <= 0) {
                 return showAlert('ยอดรวมต้องมากกว่า 0 บาท');
             }
-            
+
             const saleData = {
                 seller,
                 date,
@@ -1474,10 +1447,10 @@
                 timestamp: new Date(),
                 userId
             };
-            
+
             ui.saveButton.disabled = true;
             ui.saveButton.textContent = 'กำลังบันทึก...';
-            
+
             try {
                 if (editingId) {
                     // --- UPDATE EXISTING SALE ---
@@ -1494,40 +1467,42 @@
                     // --- CREATE NEW SALE USING TRANSACTION ---
                     await runTransaction(db, async (transaction) => {
                         const counterDoc = await transaction.get(countersDocRef);
-                        
+
                         const dateKey = getUTCDateKey(date); // YYYY-MM-DD
-                        
+
                         let nextQueueNumber = 1;
                         if (counterDoc.exists() && counterDoc.data()[dateKey]) {
                             nextQueueNumber = counterDoc.data()[dateKey] + 1;
                         }
-                        
+
                         let nextReceiptIndex = 1;
                         if (counterDoc.exists() && counterDoc.data().lastReceiptIndex) {
                             nextReceiptIndex = counterDoc.data().lastReceiptIndex + 1;
                         }
-                        
+
                         const now = new Date();
                         const year = now.getFullYear().toString().slice(-2);
                         const month = (now.getMonth() + 1).toString().padStart(2, '0');
                         const day = now.getDate().toString().padStart(2, '0');
                         const newReceiptId = `${year}${month}${day}-${String(nextReceiptIndex).padStart(4, '0')}`;
-                        
+
                         saleData.dailyQueueNumber = nextQueueNumber;
                         saleData.receiptId = newReceiptId;
                         saleData.printCount = 0;
-                        
+
                         // Update counter
                         const newCounterData = {
                             [dateKey]: nextQueueNumber,
                             lastReceiptIndex: nextReceiptIndex
                         };
-                        transaction.set(countersDocRef, newCounterData, { merge: true });
-                        
+                        transaction.set(countersDocRef, newCounterData, {
+                            merge: true
+                        });
+
                         // Create new sale document
                         transaction.set(doc(salesCollectionRef), saleData);
                     });
-                    
+
                     showAlert('บันทึกข้อมูลสำเร็จ');
                     clearForm();
                 }
@@ -1539,7 +1514,7 @@
                 ui.saveButton.textContent = editingId ? 'อัปเดตข้อมูล' : 'บันทึกข้อมูล';
             }
         }
-        
+
         function handleTableClick(e) {
             const target = e.target.closest('button');
             if (!target) return;
@@ -1559,7 +1534,6 @@
                 editingId = id;
                 ui.sellerNameInput.value = saleToProcess.seller;
                 ui.receiptDateInput.value = saleToProcess.date.toDate().toISOString().split('T')[0];
-                ui.scaleNumberInput.value = saleToProcess.scaleNumber || '';
                 ui.pricePerKgInput.value = saleToProcess.price;
                 const weightInputs = ui.weightInputsContainer.querySelectorAll('.weight-input');
                 weightInputs.forEach((input, index) => {
@@ -1568,7 +1542,13 @@
                 calculateTotals();
                 ui.saveButton.textContent = 'อัปเดตข้อมูล';
                 ui.cancelEditButton.classList.remove('hidden');
+
+                // Switch to the correct tab for editing
                 switchToTab('tab-receipt');
+                if (saleToProcess.scaleNumber) {
+                    _switchToReceiptSubTab(`receipt-scale-${saleToProcess.scaleNumber}`);
+                }
+
                 window.scrollTo({
                     top: 0,
                     behavior: 'smooth'
@@ -1590,12 +1570,12 @@
                 });
             }
         }
-        
+
         function updateDateDisplay() {
             const date = ui.receiptDateInput.valueAsDate;
             ui.dateDisplay.textContent = `(${(date || new Date()).toLocaleDateString('th-TH')})`;
         }
-        
+
         function createWeighingStationHTML(scaleId) {
             return `
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -1630,13 +1610,13 @@
                 <div class="border-t mt-8 pt-6">
                      <h3 class="text-lg font-semibold text-stone-700 mb-3">เครื่องมือย้อนหลัง (สำหรับตาชั่งที่ ${scaleId})</h3>
                      <div class="flex items-center gap-4 flex-wrap">
-                        <button id="print-weighing-history-${scaleId}" data-scale="${scaleId}" class="bg-sky-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-sky-700 transition-colors">🖨️ เรียกข้อมูลย้อนหลังเพื่อปริ้น</button>
-                        <button id="export-weighing-history-${scaleId}" data-scale="${scaleId}" class="bg-emerald-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-emerald-700 transition-colors">📄 แปลงไฟล์เป็น .xlsx</button>
+                         <button id="print-weighing-history-${scaleId}" data-scale="${scaleId}" class="bg-sky-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-sky-700 transition-colors">🖨️ เรียกข้อมูลย้อนหลังเพื่อปริ้น</button>
+                         <button id="export-weighing-history-${scaleId}" data-scale="${scaleId}" class="bg-emerald-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-emerald-700 transition-colors">📄 แปลงไฟล์เป็น .xlsx</button>
                      </div>
                 </div>
             `;
         }
-        
+
         function renderWeighingStations() {
             for (let i = 1; i <= 4; i++) {
                 const tabContent = document.getElementById(`weighing-scale-${i}-content`);
@@ -1653,7 +1633,7 @@
                 }
             }
         }
-        
+
         function printWeighingHistory(scaleId) {
             if (!localWeighingData) return showAlert('ข้อมูลการวางยางยังไม่ถูกโหลด');
             const scaleData = localWeighingData.filter(record => record.scaleId == scaleId);
@@ -1727,7 +1707,7 @@
                 classes: 'mt-3 w-full inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 sm:mt-0 sm:w-auto sm:text-sm'
             }]);
         }
-        
+
         function exportWeighingHistoryToXLSX(scaleId) {
             if (!localWeighingData) return showAlert('ข้อมูลการวางยางยังไม่ถูกโหลด');
             const scaleData = localWeighingData.filter(record => record.scaleId == scaleId).sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
@@ -1754,7 +1734,7 @@
             XLSX.utils.book_append_sheet(wb, ws, `ประวัติตาชั่งที่ ${scaleId}`);
             XLSX.writeFile(wb, `weighing-history-scale-${scaleId}.xlsx`);
         }
-        
+
         function exportToExcel() {
             if (localSalesData.length === 0) return showAlert('ไม่มีข้อมูลการขายสำหรับ Export');
             const salesByDate = localSalesData.reduce((acc, sale) => {
@@ -1808,7 +1788,7 @@
             const today = new Date().toISOString().slice(0, 10);
             XLSX.writeFile(wb, `daily-sales-report-${today}.xlsx`);
         }
-        
+
         async function saveWeighing(event) {
             if (!weighingsCollectionRef) return showAlert('ยังไม่พร้อมใช้งาน กรุณารอสักครู่');
             const scaleId = parseInt(event.target.dataset.scale);
@@ -1845,13 +1825,13 @@
                 showAlert(`เกิดข้อผิดพลาดในการบันทึกน้ำหนัก: ${error.message}`);
             }
         }
-        
+
         function calculateSummaryTotalWeight() {
             const totalBags = parseFloat(ui.summaryTotalBags.textContent) || 0;
             const multiplier = parseFloat(ui.summaryMultiplierWeight.value) || 0;
             ui.summaryCalculatedWeight.textContent = (totalBags * multiplier).toFixed(2);
         }
-        
+
         function updateWeighingSummary() {
             let totalBags = 0;
             for (const scaleId in dailyWeighingData) {
@@ -1860,7 +1840,7 @@
             ui.summaryTotalBags.textContent = totalBags;
             calculateSummaryTotalWeight();
         }
-        
+
         async function deleteAllTodaysWeighings() {
             showConfirm(
                 'คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลการวางยางทั้งหมดของวันนี้? <strong>การกระทำนี้ไม่สามารถย้อนกลับได้</strong>',
@@ -1884,7 +1864,7 @@
                 }
             );
         }
-        
+
         function setupWeighingListeners() {
             if (!weighingsCollectionRef) return;
             for (let i = 1; i <= 4; i++) {
@@ -1921,14 +1901,14 @@
                                          <button class="delete-weighing-btn text-red-600 p-2 rounded-md hover:bg-red-100" data-id="${data.id}" title="ลบ">🗑️</button>
                                      </div>
                                  </td>
-                            `;
+                             `;
                             tableBody.appendChild(row);
                         });
                     }
                 });
             }
         }
-        
+
         async function fetchAndPopulateWeights(sellerName) {
             if (!weighingsCollectionRef || editingId) return;
             const q = query(weighingsCollectionRef, where("sellerName", "==", sellerName));
@@ -1950,7 +1930,7 @@
                 await batch.commit();
             });
         }
-        
+
         async function initializeFirebaseAndAuth() {
             if (isAppInitialized) return;
             if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
@@ -1969,7 +1949,7 @@
                         salesCollectionRef = collection(db, `${appDataPath}/sales`);
                         weighingsCollectionRef = collection(db, `${appDataPath}/weighings`);
                         truckLoadsCollectionRef = collection(db, `${appDataPath}/truckLoads`);
-                        countersDocRef = doc(db, `${appDataPath}/counters`, 'salesCounter'); // FIX: Reference to the counter document
+                        countersDocRef = doc(db, `${appDataPath}/counters`, 'salesCounter');
 
                         if (unsubscribeSales) unsubscribeSales();
                         unsubscribeSales = onSnapshot(query(salesCollectionRef), (snapshot) => {
@@ -2019,7 +1999,7 @@
                 showAlert(`เกิดข้อผิดพลาดในการเริ่มต้นระบบ: ${error.message}`);
             }
         }
-        
+
         async function handleWeighingTableClick(e) {
             const target = e.target.closest('button');
             if (!target) return;
@@ -2089,7 +2069,7 @@
                 }]);
             }
         }
-        
+
         const scaleColorPalette = [{
             bg: 'bg-red-100',
             border: 'border-red-300',
@@ -2152,7 +2132,7 @@
             textP: 'text-stone-900',
             textS: 'text-stone-700'
         };
-        
+
         function renderScaleSummaries() {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
@@ -2213,7 +2193,7 @@
             });
             ui.salesSummaryTodayTotal.classList.remove('hidden');
         }
-        
+
         function filterAndRenderSalesTable() {
             const searchTerm = ui.searchBox.value.toLowerCase().trim();
             const selectedDate = ui.reportDateSelect.value;
@@ -2242,7 +2222,7 @@
             }
             renderTable(dataToRender);
         }
-        
+
         function populateReportDateSelector() {
             const dateSet = new Set(localSalesData.map(sale => getUTCDateKey(sale.date.toDate())));
             const sortedDates = Array.from(dateSet).sort((a, b) => b.localeCompare(a));
@@ -2262,7 +2242,7 @@
             });
             ui.reportDateSelect.value = currentValue;
         }
-        
+
         function populateTruckSummaryDateSelector() {
             const dateSet = new Set(localSalesData.map(sale => getUTCDateKey(sale.date.toDate())));
             const sortedDates = Array.from(dateSet).sort((a, b) => b.localeCompare(a));
@@ -2291,7 +2271,7 @@
                 selector.value = sortedDates[0];
             }
         }
-        
+
         function promptChangePassword() {
             const modalContentHTML = `
                 <div class="space-y-4 text-left">
@@ -2334,7 +2314,7 @@
                 classes: 'mt-3 w-full inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 sm:mt-0 sm:w-auto sm:text-sm'
             }]);
         }
-        
+
         async function backupData() {
             showAlert('กำลังเตรียมข้อมูลสำรอง...');
             try {
@@ -2361,8 +2341,7 @@
                 showAlert(`เกิดข้อผิดพลาดในการสำรองข้อมูล: ${error.message}`);
             }
         }
-        
-        // FIX: Rewritten restoreDataFromFile function for better data integrity
+
         async function restoreDataFromFile(file) {
             const reader = new FileReader();
             reader.onload = async (e) => {
@@ -2371,15 +2350,15 @@
                     data = JSON.parse(e.target.result);
                     // --- Validation Step ---
                     const isValid = (data.sales && Array.isArray(data.sales)) &&
-                                    (data.weighings && Array.isArray(data.weighings)) &&
-                                    (data.truckLoads && Array.isArray(data.truckLoads));
+                        (data.weighings && Array.isArray(data.weighings)) &&
+                        (data.truckLoads && Array.isArray(data.truckLoads));
 
                     if (!isValid) {
                         throw new Error("ไฟล์มีโครงสร้างที่ไม่รู้จักหรือไม่สมบูรณ์ (ต้องมี sales, weighings, truckLoads เป็น array)");
                     }
-                     // Check a sample record
+                    // Check a sample record
                     if (data.sales.length > 0 && (typeof data.sales[0].seller === 'undefined' || typeof data.sales[0].total === 'undefined')) {
-                         throw new Error("ข้อมูลใน 'sales' array ดูเหมือนจะไม่ถูกต้อง");
+                        throw new Error("ข้อมูลใน 'sales' array ดูเหมือนจะไม่ถูกต้อง");
                     }
 
                 } catch (error) {
@@ -2411,12 +2390,12 @@
                                 if (sale.timestamp && sale.timestamp.seconds) sale.timestamp = new Date(sale.timestamp.seconds * 1000);
                                 restoreBatch.set(newDocRef, sale);
                             });
-                             data.weighings.forEach(weighing => {
+                            data.weighings.forEach(weighing => {
                                 const newDocRef = doc(weighingsCollectionRef);
                                 if (weighing.timestamp && weighing.timestamp.seconds) weighing.timestamp = new Date(weighing.timestamp.seconds * 1000);
                                 restoreBatch.set(newDocRef, weighing);
                             });
-                             if (data.truckLoads && Array.isArray(data.truckLoads)) {
+                            if (data.truckLoads && Array.isArray(data.truckLoads)) {
                                 data.truckLoads.forEach(load => {
                                     const newDocRef = doc(truckLoadsCollectionRef);
                                     if (load.timestamp && load.timestamp.seconds) load.timestamp = new Date(load.timestamp.seconds * 1000);
@@ -2424,16 +2403,16 @@
                                 });
                             }
                             await restoreBatch.commit();
-                            
+
                             showAlert('กู้คืนข้อมูลสำเร็จ!');
                         } catch (error) {
-                             showAlert(`เกิดข้อผิดพลาดร้ายแรงระหว่างการกู้คืนข้อมูล: ${error.message}`);
+                            showAlert(`เกิดข้อผิดพลาดร้ายแรงระหว่างการกู้คืนข้อมูล: ${error.message}`);
                         }
                     });
             };
             reader.readAsText(file);
         }
-        
+
         function confirmDeleteAllData() {
             showConfirm("คุณแน่ใจจริงๆ หรือว่าต้องการลบข้อมูลทั้งหมด? การกระทำนี้ไม่สามารถย้อนกลับได้!", () => {
                 showConfirm("นี่คือการยืนยันครั้งสุดท้าย! ข้อมูลการขาย, การรับวางยาง และการบันทึกขึ้นรถทั้งหมดจะถูกลบถาวร กด 'ยืนยัน' เพื่อดำเนินการต่อ", async () => {
@@ -2442,7 +2421,7 @@
                         const collections = [salesCollectionRef, weighingsCollectionRef, truckLoadsCollectionRef, countersDocRef];
                         for (const ref of collections) {
                             if (!ref) continue;
-                             if (ref.type === 'document') { // Handle document reference
+                            if (ref.type === 'document') { // Handle document reference
                                 await deleteDoc(ref);
                             } else { // Handle collection reference
                                 const allDocsSnapshot = await getDocs(ref);
@@ -2460,7 +2439,7 @@
                 });
             });
         }
-        
+
         function applyUserPermissions() {
             const username = sessionStorage.getItem('loggedInUser');
             if (!username || !users[username]) {
@@ -2492,32 +2471,46 @@
             }
         }
 
-        // FIX: Refactored to a single function to handle all sub-tabs
+        // Generic function for sub-tabs
         function _switchToSubTab(type, targetId) {
             const context = {
                 'weighing': {
                     contents: document.querySelectorAll('.weighing-sub-content'),
                     buttons: document.querySelectorAll('.weighing-sub-btn')
-                },
-                'receipt': {
-                    contents: document.querySelectorAll('.receipt-sub-content'),
-                    buttons: document.querySelectorAll('.receipt-sub-btn')
                 }
-            }[type];
+            } [type];
 
             if (!context) return;
-            
+
             context.contents.forEach(content => content.classList.remove('active'));
             context.buttons.forEach(btn => btn.classList.remove('active'));
-            
+
             const targetContent = document.getElementById(targetId + '-content');
             const targetBtn = document.querySelector(`[data-subtab="${targetId}"]`);
-            
+
             if (targetContent) targetContent.classList.add('active');
             if (targetBtn) targetBtn.classList.add('active');
+        }
 
-            // Special logic for receipt truck summary tab
-             if (targetId === 'receipt-truck-summary') {
+        // New specific function for receipt sub-tabs
+        function _switchToReceiptSubTab(targetId) {
+            ui.receiptSubTabs.querySelectorAll('.receipt-sub-btn').forEach(btn => btn.classList.remove('active'));
+            const targetBtn = ui.receiptSubTabs.querySelector(`[data-subtab="${targetId}"]`);
+            if (targetBtn) targetBtn.classList.add('active');
+
+            if (targetId.startsWith('receipt-scale-')) {
+                const scaleNum = targetId.split('-')[2];
+                activeReceiptScale = parseInt(scaleNum, 10);
+                ui.receiptTitleScaleNumber.textContent = scaleNum;
+
+                ui.receiptFormContent.classList.add('active');
+                ui.receiptTruckSummaryContent.classList.remove('active');
+                clearForm();
+            } else if (targetId === 'receipt-truck-summary') {
+                ui.receiptFormContent.classList.remove('active');
+                ui.receiptTruckSummaryContent.classList.add('active');
+
+                // Special logic for truck summary
                 const dateSelector = ui.truckSummaryDate;
                 if (dateSelector.options.length > 0 && dateSelector.options[0].value) {
                     dateSelector.value = dateSelector.options[0].value;
@@ -2525,7 +2518,7 @@
                 calculateTruckSummary();
             }
         }
-        
+
         document.addEventListener('DOMContentLoaded', () => {
             const handleLogin = () => {
                 const username = ui.usernameInput.value.trim().toLowerCase();
@@ -2578,7 +2571,6 @@
             });
             ui.saveButton.addEventListener('click', handleSave);
             ui.cancelEditButton.addEventListener('click', clearForm);
-            ui.scaleLockBtn.addEventListener('click', toggleScaleLock);
             ui.priceLockBtn.addEventListener('click', togglePriceLock);
             ui.salesTableBody.addEventListener('click', handleTableClick);
             ui.printReportBtn.addEventListener('click', createDailySummaryReport);
@@ -2611,23 +2603,23 @@
             ui.receiptDateInput.valueAsDate = new Date();
             updateDateDisplay();
 
-            // FIX: Use the new generic function for sub-tab events
+            // Handle sub-tab clicks
             ui.weighingSubTabs.addEventListener('click', (e) => {
                 const targetSubTabId = e.target.dataset.subtab;
                 if (targetSubTabId) {
                     _switchToSubTab('weighing', targetSubTabId);
                 }
             });
-             ui.receiptSubTabs.addEventListener('click', (e) => {
+            ui.receiptSubTabs.addEventListener('click', (e) => {
                 const targetSubTabId = e.target.dataset.subtab;
                 if (targetSubTabId) {
-                    _switchToSubTab('receipt', targetSubTabId);
+                    _switchToReceiptSubTab(targetSubTabId);
                 }
             });
-            
+
             // Set initial state for tabs
             _switchToSubTab('weighing', 'weighing-scale-1');
-            _switchToSubTab('receipt', 'receipt-form');
+            _switchToReceiptSubTab('receipt-scale-1');
         });
     </script>
 </body>
