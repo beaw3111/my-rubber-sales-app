@@ -36,12 +36,11 @@
         .tab-content.active {
             display: block;
         }
-        /* Styling for sub-tab buttons in "รับวางยาง" */
         .weighing-sub-btn, .receipt-scale-sub-btn {
             transition: all 0.15s ease-in-out;
         }
         .weighing-sub-btn.active, .receipt-scale-sub-btn.active {
-            background-color: #b45309; /* amber-700 */
+            background-color: #b45309;
             color: #ffffff;
             transform: translateY(1px);
             box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.1);
@@ -52,12 +51,11 @@
         .weighing-sub-content.active {
             display: block;
         }
-        /* Styling for sub-tab buttons in "ออกใบเสร็จ" */
         .receipt-sub-btn {
             transition: all 0.15s ease-in-out;
         }
         .receipt-sub-btn.active {
-            background-color: #b45309; /* amber-700 */
+            background-color: #b45309;
             color: #ffffff;
             transform: translateY(1px);
             box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.1);
@@ -68,8 +66,14 @@
         .receipt-sub-content.active {
             display: block;
         }
-        /* --- ADJUSTED FOR PRINTING --- */
         @media print {
+            @page {
+                size: A4;
+                margin: 0;
+            }
+            body {
+                margin: 0;
+            }
             body * {
                 visibility: hidden;
             }
@@ -157,7 +161,8 @@
                 <div id="receipt-form-content" class="receipt-sub-content">
                     <section id="receipt-generator" class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
                         <h2 class="text-2xl font-bold mb-2 border-b pb-3 text-stone-800">2. กรอกข้อมูลเพื่อออกใบเสร็จ</h2>
-                        <p class="text-sm text-stone-500 mt-2 mb-6">ส่วนนี้คือศูนย์กลางการทำงาน สำหรับบันทึกข้อมูลการขาย ระบบจะคำนวณยอดรวมให้อัตโนมัติ และเมื่อบันทึกข้อมูลแล้วจะสร้างใบเสร็จสำหรับพิมพ์ได้ทันที</p>                                                <div id="receipt-scale-sub-tabs" class="mb-6 no-print">
+                        <p class="text-sm text-stone-500 mt-2 mb-6">ส่วนนี้คือศูนย์กลางการทำงาน สำหรับบันทึกข้อมูลการขาย ระบบจะคำนวณยอดรวมให้อัตโนมัติ และเมื่อบันทึกข้อมูลแล้วจะสร้างใบเสร็จสำหรับพิมพ์ได้ทันที</p>
+                        <div id="receipt-scale-sub-tabs" class="mb-6 no-print">
                             <label class="block text-sm font-medium text-stone-700 mb-2">เลือกตาชั่งสำหรับออกใบเสร็จ</label>
                             <nav class="flex flex-wrap gap-2" aria-label="Scale Tabs">
                                 <button data-scale="1" class="receipt-scale-sub-btn py-2 px-5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold shadow-sm border border-stone-200">ตาชั่ง 1</button>
@@ -168,7 +173,7 @@
                             <input type="hidden" id="selected-receipt-scale">
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
-                           <div>
+                            <div>
                                 <label for="seller-name" class="block text-sm font-medium text-stone-700 mb-1">ชื่อ-สกุล ผู้ขาย</label>
                                 <input type="text" id="seller-name" list="seller-name-list" class="w-full p-3 border border-stone-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500" placeholder="เลือกหรือกรอกชื่อผู้ขาย">
                                 <datalist id="seller-name-list"></datalist>
@@ -473,7 +478,7 @@
                     </div>
                 </div>
             </div>
-            <div id="modal-actions" class="bg-stone-50 px-6 py-4 rounded-b-xl flex flex-row-reverse gap-3">
+            <div id="modal-actions" class="bg-stone-50 px-6 py-4 rounded-b-xl flex flex-col-reverse sm:flex-row-reverse sm:gap-3">
             </div>
         </div>
     </div>
@@ -504,6 +509,7 @@
             writeBatch,
             runTransaction
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyCNVxG6s46SRXOYAeT0rJHAtz_-3IPUJNE",
             authDomain: "coopksb001.firebaseapp.com",
@@ -514,37 +520,34 @@
             measurementId: "G-1RHH9TMD73"
         };
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'cup-rubber-sales-app';
+        
         const users = {
-            'admin': {
-                password: 'as54321',
-                allowedTabs: ['all']
-            },
-            'bill': {
-                password: 'bill12345',
-                allowedTabs: ['tab-receipt']
-            },
-            'rub': {
-                password: 'kaset1234',
-                allowedTabs: ['tab-weighing-consolidated', 'tab-receipt']
-            }
+            'admin': { password: 'as54321', allowedTabs: ['all'] },
+            'bill': { password: 'bill12345', allowedTabs: ['tab-receipt'] },
+            'rub': { password: 'kaset1234', allowedTabs: ['tab-weighing-consolidated', 'tab-receipt'] }
         };
+        
         let currentPassword = localStorage.getItem('customPassword') || users.admin.password;
         users.admin.password = currentPassword;
+        
         let localSalesData = [];
         let localWeighingData = [];
         let localTruckLoads = [];
         let dailyStatsChart;
         let editingId = null;
         let editingWeighingId = null;
+        
         let db, auth, userId, salesCollectionRef, weighingsCollectionRef, truckLoadsCollectionRef, countersDocRef;
         let unsubscribeSales = null;
         let unsubscribeAllWeighings = null;
         let unsubscribeTruckLoads = null;
         let unsubscribeWeighings = {};
+        
         let dailyWeighingData = {};
         let isPriceLocked = false;
-        let isTypeLocked = false; // New state for type lock
+        let isTypeLocked = false;
         let isAppInitialized = false;
+
         const ui = {
             loginScreen: document.getElementById('login-screen'),
             appContainer: document.getElementById('app'),
@@ -568,9 +571,9 @@
             pricePerKgInput: document.getElementById('price-per-kg'),
             priceLockBtn: document.getElementById('price-lock-btn'),
             priceLockIcon: document.getElementById('price-lock-icon'),
-            typeLockBtn: document.getElementById('type-lock-btn'), // New UI element
-            typeLockIcon: document.getElementById('type-lock-icon'), // New UI element
-            receiptTypeContainer: document.getElementById('receipt-type-container'), // New UI element
+            typeLockBtn: document.getElementById('type-lock-btn'),
+            typeLockIcon: document.getElementById('type-lock-icon'),
+            receiptTypeContainer: document.getElementById('receipt-type-container'),
             totalWeightEl: document.getElementById('total-weight'),
             totalAmountEl: document.getElementById('total-amount'),
             totalAmountTextEl: document.getElementById('total-amount-text'),
@@ -612,16 +615,97 @@
             weighingSubTabs: document.getElementById('weighing-sub-tabs'),
             receiptSubTabs: document.getElementById('receipt-sub-tabs'),
         };
-        // --- Functions for Truck Summary ---
+
+        // --- NEW: Helper function to print batch details from modal ---
+        function printBatchDetails(salesInBatch, title) {
+            if (!salesInBatch || salesInBatch.length === 0) {
+                showAlert('ไม่มีข้อมูลสำหรับพิมพ์');
+                return;
+            }
+            
+            const totalWeight = salesInBatch.reduce((sum, sale) => sum + sale.weight, 0);
+
+            const tableRows = salesInBatch.map((sale) => `
+                <tr class="border-b">
+                    <td class="px-2 py-2 text-center">${sale.dailyQueueNumber || '-'}</td>
+                    <td class="px-2 py-2">${sale.seller}</td>
+                    <td class="px-2 py-2 text-right">${sale.weight.toFixed(2)}</td>
+                </tr>
+            `).join('');
+
+            const reportHTML = `
+                <div class="p-8 bg-white text-black">
+                    <div class="text-center mb-4">
+                        <h3 class="text-lg font-bold">${title}</h3>
+                    </div>
+                    <table class="w-full text-sm border-collapse border border-black">
+                        <thead class="bg-stone-200">
+                            <tr class="border-b-2 border-black">
+                                <th class="px-2 py-2 border-r border-black" style="width: 15%;">คิว</th>
+                                <th class="px-2 py-2 border-r border-black" style="width: 55%;">ชื่อผู้ขาย</th>
+                                <th class="px-2 py-2 border-black" style="width: 30%;">น้ำหนัก (กก.)</th>
+                            </tr>
+                        </thead>
+                        <tbody>${tableRows}</tbody>
+                        <tfoot class="font-bold bg-stone-200">
+                           <tr class="border-t-2 border-black">
+                               <td class="px-2 py-2 text-right" colspan="2">รวมน้ำหนัก</td>
+                               <td class="px-2 py-2 text-right">${totalWeight.toFixed(2)}</td>
+                           </tr>
+                        </tfoot>
+                    </table>
+                </div>`;
+            
+            ui.printArea.innerHTML = reportHTML;
+            window.print();
+        }
+
+        // --- NEW: Helper function to export batch details to Excel from modal ---
+        function exportBatchDetailsToExcel(salesInBatch, title) {
+            if (!salesInBatch || salesInBatch.length === 0) {
+                showAlert('ไม่มีข้อมูลสำหรับ Export');
+                return;
+            }
+            
+            const headers = ['คิว', 'ชื่อผู้ขาย', 'น้ำหนัก (กก.)'];
+            const exportData = [headers];
+            
+            salesInBatch.forEach(sale => {
+                exportData.push([
+                    sale.dailyQueueNumber || '',
+                    sale.seller,
+                    sale.weight
+                ]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(exportData);
+            ws['!cols'] = [{ wch: 10 }, { wch: 40 }, { wch: 20 }];
+             
+            // Format weight column as number
+            for (let i = 1; i < exportData.length; i++) {
+                const cellRef = XLSX.utils.encode_cell({ c: 2, r: i });
+                if (ws[cellRef]) {
+                    ws[cellRef].t = 'n';
+                    ws[cellRef].z = '#,##0.00';
+                }
+            }
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+            
+            const safeTitle = title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            XLSX.writeFile(wb, `รายงาน_${safeTitle}.xlsx`);
+        }
+        
         function getUTCDateKey(date) {
             if (!date) return null;
-            // Handle cases where date might be a Firestore Timestamp
             const d = (date.toDate) ? date.toDate() : date;
             const year = d.getFullYear();
             const month = String(d.getMonth() + 1).padStart(2, '0');
             const day = String(d.getDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
         }
+        
         async function handleSaveTruckLoad(event) {
             const scaleId = event.target.dataset.scale;
             const weightToSave = parseFloat(event.target.dataset.weight);
@@ -643,7 +727,7 @@
             `;
             showModal(`ระบุทะเบียนรถ`, modalContentHTML, [{
                 text: 'ยืนยันการบันทึก',
-                classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:w-auto sm:text-sm',
+                classes: 'w-full sm:w-auto inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700',
                 onClick: async () => {
                     const vehicleRegInput = document.getElementById('modal-vehicle-reg-input');
                     const errorEl = document.getElementById('save-load-error');
@@ -673,10 +757,10 @@
                 }
             }, {
                 text: 'ยกเลิก',
-                classes: 'mt-3 w-full inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 sm:mt-0 sm:w-auto sm:text-sm'
+                classes: 'w-full sm:w-auto mt-2 sm:mt-0 inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50'
             }]);
         }
-        // MODIFIED FUNCTION: Shows receipts created between the previous load and the current load.
+        
         function handleViewLoadBatchDetails(loadId) {
             if (!loadId) return;
             const currentLoad = localTruckLoads.find(l => l.id === loadId);
@@ -687,33 +771,32 @@
             const endTime = currentLoad.timestamp.toDate();
             const scaleId = currentLoad.scaleId;
             const dateStr = currentLoad.date;
-            // Find the previous load for the same scale and date to determine the start time
             const previousLoad = localTruckLoads
                 .filter(l => l.id !== loadId && l.scaleId === scaleId && l.date === dateStr && l.timestamp.toDate() < endTime)
-                .sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate())[0]; // Get the latest one before current
+                .sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate())[0];
             let startTime;
             if (previousLoad) {
-                // Start time is the timestamp of the previous load
                 startTime = previousLoad.timestamp.toDate();
             } else {
-                // If it's the first load of the day, start from the beginning of that UTC day
                 const dateParts = dateStr.split('-');
                 startTime = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2]));
             }
-            // Filter sales that fall within the batch timeline for the specific scale
             const salesInBatch = localSalesData.filter(sale => {
                 const saleTime = sale.timestamp.toDate();
                 return sale.scaleNumber == scaleId &&
-                       saleTime <= endTime &&
-                       saleTime > startTime;
+                    saleTime <= endTime &&
+                    saleTime > startTime;
             }).sort((a, b) => (a.dailyQueueNumber || 0) - (b.dailyQueueNumber || 0));
+            
             if (salesInBatch.length === 0) {
-                showAlert(`ไม่พบข้อมูลใบเสร็จสำหรับล็อตนี้ (อาจถูกบันทึกไปแล้วในล็อตอื่น)`);
+                showAlert(`ไม่พบข้อมูลใบเสร็จสำหรับล็อตนี้`);
                 return;
             }
+
             const formattedTime = endTime.toLocaleTimeString('th-TH');
-            let modalTitle = `รายชื่อในล็อต (ตาชั่งที่ ${scaleId} - บันทึกเวลา ${formattedTime})`;
-            let modalContentHTML = `<div class="text-left text-sm max-h-96 overflow-y-auto">
+            let modalTitle = `รายชื่อในล็อต (ตาชั่งที่ ${scaleId} - ${formattedTime})`;
+
+            let modalContentHTML = `<div class="text-left text-sm max-h-80 overflow-y-auto">
                                         <table class="w-full">
                                             <thead class="sticky top-0 bg-stone-100"><tr><th class="p-2">คิว</th><th class="p-2 text-left">ชื่อผู้ขาย</th><th class="p-2 text-right">น้ำหนัก (กก.)</th></tr></thead>
                                             <tbody>`;
@@ -722,15 +805,37 @@
             });
             const totalWeight = salesInBatch.reduce((sum, sale) => sum + sale.weight, 0);
             modalContentHTML += `</tbody><tfoot><tr class="font-bold border-t-2"><td class="p-2" colspan="2">รวม</td><td class="p-2 text-right">${totalWeight.toFixed(2)}</td></tr></tfoot></table></div>`;
-            showModal(modalTitle, modalContentHTML, [{
-                text: 'ปิด',
-                classes: 'mt-3 w-full inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 sm:mt-0 sm:w-auto sm:text-sm'
-            }]);
+            
+            // MODIFIED: Added Print and Export buttons to the modal
+            const modalButtons = [
+                {
+                    text: '🖨️ พิมพ์รายงาน',
+                    classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-sky-600 text-base font-medium text-white hover:bg-sky-700',
+                    onClick: () => {
+                        printBatchDetails(salesInBatch, modalTitle);
+                        return false; 
+                    }
+                },
+                {
+                    text: '📄 Export to Excel',
+                    classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700',
+                    onClick: () => {
+                        exportBatchDetailsToExcel(salesInBatch, modalTitle);
+                        return false;
+                    }
+                },
+                {
+                    text: 'ปิด',
+                    classes: 'mt-2 w-full inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 sm:mt-0'
+                }
+            ];
+
+            showModal(modalTitle, modalContentHTML, modalButtons);
         }
+        
         async function handleTruckLoadHistoryClick(e) {
             const target = e.target.closest('button');
             if (!target) return;
-            // MODIFIED: This now calls the new function with the specific load ID
             if (target.matches('.view-receipt-list-btn')) {
                 const loadId = target.dataset.id;
                 handleViewLoadBatchDetails(loadId);
@@ -766,7 +871,7 @@
                 `;
                 showModal(`แก้ไขข้อมูลขึ้นรถ`, modalContentHTML, [{
                     text: 'บันทึก',
-                    classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:w-auto sm:text-sm',
+                    classes: 'w-full sm:w-auto inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700',
                     onClick: async () => {
                         const inputEl = document.getElementById('modal-edit-load-input');
                         const regInputEl = document.getElementById('modal-edit-reg-input');
@@ -784,10 +889,7 @@
                             return false;
                         }
                         try {
-                            await updateDoc(doc(truckLoadsCollectionRef, loadId), {
-                                weight: newWeight,
-                                vehicleRegistration: newReg
-                            });
+                            await updateDoc(doc(truckLoadsCollectionRef, loadId), { weight: newWeight, vehicleRegistration: newReg });
                             showAlert('แก้ไขข้อมูลสำเร็จ');
                             return true;
                         } catch (error) {
@@ -798,10 +900,11 @@
                     }
                 }, {
                     text: 'ยกเลิก',
-                    classes: 'mt-3 w-full inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 sm:mt-0 sm:w-auto sm:text-sm'
+                    classes: 'w-full sm:w-auto mt-2 sm:mt-0 inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50'
                 }]);
             }
         }
+        
         function renderTruckLoadHistory(loadsForDay) {
             const container = ui.truckLoadHistoryContainer;
             container.innerHTML = '';
@@ -810,23 +913,19 @@
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             });
-            if (loadsForDay.length === 0) {
-                return;
-            }
+            if (loadsForDay.length === 0) return;
+
             const loadsByScale = loadsForDay.reduce((acc, load) => {
                 const scale = load.scaleId;
                 if (!acc[scale]) acc[scale] = [];
                 acc[scale].push(load);
                 return acc;
             }, {});
-            const selectedDateStr = ui.truckSummaryDate.value;
-            const dateParts = selectedDateStr.split('-');
-            const selectedDateObj = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
-            const formattedDate = selectedDateObj.toLocaleDateString('th-TH', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
+
+            const formattedDate = new Date(loadsForDay[0].date.replace(/-/g, '/')).toLocaleDateString('th-TH', {
+                year: 'numeric', month: 'long', day: 'numeric'
             });
+
             let historyHtml = `
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xl font-bold text-stone-800 border-b pb-2">ประวัติการบันทึกน้ำหนักขึ้นรถ</h3>
@@ -837,71 +936,69 @@
             const sortedScales = Object.keys(loadsByScale).sort((a, b) => a - b);
             for (const scaleId of sortedScales) {
                 historyHtml += `<div class="mb-4 bg-stone-50 p-4 rounded-lg border">
-                                        <h4 class="font-bold text-md text-stone-700">ตาชั่งที่ ${scaleId}</h4>
-                                        <ul class="list-none mt-2 space-y-2 text-stone-600">`;
+                    <h4 class="font-bold text-md text-stone-700">ตาชั่งที่ ${scaleId}</h4>
+                    <ul class="list-none mt-2 space-y-2 text-stone-600">`;
                 loadsByScale[scaleId].sort((a, b) => a.timestamp.toDate() - b.timestamp.toDate()).forEach((load, index) => {
                     historyHtml += `<li class="flex justify-between items-center border-b border-stone-200 py-2">
-                                            <div>
-                                                <span class="font-medium">ครั้งที่ ${index + 1}:</span>
-                                                <strong class="text-stone-900 ml-2">${load.weight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} กก.</strong>
-                                                <span class="block text-sm text-sky-700 font-semibold">${load.vehicleRegistration || 'ไม่ระบุทะเบียน'}</span>
-                                                <span class="text-xs text-stone-500">(${load.timestamp.toDate().toLocaleTimeString('th-TH')})</span>
-                                            </div>
-                                            <div class="flex items-center gap-2">
-                                                <button class="view-receipt-list-btn text-blue-600 hover:text-blue-800 p-1 rounded-md text-xl no-print" data-id="${load.id}" title="ดูรายชื่อในล็อตนี้">📋</button>
-                                                <button class="edit-load-btn text-blue-600 hover:text-blue-800 p-1 rounded-md text-lg no-print" data-id="${load.id}" title="แก้ไข">✏️</button>
-                                                <button class="delete-load-btn text-red-600 hover:text-red-800 p-1 rounded-md text-lg no-print" data-id="${load.id}" title="ลบ">🗑️</button>
-                                            </div>
-                                        </li>`;
+                        <div>
+                            <span class="font-medium">ครั้งที่ ${index + 1}:</span>
+                            <strong class="text-stone-900 ml-2">${load.weight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} กก.</strong>
+                            <span class="block text-sm text-sky-700 font-semibold">${load.vehicleRegistration || 'ไม่ระบุทะเบียน'}</span>
+                            <span class="text-xs text-stone-500">(${load.timestamp.toDate().toLocaleTimeString('th-TH')})</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button class="view-receipt-list-btn text-blue-600 hover:text-blue-800 p-1 rounded-md text-xl no-print" data-id="${load.id}" title="ดูรายชื่อในล็อตนี้">📋</button>
+                            <button class="edit-load-btn text-blue-600 hover:text-blue-800 p-1 rounded-md text-lg no-print" data-id="${load.id}" title="แก้ไข">✏️</button>
+                            <button class="delete-load-btn text-red-600 hover:text-red-800 p-1 rounded-md text-lg no-print" data-id="${load.id}" title="ลบ">🗑️</button>
+                        </div>
+                    </li>`;
                 });
                 historyHtml += `</ul></div>`;
             }
             container.innerHTML = historyHtml;
             document.getElementById('print-truck-history-btn').addEventListener('click', () => printTruckLoadHistory(loadsByScale, formattedDate, totalLoadedWeight));
         }
+        
+        // MODIFIED: Removed cooperative name/address
         function printTruckLoadHistory(loadsByScale, formattedDate, totalLoadedWeight) {
             let printContent = `
                 <div class="p-8 bg-white text-black">
                     <div class="text-center mb-6">
                         <h2 class="text-xl font-bold">สรุปรายการบันทึกน้ำหนักขึ้นรถ</h2>
                         <h3 class="text-lg">ประจำวันที่ ${formattedDate}</h3>
-                        <p>สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</p>
-                    </div>
-            `;
+                    </div>`;
             const sortedScales = Object.keys(loadsByScale).sort((a, b) => a - b);
             for (const scaleId of sortedScales) {
                 printContent += `<div class="mb-4" style="page-break-inside: avoid;">
-                                    <h4 class="text-md font-bold text-stone-800 border-b-2 border-black pb-1 mb-2">ตาชั่งที่ ${scaleId}</h4>
-                                    <table class="w-full text-sm">
-                                        <thead>
-                                            <tr>
-                                                <th class="text-left py-1" style="width:15%">ครั้งที่</th>
-                                                <th class="text-left py-1" style="width:35%">ทะเบียนรถ</th>
-                                                <th class="text-left py-1" style="width:20%">เวลา</th>
-                                                <th class="text-right py-1" style="width:30%">น้ำหนัก (กก.)</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>`;
+                    <h4 class="text-md font-bold text-stone-800 border-b-2 border-black pb-1 mb-2">ตาชั่งที่ ${scaleId}</h4>
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr>
+                                <th class="text-left py-1" style="width:15%">ครั้งที่</th>
+                                <th class="text-left py-1" style="width:35%">ทะเบียนรถ</th>
+                                <th class="text-left py-1" style="width:20%">เวลา</th>
+                                <th class="text-right py-1" style="width:30%">น้ำหนัก (กก.)</th>
+                            </tr>
+                        </thead><tbody>`;
                 loadsByScale[scaleId].forEach((load, index) => {
                     printContent += `<tr class="border-b border-dotted">
-                                        <td class="py-1">${index + 1}</td>
-                                        <td class="py-1 font-semibold">${load.vehicleRegistration || ''}</td>
-                                        <td class="py-1">${load.timestamp.toDate().toLocaleTimeString('th-TH')}</td>
-                                        <td class="py-1 text-right">${load.weight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                    </tr>`;
+                        <td class="py-1">${index + 1}</td>
+                        <td class="py-1 font-semibold">${load.vehicleRegistration || ''}</td>
+                        <td class="py-1">${load.timestamp.toDate().toLocaleTimeString('th-TH')}</td>
+                        <td class="py-1 text-right">${load.weight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    </tr>`;
                 });
-                printContent += `   </tbody>
-                                    </table>
-                                </div>`;
+                printContent += `</tbody></table></div>`;
             }
             printContent += `<div class="mt-8 pt-4 border-t-4 border-double border-black text-right">
-                                <span class="text-lg font-bold">รวมน้ำหนักที่บันทึกทั้งหมด:</span>
-                                <span class="text-2xl font-bold ml-4">${totalLoadedWeight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                <span class="text-lg font-bold"> กก.</span>
-                            </div></div>`;
+                <span class="text-lg font-bold">รวมน้ำหนักที่บันทึกทั้งหมด:</span>
+                <span class="text-2xl font-bold ml-4">${totalLoadedWeight.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span class="text-lg font-bold"> กก.</span>
+            </div></div>`;
             ui.printArea.innerHTML = printContent;
             window.print();
         }
+        
         function calculateTruckSummary() {
             const selectedDateStr = ui.truckSummaryDate.value;
             if (!selectedDateStr) {
@@ -922,10 +1019,7 @@
             const summary = salesForDay.reduce((acc, sale) => {
                 const scale = sale.scaleNumber || 'ไม่ระบุ';
                 if (!acc[scale]) {
-                    acc[scale] = {
-                        totalSalesWeight: 0,
-                        count: 0
-                    };
+                    acc[scale] = { totalSalesWeight: 0, count: 0 };
                 }
                 acc[scale].totalSalesWeight += sale.weight;
                 acc[scale].count++;
@@ -945,6 +1039,7 @@
             renderTruckSummary(summary, loadedSummary);
             renderTruckLoadHistory(loadsForDay);
         }
+        
         function renderTruckSummary(salesSummary, loadedSummary) {
             ui.truckSummaryContainer.innerHTML = '';
             let grandTotal = 0;
@@ -958,10 +1053,7 @@
                 ui.truckSummaryContainer.innerHTML = '<p class="text-center text-stone-500 md:col-span-2">ไม่พบข้อมูลการขายในวันที่เลือก</p>';
             }
             for (const scale of sortedScales) {
-                const salesData = salesSummary[scale] || {
-                    totalSalesWeight: 0,
-                    count: 0
-                };
+                const salesData = salesSummary[scale] || { totalSalesWeight: 0, count: 0 };
                 const loadedWeight = loadedSummary[scale] || 0;
                 const currentWeight = salesData.totalSalesWeight - loadedWeight;
                 grandTotal += currentWeight;
@@ -991,6 +1083,7 @@
                 maximumFractionDigits: 2
             });
         }
+        
         function switchToTab(targetTabId) {
             ui.tabs.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             ui.tabContents.forEach(content => content.classList.remove('active'));
@@ -1002,23 +1095,17 @@
             if (targetContent) {
                 targetContent.classList.add('active');
             }
-            // Auto-select first sub-tab when switching to a main tab that has them
             if (targetTabId === 'tab-receipt') {
                 const firstSubTab = ui.receiptSubTabs.querySelector('.receipt-sub-btn');
-                if (firstSubTab) {
-                    _switchToSubTab('receipt', firstSubTab.dataset.subtab);
-                }
+                if (firstSubTab) _switchToSubTab('receipt', firstSubTab.dataset.subtab);
                 const firstReceiptScaleTab = ui.receiptScaleSubTabs.querySelector('.receipt-scale-sub-btn');
-                if(firstReceiptScaleTab) {
-                    firstReceiptScaleTab.click();
-                }
+                if (firstReceiptScaleTab) firstReceiptScaleTab.click();
             } else if (targetTabId === 'tab-weighing-consolidated') {
                 const firstSubTab = ui.weighingSubTabs.querySelector('.weighing-sub-btn');
-                if (firstSubTab) {
-                    _switchToSubTab('weighing', firstSubTab.dataset.subtab);
-                }
+                if (firstSubTab) _switchToSubTab('weighing', firstSubTab.dataset.subtab);
             }
         }
+        
         function showModal(title, message, buttons) {
             ui.modalTitle.textContent = title;
             ui.modalMessageContainer.innerHTML = message;
@@ -1041,27 +1128,31 @@
                 ui.modal.querySelector('.modal-content').classList.remove('scale-95');
             }, 10);
         }
+        
         function hideModal() {
             ui.modal.classList.add('opacity-0');
             ui.modal.querySelector('.modal-content').classList.add('scale-95');
             setTimeout(() => ui.modal.classList.add('hidden'), 300);
         }
+        
         function showAlert(message) {
             showModal('แจ้งเตือน', `<p class="text-sm text-stone-500">${message}</p>`, [{
                 text: 'ตกลง',
                 classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-amber-600 text-base font-medium text-white hover:bg-amber-700 sm:w-auto sm:text-sm'
             }]);
         }
+        
         function showConfirm(message, onConfirm) {
             showModal('ยืนยันการดำเนินการ', `<p class="text-sm text-stone-500">${message}</p>`, [{
                 text: 'ยืนยัน',
-                classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:ml-3 sm:w-auto sm:text-sm',
+                classes: 'w-full sm:w-auto inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700',
                 onClick: onConfirm
             }, {
                 text: 'ยกเลิก',
-                classes: 'mt-3 w-full inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 sm:mt-0 sm:w-auto sm:text-sm'
+                classes: 'w-full sm:w-auto mt-2 sm:mt-0 inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50'
             }]);
         }
+        
         function bahttext(number) {
             number = Number(number).toFixed(2);
             let [integer,
@@ -1092,6 +1183,8 @@
             if (!fracText && intText) fracText = 'ถ้วน';
             return intText + fracText;
         }
+        
+        // MODIFIED: `bahttext` now uses the floored total
         function calculateTotals() {
             let totalWeight = 0;
             const weightInputs = ui.weightInputsContainer.querySelectorAll('.weight-input');
@@ -1100,13 +1193,16 @@
             });
             const pricePerKg = parseFloat(ui.pricePerKgInput.value) || 0;
             const totalAmount = totalWeight * pricePerKg;
+            const roundedTotal = Math.floor(totalAmount);
+
             ui.totalWeightEl.textContent = totalWeight.toFixed(2);
             ui.totalAmountEl.textContent = totalAmount.toLocaleString('th-TH', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             });
-            ui.totalAmountTextEl.textContent = bahttext(totalAmount);
+            ui.totalAmountTextEl.textContent = bahttext(roundedTotal);
         }
+        
         function renderTable(dataToRender) {
             ui.salesTableBody.innerHTML = '';
             if (dataToRender.length === 0) {
@@ -1143,6 +1239,7 @@
                 ui.salesTableBody.appendChild(row);
             });
         }
+        
         function renderSummary() {
             if (!localSalesData || localSalesData.length === 0) {
                 ui.summaryTotalSellers.textContent = '0';
@@ -1163,17 +1260,16 @@
                 maximumFractionDigits: 2
             });
         }
+        
         function renderDashboard() {
             renderDailyStatsChart();
         }
+        
         function renderDailyStatsChart() {
             const statsByDay = localSalesData.reduce((acc, sale) => {
                 const day = sale.date.toDate().toISOString().split('T')[0];
                 if (!acc[day]) {
-                    acc[day] = {
-                        totalWeight: 0,
-                        totalValue: 0
-                    };
+                    acc[day] = { totalWeight: 0, totalValue: 0 };
                 }
                 acc[day].totalWeight += sale.weight;
                 acc[day].totalValue += sale.total;
@@ -1181,9 +1277,7 @@
             }, {});
             const sortedDays = Object.keys(statsByDay).sort((a, b) => new Date(a) - new Date(b));
             const labels = sortedDays.map(day => new Date(day).toLocaleDateString('th-TH', {
-                year: '2-digit',
-                month: 'short',
-                day: 'numeric'
+                year: '2-digit', month: 'short', day: 'numeric'
             }));
             const weightData = sortedDays.map(day => statsByDay[day].totalWeight);
             const priceData = sortedDays.map(day => {
@@ -1219,92 +1313,48 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false
-                        },
+                        interaction: { mode: 'index', intersect: false },
                         scales: {
-                            x: {
-                                ticks: {
-                                    font: {
-                                        family: "'Sarabun', sans-serif"
-                                    }
-                                }
-                            },
+                            x: { ticks: { font: { family: "'Sarabun', sans-serif" } } },
                             yWeight: {
                                 type: 'linear',
                                 display: true,
                                 position: 'left',
-                                title: {
-                                    display: true,
-                                    text: 'ปริมาณ (กก.)',
-                                    font: {
-                                        family: "'Sarabun', sans-serif",
-                                        size: 14
-                                    }
-                                }
+                                title: { display: true, text: 'ปริมาณ (กก.)', font: { family: "'Sarabun', sans-serif", size: 14 } }
                             },
                             yPrice: {
                                 type: 'linear',
                                 display: true,
                                 position: 'right',
-                                title: {
-                                    display: true,
-                                    text: 'ราคาเฉลี่ย (บาท)',
-                                    font: {
-                                        family: "'Sarabun', sans-serif",
-                                        size: 14
-                                    }
-                                },
-                                grid: {
-                                    drawOnChartArea: false
-                                }
+                                title: { display: true, text: 'ราคาเฉลี่ย (บาท)', font: { family: "'Sarabun', sans-serif", size: 14 } },
+                                grid: { drawOnChartArea: false }
                             }
                         },
                         plugins: {
-                            legend: {
-                                position: 'top',
-                                labels: {
-                                    font: {
-                                        family: "'Sarabun', sans-serif"
-                                    }
-                                }
-                            },
+                            legend: { position: 'top', labels: { font: { family: "'Sarabun', sans-serif" } } },
                             tooltip: {
-                                titleFont: {
-                                    family: "'Sarabun', sans-serif"
-                                },
-                                bodyFont: {
-                                    family: "'Sarabun', sans-serif"
-                                },
-                                footerFont: {
-                                    family: "'Sarabun', sans-serif"
-                                },
+                                titleFont: { family: "'Sarabun', sans-serif" },
+                                bodyFont: { family: "'Sarabun', sans-serif" },
+                                footerFont: { family: "'Sarabun', sans-serif" },
                             }
                         }
                     }
                 });
             }
         }
+        
         function renderWeighingHistory() {
             const historyBody = ui.weighingHistoryBody;
             if (!historyBody) return;
             const salesWeightByDay = localSalesData.reduce((acc, sale) => {
                 const day = sale.date.toDate().toISOString().split('T')[0];
-                if (!acc[day]) {
-                    acc[day] = 0;
-                }
+                if (!acc[day]) acc[day] = 0;
                 acc[day] += sale.weight;
                 return acc;
             }, {});
             const statsByDay = localWeighingData.reduce((acc, entry) => {
                 const day = entry.timestamp.toDate().toISOString().split('T')[0];
-                if (!acc[day]) {
-                    acc[day] = {
-                        totalBags: 0,
-                        recordCount: 0
-                    };
-                }
+                if (!acc[day]) acc[day] = { totalBags: 0, recordCount: 0 };
                 acc[day].totalBags += entry.bags;
                 acc[day].recordCount++;
                 return acc;
@@ -1323,9 +1373,7 @@
                 const nextDayWeight = salesWeightByDay[nextDayKey] || 0;
                 const averageWeight = (nextDayWeight > 0 && stats.totalBags > 0) ? (nextDayWeight / stats.totalBags) : 0;
                 const formattedDate = new Date(day).toLocaleDateString('th-TH', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
+                    year: 'numeric', month: 'long', day: 'numeric'
                 });
                 const row = document.createElement('tr');
                 row.className = 'bg-white border-b hover:bg-stone-50';
@@ -1338,48 +1386,54 @@
                 historyBody.appendChild(row);
             });
         }
+        
+        // MODIFIED: All changes for receipt formatting are here
         function createPrintableReceipt(sale) {
             const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
+            const roundedTotal = Math.floor(sale.total); // Round down total
+
             const generateSingleReceiptHTML = (title, isCopy = false) => `
-                <div class="w-1/2 p-4 text-xs relative" style="border: 2px dashed #9ca3af; height: 12cm; float: left; page-break-inside: avoid; display: flex; flex-direction: column;">
+                <div style="width: 50%; padding: 0.5rem; text-align: left; font-size: 11px; border: 2px dashed #9ca3af; height: 11cm; display: flex; flex-direction: column; box-sizing: border-box;">
                     ${isCopy ? '<div class="watermark">สำเนา</div>' : ''}
-                    <div class="text-center mb-4">
+                    <div class="text-center mb-2">
                         <h2 class="text-base font-bold">${title}</h2>
-                        <h3 class="text-sm font-semibold mt-1">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</h3>
-                        <p class="text-xs text-stone-600">15/1 ม.6 ต.หนองโพนงาม อ.เกษตรสมบูรณ์ จ.ชัยภูมิ</p>
                     </div>
                     <div class="border-y border-dotted border-stone-400 py-1 mb-2">
-                        <div class="flex justify-between"><span>เลขที่:</span><span>${sale.receiptId || 'N/A'}</span></div>
-                        <div class="flex justify-between mt-1"><span>วันที่:</span><span>${saleDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</span></div>
-                        <div class="flex justify-between mt-1"><span>ตาชั่งที่:</span><span>${sale.scaleNumber || '-'}</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span>เลขที่:</span><span>${sale.receiptId || 'N/A'}</span></div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 2px;"><span>วันที่:</span><span>${saleDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</span></div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 2px;"><span>ตาชั่งที่:</span><span>${sale.scaleNumber || '-'}</span></div>
                     </div>
-                    <div class="mb-2"><strong>ผู้ขาย:</strong> <span class="font-bold text-xl">${sale.seller}</span></div>
-                    <table class="w-full my-1">
+                    <div class="mb-2"><strong>ผู้ขาย:</strong> <span style="font-size: 16px; font-weight: bold;">${sale.seller}</span></div>
+                    <table style="width: 100%; margin: 4px 0;">
                         <thead class="border-y border-dotted border-stone-400">
-                            <tr><th class="py-1 text-left font-semibold">รายการ</th><th class="py-1 text-right font-semibold">ยอดรวม (บาท)</th></tr>
+                            <tr><th style="padding: 4px 0; text-align: left;">รายการ</th><th style="padding: 4px 0; text-align: right;">ยอดรวม (บาท)</th></tr>
                         </thead>
                         <tbody class="border-b border-dotted border-stone-400">
                              <tr>
-                                 <td class="py-2 align-top">
-                                     ค่ายางก้อนถ้วย ${sale.receiptType ? `<span class="font-bold">(${sale.receiptType})</span>` : ''}
-                                     <span class="block text-xs text-stone-600">น้ำหนัก: ${sale.weight.toFixed(2)} กก. @ ${sale.price.toFixed(2)} บาท/กก. (จำนวน ${sale.bagsCount || '-'} ถุง)</span>
+                                 <td style="padding: 6px 0; vertical-align: top;">
+                                     ค่ายางก้อนถ้วย ${sale.receiptType ? `<strong>(${sale.receiptType})</strong>` : ''}
+                                     <span style="display: block; font-size: 10px;">น้ำหนัก: ${sale.weight.toFixed(2)} กก. @ ${sale.price.toFixed(2)} บาท/กก. (${sale.bagsCount || '-'} ถุง)</span>
                                  </td>
-                                 <td class="text-right align-top pt-2">${sale.total.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                 <td style="padding: 6px 0; vertical-align: top; text-align: right;">${roundedTotal.toLocaleString('th-TH')}</td>
                              </tr>
                         </tbody>
                         <tfoot>
-                            <tr class="font-bold"><td class="py-2 text-base">รวมเป็นเงิน</td><td class="text-right text-xl">${sale.total.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td></tr>
+                            <tr style="font-weight: bold;"><td style="padding: 6px 0; font-size: 14px;">รวมเป็นเงิน</td><td style="text-align: right; font-size: 18px;">${roundedTotal.toLocaleString('th-TH')}</td></tr>
                         </tfoot>
                     </table>
-                    <div class="flex-grow"></div>
-                    <div class="text-xs text-stone-500 mt-2">พิมพ์ครั้งที่: ${sale.printCount || 1}</div>
-                    <div class="text-center mt-4">
-                         <div><p class="pb-1">........................................</p><p>(ผู้จ่ายเงิน)</p></div>
+                    <div style="flex-grow: 1;"></div>
+                    <div style="font-size: 10px;">พิมพ์ครั้งที่: ${sale.printCount || 1}</div>
+                    <div style="text-align: center; margin-top: 1rem;">
+                         <div><p style="padding-bottom: 4px;">........................................</p><p>(ผู้จ่ายเงิน)</p></div>
                     </div>
                 </div>`;
-            ui.printArea.innerHTML = `<div style="overflow: auto;">${generateSingleReceiptHTML('ใบเสร็จรับเงิน (ต้นฉบับ)')}${generateSingleReceiptHTML('ใบเสร็จรับเงิน (สำเนา)', true)}</div>`;
+
+            // MODIFIED: Using flexbox for side-by-side layout
+            ui.printArea.innerHTML = `<div style="display: flex; width: 100%;">${generateSingleReceiptHTML('ใบเสร็จรับเงิน (ต้นฉบับ)')}${generateSingleReceiptHTML('ใบเสร็จรับเงิน (สำเนา)', true)}</div>`;
             window.print();
         }
+
+        // MODIFIED: Removed cooperative name header
         function createDailySummaryReport() {
             const reportDateStr = ui.reportDateSelect.value;
             if (!reportDateStr) {
@@ -1388,10 +1442,7 @@
             const dateParts = reportDateStr.split('-');
             const reportDate = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2]));
             const formattedDate = reportDate.toLocaleDateString('th-TH', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                timeZone: 'UTC'
+                year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC'
             });
             const reportStart = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2]));
             const reportEnd = new Date(reportStart.getTime() + (24 * 60 * 60 * 1000) - 1);
@@ -1416,10 +1467,9 @@
                 </tr>
             `).join('');
             const reportHTML = `
-                <div class="p-4 bg-white text-black">
+                <div class="p-8 bg-white text-black">
                     <div class="text-center mb-4">
-                        <h2 class="text-xl font-bold">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</h2>
-                        <h3 class="text-lg">รายงานการชั่งยางประจำวันที่ ${formattedDate}</h3>
+                        <h3 class="text-lg font-bold">รายงานการชั่งยางประจำวันที่ ${formattedDate}</h3>
                     </div>
                     <table class="w-full text-sm border-collapse border border-black">
                         <thead class="bg-stone-200">
@@ -1448,24 +1498,21 @@
             ui.printArea.innerHTML = reportHTML;
             window.print();
         }
+        
         function clearForm() {
             ui.sellerNameInput.value = '';
             ui.receiptBagsCount.value = '';
-            // Clear type selection
             const typeRadios = document.querySelectorAll('.receipt-type-radio');
             typeRadios.forEach(radio => radio.checked = false);
-            if (isTypeLocked) {
-                toggleTypeLock(); // Unlock it
-            }
+            if (isTypeLocked) toggleTypeLock();
             ui.weightInputsContainer.querySelectorAll('.weight-input').forEach(input => input.value = '');
-            if (!isPriceLocked) {
-                ui.pricePerKgInput.value = '';
-            }
+            if (!isPriceLocked) ui.pricePerKgInput.value = '';
             editingId = null;
             ui.saveButton.textContent = 'บันทึกข้อมูล';
             ui.cancelEditButton.classList.add('hidden');
             calculateTotals();
         }
+        
         function togglePriceLock() {
             isPriceLocked = !isPriceLocked;
             if (isPriceLocked) {
@@ -1485,6 +1532,7 @@
                 ui.pricePerKgInput.focus();
             }
         }
+        
         function toggleTypeLock() {
             isTypeLocked = !isTypeLocked;
             const typeRadios = document.querySelectorAll('.receipt-type-radio');
@@ -1502,6 +1550,7 @@
                 ui.typeLockBtn.classList.replace('hover:bg-sky-600', 'hover:bg-gray-500');
             }
         }
+        
         async function handleSave() {
             if (!salesCollectionRef || !countersDocRef) return showAlert('ยังไม่พร้อมใช้งาน กรุณารอสักครู่');
             const seller = ui.sellerNameInput.value.trim();
@@ -1513,33 +1562,18 @@
             const total = parseFloat(ui.totalAmountEl.textContent.replace(/,/g, '')) || 0;
             const weightInputs = Array.from(ui.weightInputsContainer.querySelectorAll('.weight-input')).map(input => parseFloat(input.value) || 0).filter(v => v > 0);
             const receiptType = document.querySelector('input[name="receipt_type"]:checked')?.value || null;
-            if (!scaleNumber) {
-                return showAlert('กรุณาเลือกตาชั่งสำหรับออกใบเสร็จก่อน');
-            }
-            if (weightInputs.length === 0 || !seller || !date || weight <= 0 || price <= 0) {
-                return showAlert('กรุณากรอกข้อมูลให้ครบถ้วน: ชื่อผู้ขาย, วันที่, น้ำหนัก และราคา');
-            }
-            if (total <= 0) {
-                return showAlert('ยอดรวมต้องมากกว่า 0 บาท');
-            }
-            const saleData = {
-                seller,
-                date,
-                scaleNumber,
-                bagsCount,
-                weight,
-                weights: weightInputs,
-                price,
-                total,
-                receiptType, // Save the selected type
-                timestamp: new Date(),
-                userId
-            };
+
+            if (!scaleNumber) return showAlert('กรุณาเลือกตาชั่งสำหรับออกใบเสร็จก่อน');
+            if (weightInputs.length === 0 || !seller || !date || weight <= 0 || price <= 0) return showAlert('กรุณากรอกข้อมูลให้ครบถ้วน: ชื่อผู้ขาย, วันที่, น้ำหนัก และราคา');
+            if (total <= 0) return showAlert('ยอดรวมต้องมากกว่า 0 บาท');
+            
+            const saleData = { seller, date, scaleNumber, bagsCount, weight, weights: weightInputs, price, total, receiptType, timestamp: new Date(), userId };
+            
             ui.saveButton.disabled = true;
             ui.saveButton.textContent = 'กำลังบันทึก...';
+            
             try {
                 if (editingId) {
-                    // --- UPDATE EXISTING SALE ---
                     const originalDoc = localSalesData.find(s => s.id === editingId);
                     if (originalDoc) {
                         saleData.dailyQueueNumber = originalDoc.dailyQueueNumber;
@@ -1550,38 +1584,25 @@
                     showAlert('อัปเดตข้อมูลสำเร็จ');
                     clearForm();
                 } else {
-                    // --- CREATE NEW SALE USING TRANSACTION ---
                     await runTransaction(db, async (transaction) => {
                         const counterDoc = await transaction.get(countersDocRef);
-                        const dateKey = getUTCDateKey(date); // YYYY-MM-DD
-                        let nextQueueNumber = 1;
-                        if (counterDoc.exists() && counterDoc.data()[dateKey]) {
-                            nextQueueNumber = counterDoc.data()[dateKey] + 1;
-                        }
-                        let nextReceiptIndex = 1;
-                        if (counterDoc.exists() && counterDoc.data().lastReceiptIndex) {
-                            nextReceiptIndex = counterDoc.data().lastReceiptIndex + 1;
-                        }
+                        const dateKey = getUTCDateKey(date);
+                        let nextQueueNumber = (counterDoc.exists() && counterDoc.data()[dateKey]) ? counterDoc.data()[dateKey] + 1 : 1;
+                        let nextReceiptIndex = (counterDoc.exists() && counterDoc.data().lastReceiptIndex) ? counterDoc.data().lastReceiptIndex + 1 : 1;
                         const now = new Date();
                         const year = now.getFullYear().toString().slice(-2);
                         const month = (now.getMonth() + 1).toString().padStart(2, '0');
                         const day = now.getDate().toString().padStart(2, '0');
-                        const newReceiptId = `${year}${month}${day}-${String(nextReceiptIndex).padStart(4, '0')}`;
                         saleData.dailyQueueNumber = nextQueueNumber;
-                        saleData.receiptId = newReceiptId;
+                        saleData.receiptId = `${year}${month}${day}-${String(nextReceiptIndex).padStart(4, '0')}`;
                         saleData.printCount = 0;
-                        // Update counter
-                        const newCounterData = {
-                            [dateKey]: nextQueueNumber,
-                            lastReceiptIndex: nextReceiptIndex
-                        };
+                        const newCounterData = { [dateKey]: nextQueueNumber, lastReceiptIndex: nextReceiptIndex };
                         transaction.set(countersDocRef, newCounterData, { merge: true });
-                        // Create new sale document
                         transaction.set(doc(salesCollectionRef), saleData);
                     });
                     showAlert('บันทึกข้อมูลสำเร็จ');
                     clearForm();
-                    populateSellerDatalist(scaleNumber); // Refresh datalist after successful save
+                    populateSellerDatalist(scaleNumber);
                 }
             } catch (error) {
                 console.error("Error saving document: ", error);
@@ -1591,6 +1612,7 @@
                 ui.saveButton.textContent = editingId ? 'อัปเดตข้อมูล' : 'บันทึกข้อมูล';
             }
         }
+        
         function handleTableClick(e) {
             const target = e.target.closest('button');
             if (!target) return;
@@ -1608,16 +1630,15 @@
                 });
             } else if (target.classList.contains('edit-btn')) {
                 editingId = id;
-                if(saleToProcess.scaleNumber) {
+                if (saleToProcess.scaleNumber) {
                     const scaleBtn = ui.receiptScaleSubTabs.querySelector(`.receipt-scale-sub-btn[data-scale="${saleToProcess.scaleNumber}"]`);
-                    if(scaleBtn) scaleBtn.click();
+                    if (scaleBtn) scaleBtn.click();
                 }
                 ui.sellerNameInput.value = saleToProcess.seller;
                 ui.receiptBagsCount.value = saleToProcess.bagsCount || '';
                 ui.receiptDateInput.value = saleToProcess.date.toDate().toISOString().split('T')[0];
                 ui.pricePerKgInput.value = saleToProcess.price;
-                // Set receipt type
-                if (isTypeLocked) toggleTypeLock(); // Ensure unlocked for editing
+                if (isTypeLocked) toggleTypeLock();
                 document.querySelectorAll('.receipt-type-radio').forEach(radio => {
                     radio.checked = (radio.value === saleToProcess.receiptType);
                 });
@@ -1630,20 +1651,13 @@
                 ui.cancelEditButton.classList.remove('hidden');
                 switchToTab('tab-receipt');
                 _switchToSubTab('receipt', 'receipt-form');
-                window.scrollTo({
-                    top: 0,
-                    behavior: 'smooth'
-                });
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             } else if (target.classList.contains('reprint-btn')) {
                 showConfirm('ยืนยันการพิมพ์ใช่หรือไม่? ระบบจะนับจำนวนครั้งที่พิมพ์', async () => {
                     try {
                         const currentCount = saleToProcess.printCount || 0;
-                        await updateDoc(doc(salesCollectionRef, id), {
-                            printCount: currentCount + 1
-                        });
-                        const updatedSaleDataForPrint = { ...saleToProcess,
-                            printCount: currentCount + 1
-                        };
+                        await updateDoc(doc(salesCollectionRef, id), { printCount: currentCount + 1 });
+                        const updatedSaleDataForPrint = { ...saleToProcess, printCount: currentCount + 1 };
                         createPrintableReceipt(updatedSaleDataForPrint);
                     } catch (error) {
                         showAlert(`เกิดข้อผิดพลาดในการอัปเดตสถานะ: ${error.message}`);
@@ -1651,10 +1665,12 @@
                 });
             }
         }
+        
         function updateDateDisplay() {
             const date = ui.receiptDateInput.valueAsDate;
             ui.dateDisplay.textContent = `(${(date || new Date()).toLocaleDateString('th-TH')})`;
         }
+        
         function createWeighingStationHTML(scaleId) {
             return `
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -1695,6 +1711,7 @@
                 </div>
             `;
         }
+        
         function renderWeighingStations() {
             for (let i = 1; i <= 4; i++) {
                 const tabContent = document.getElementById(`weighing-scale-${i}-content`);
@@ -1702,33 +1719,33 @@
                     tabContent.innerHTML = createWeighingStationHTML(i);
                     document.getElementById(`save-weighing-${i}`).addEventListener('click', saveWeighing);
                     document.getElementById(`weighing-table-body-${i}`).addEventListener('click', handleWeighingTableClick);
-                    document.getElementById(`print-weighing-history-${i}`).addEventListener('click', (e) => {
-                        printWeighingHistory(e.currentTarget.dataset.scale);
-                    });
-                    document.getElementById(`export-weighing-history-${i}`).addEventListener('click', (e) => {
-                        exportWeighingHistoryToXLSX(e.currentTarget.dataset.scale);
-                    });
+                    document.getElementById(`print-weighing-history-${i}`).addEventListener('click', (e) => printWeighingHistory(e.currentTarget.dataset.scale));
+                    document.getElementById(`export-weighing-history-${i}`).addEventListener('click', (e) => exportWeighingHistoryToXLSX(e.currentTarget.dataset.scale));
                 }
             }
         }
+        
+        // MODIFIED: Removed cooperative name header
         function printWeighingHistory(scaleId) {
             if (!localWeighingData) return showAlert('ข้อมูลการวางยางยังไม่ถูกโหลด');
             const scaleData = localWeighingData.filter(record => record.scaleId == scaleId);
-            if (scaleData.length === 0) {
-                return showAlert(`ไม่พบข้อมูลการวางยางย้อนหลังสำหรับตาชั่งที่ ${scaleId}`);
-            }
+            if (scaleData.length === 0) return showAlert(`ไม่พบข้อมูลการวางยางย้อนหลังสำหรับตาชั่งที่ ${scaleId}`);
             const uniqueDates = Array.from(new Set(scaleData.map(r => r.timestamp.toDate().toISOString().split('T')[0]))).sort((a, b) => new Date(b) - new Date(a));
             let modalContentHTML = `
                 <div class="space-y-2">
                     <label for="modal-date-select" class="block text-sm font-medium text-stone-700">กรุณาเลือกวันที่ที่ต้องการพิมพ์:</label>
                     <select id="modal-date-select" class="w-full p-2 border border-stone-300 rounded-md shadow-sm">
                         <option value="">-- เลือกวันที่ --</option>
-                        ${uniqueDates.map(dateStr => {                            const dateObj = new Date(dateStr);                            const formattedDate = dateObj.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });                            return `<option value="${dateStr}">${formattedDate}</option>`;                        }).join('')}
+                        ${uniqueDates.map(dateStr => {
+                            const dateObj = new Date(dateStr);
+                            const formattedDate = dateObj.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+                            return `<option value="${dateStr}">${formattedDate}</option>`;
+                        }).join('')}
                     </select>
                 </div>`;
             showModal(`พิมพ์รายงานย้อนหลัง (ตาชั่งที่ ${scaleId})`, modalContentHTML, [{
                 text: '🖨️ พิมพ์รายงาน',
-                classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-sky-600 text-base font-medium text-white hover:bg-sky-700 sm:ml-3 sm:w-auto sm:text-sm',
+                classes: 'w-full sm:w-auto inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-sky-600 text-base font-medium text-white hover:bg-sky-700',
                 onClick: () => {
                     const selectedDate = document.getElementById('modal-date-select').value;
                     if (!selectedDate) {
@@ -1739,53 +1756,47 @@
                         return false;
                     }
                     const reportData = scaleData.filter(record => record.timestamp.toDate().toISOString().split('T')[0] === selectedDate).sort((a, b) => (a.dailyQueueNumber || 0) - (b.dailyQueueNumber || 0));
-                    const formattedPrintDate = new Date(selectedDate).toLocaleDateString('th-TH', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                    });
-                    const tableRows = reportData.map(record => {
-                        return `<tr class="border-b">
-                                    <td class="px-2 py-2 text-center">${record.dailyQueueNumber}</td>
-                                    <td class="px-2 py-2">${record.sellerName}</td>
-                                    <td class="px-2 py-2 text-right">${record.bags}</td>
-                                    <td class="px-2 py-2 border-l border-black"></td>
-                                </tr>`;
-                    }).join('');
+                    const formattedPrintDate = new Date(selectedDate).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+                    const tableRows = reportData.map(record => `
+                        <tr class="border-b">
+                            <td class="px-2 py-2 text-center">${record.dailyQueueNumber}</td>
+                            <td class="px-2 py-2">${record.sellerName}</td>
+                            <td class="px-2 py-2 text-right">${record.bags}</td>
+                            <td class="px-2 py-2 border-l border-black"></td>
+                        </tr>`).join('');
                     const reportHTML = `
-                            <div class="p-4 bg-white text-black">
-                                <div class="text-center mb-4">
-                                    <h2 class="text-xl font-bold">รายงานการรับวางยาง ประจำวันที่ ${formattedPrintDate}</h2>
-                                    <h3 class="text-lg">ตาชั่งที่ ${scaleId}</h3>
-                                    <p>สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</p>
-                                </div>
-                                <table class="w-full text-sm border-collapse border border-black">
-                                    <thead class="bg-stone-200">
-                                        <tr class="border-b-2 border-black">
-                                            <th class="px-2 py-2 border-r border-black" style="width: 10%;">ลำดับ</th>
-                                            <th class="px-2 py-2 border-r border-black" style="width: 40%;">ชื่อผู้ขาย</th>
-                                            <th class="px-2 py-2 border-r border-black text-right" style="width: 20%;">จำนวนถุง</th>
-                                            <th class="px-2 py-2 border-r border-black" style="width: 30%;">น้ำหนักที่ชั่ง (กก.)</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>${tableRows}</tbody>
-                                </table>
-                            </div>`;
+                        <div class="p-8 bg-white text-black">
+                            <div class="text-center mb-4">
+                                <h2 class="text-xl font-bold">รายงานการรับวางยาง ประจำวันที่ ${formattedPrintDate}</h2>
+                                <h3 class="text-lg">ตาชั่งที่ ${scaleId}</h3>
+                            </div>
+                            <table class="w-full text-sm border-collapse border border-black">
+                                <thead class="bg-stone-200">
+                                    <tr class="border-b-2 border-black">
+                                        <th class="px-2 py-2 border-r border-black" style="width: 10%;">ลำดับ</th>
+                                        <th class="px-2 py-2 border-r border-black" style="width: 40%;">ชื่อผู้ขาย</th>
+                                        <th class="px-2 py-2 border-r border-black text-right" style="width: 20%;">จำนวนถุง</th>
+                                        <th class="px-2 py-2 border-r border-black" style="width: 30%;">น้ำหนักที่ชั่ง (กก.)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${tableRows}</tbody>
+                            </table>
+                        </div>`;
                     ui.printArea.innerHTML = reportHTML;
                     setTimeout(() => window.print(), 100);
                     return true;
                 }
             }, {
                 text: 'ยกเลิก',
-                classes: 'mt-3 w-full inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 sm:mt-0 sm:w-auto sm:text-sm'
+                classes: 'w-full sm:w-auto mt-2 sm:mt-0 inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50'
             }]);
         }
+        
         function exportWeighingHistoryToXLSX(scaleId) {
             if (!localWeighingData) return showAlert('ข้อมูลการวางยางยังไม่ถูกโหลด');
             const scaleData = localWeighingData.filter(record => record.scaleId == scaleId).sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
-            if (scaleData.length === 0) {
-                return showAlert(`ไม่พบข้อมูลการวางยางย้อนหลังสำหรับตาชั่งที่ ${scaleId} เพื่อ Export`);
-            }
+            if (scaleData.length === 0) return showAlert(`ไม่พบข้อมูลการวางยางย้อนหลังสำหรับตาชั่งที่ ${scaleId} เพื่อ Export`);
+            
             const headers = ['วันที่', 'เวลา', 'ชื่อผู้ขาย', 'จำนวนถุง'];
             const exportData = [headers];
             scaleData.forEach(record => {
@@ -1793,19 +1804,12 @@
                 exportData.push([timestamp.toLocaleDateString('th-TH'), timestamp.toLocaleTimeString('th-TH'), record.sellerName, record.bags]);
             });
             const ws = XLSX.utils.aoa_to_sheet(exportData);
-            ws['!cols'] = [{
-                wch: 15
-            }, {
-                wch: 15
-            }, {
-                wch: 30
-            }, {
-                wch: 15
-            }];
+            ws['!cols'] = [{ wch: 15 }, { wch: 15 }, { wch: 30 }, { wch: 15 }];
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, `ประวัติตาชั่งที่ ${scaleId}`);
             XLSX.writeFile(wb, `weighing-history-scale-${scaleId}.xlsx`);
         }
+        
         function exportToExcel() {
             if (localSalesData.length === 0) return showAlert('ไม่มีข้อมูลการขายสำหรับ Export');
             const salesByDate = localSalesData.reduce((acc, sale) => {
@@ -1825,27 +1829,10 @@
                     exportData.push([sale.dailyQueueNumber || '', sale.date.toDate().toLocaleDateString('th-TH'), sale.seller, sale.weight, sale.price, sale.total, sale.scaleNumber || '']);
                 });
                 const ws = XLSX.utils.aoa_to_sheet(exportData);
-                ws['!cols'] = [{
-                    wch: 5
-                }, {
-                    wch: 15
-                }, {
-                    wch: 25
-                }, {
-                    wch: 15
-                }, {
-                    wch: 15
-                }, {
-                    wch: 15
-                }, {
-                    wch: 10
-                }];
+                ws['!cols'] = [{ wch: 5 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 10 }];
                 for (let R = 1; R < exportData.length; ++R) {
                     for (let C of [3, 4, 5]) {
-                        const cell_ref = XLSX.utils.encode_cell({
-                            c: C,
-                            r: R
-                        });
+                        const cell_ref = XLSX.utils.encode_cell({ c: C, r: R });
                         if (ws[cell_ref]) {
                             ws[cell_ref].t = 'n';
                             ws[cell_ref].z = '#,##0.00';
@@ -1859,6 +1846,7 @@
             const today = new Date().toISOString().slice(0, 10);
             XLSX.writeFile(wb, `daily-sales-report-${today}.xlsx`);
         }
+        
         async function saveWeighing(event) {
             if (!weighingsCollectionRef) return showAlert('ยังไม่พร้อมใช้งาน กรุณารอสักครู่');
             const scaleId = parseInt(event.target.dataset.scale);
@@ -1869,24 +1857,14 @@
             if (!sellerName || !bags || bags <= 0) return showAlert('กรุณากรอกชื่อผู้ขายและจำนวนถุงให้ถูกต้อง');
             try {
                 if (editingWeighingId) {
-                    await updateDoc(doc(weighingsCollectionRef, editingWeighingId), {
-                        sellerName,
-                        bags
-                    });
+                    await updateDoc(doc(weighingsCollectionRef, editingWeighingId), { sellerName, bags });
                     editingWeighingId = null;
                 } else {
                     const todayStart = new Date();
                     todayStart.setHours(0, 0, 0, 0);
                     const todaysEntriesOnScale = localWeighingData.filter(d => d.scaleId === scaleId && d.timestamp.toDate() >= todayStart);
                     const newQueueNumber = todaysEntriesOnScale.length + 1;
-                    await addDoc(weighingsCollectionRef, {
-                        sellerName,
-                        bags,
-                        scaleId,
-                        timestamp: new Date(),
-                        userId,
-                        dailyQueueNumber: newQueueNumber
-                    });
+                    await addDoc(weighingsCollectionRef, { sellerName, bags, scaleId, timestamp: new Date(), userId, dailyQueueNumber: newQueueNumber });
                 }
                 sellerNameInput.value = '';
                 bagsInput.value = '';
@@ -1895,11 +1873,13 @@
                 showAlert(`เกิดข้อผิดพลาดในการบันทึกน้ำหนัก: ${error.message}`);
             }
         }
+        
         function calculateSummaryTotalWeight() {
             const totalBags = parseFloat(ui.summaryTotalBags.textContent) || 0;
             const multiplier = parseFloat(ui.summaryMultiplierWeight.value) || 0;
             ui.summaryCalculatedWeight.textContent = (totalBags * multiplier).toFixed(2);
         }
+        
         function updateWeighingSummary() {
             let totalBags = 0;
             for (const scaleId in dailyWeighingData) {
@@ -1908,6 +1888,7 @@
             ui.summaryTotalBags.textContent = totalBags;
             calculateSummaryTotalWeight();
         }
+        
         async function deleteAllTodaysWeighings() {
             showConfirm(
                 'คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลการวางยางทั้งหมดของวันนี้? <strong>การกระทำนี้ไม่สามารถย้อนกลับได้</strong>',
@@ -1919,9 +1900,7 @@
                         const querySnapshot = await getDocs(q);
                         if (querySnapshot.empty) return showAlert('ไม่พบข้อมูลการวางยางของวันนี้ให้ลบ');
                         const batch = writeBatch(db);
-                        querySnapshot.forEach(doc => {
-                            batch.delete(doc.ref);
-                        });
+                        querySnapshot.forEach(doc => batch.delete(doc.ref));
                         await batch.commit();
                         ui.summaryMultiplierWeight.value = '';
                         showAlert(`ลบข้อมูลการวางยางของวันนี้จำนวน ${querySnapshot.size} รายการเรียบร้อยแล้ว`);
@@ -1931,6 +1910,7 @@
                 }
             );
         }
+        
         function setupWeighingListeners() {
             if (!weighingsCollectionRef) return;
             for (let i = 1; i <= 4; i++) {
@@ -1942,10 +1922,7 @@
                     const tableBody = document.getElementById(`weighing-table-body-${i}`);
                     if (!tableBody) return;
                     tableBody.innerHTML = '';
-                    const docs = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }));
+                    const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     const todaysDocs = docs.filter(data => data.timestamp.toDate() >= todayStart);
                     dailyWeighingData[i] = todaysDocs;
                     updateWeighingSummary();
@@ -1974,6 +1951,7 @@
                 });
             }
         }
+        
         function populateSellerDatalist(scaleNumber) {
             if (!localWeighingData || !localSalesData || !scaleNumber) {
                 if (ui.sellerNameList) ui.sellerNameList.innerHTML = '';
@@ -1984,13 +1962,13 @@
             const mostRecentWeighingDate = allWeighingDates.sort().pop();
             const recentWeighingSellers = new Set(
                 localWeighingData
-                    .filter(w => w.scaleId == scaleNumber && getUTCDateKey(w.timestamp.toDate()) === mostRecentWeighingDate)
-                    .map(w => w.sellerName)
+                .filter(w => w.scaleId == scaleNumber && getUTCDateKey(w.timestamp.toDate()) === mostRecentWeighingDate)
+                .map(w => w.sellerName)
             );
             const sellersWithReceiptsToday = new Set(
                 localSalesData
-                    .filter(s => getUTCDateKey(s.date.toDate()) === mostRecentWeighingDate && s.scaleNumber == scaleNumber)
-                    .map(s => s.seller)
+                .filter(s => getUTCDateKey(s.date.toDate()) === mostRecentWeighingDate && s.scaleNumber == scaleNumber)
+                .map(s => s.seller)
             );
             const availableSellers = [...recentWeighingSellers].filter(name => !sellersWithReceiptsToday.has(name));
             const datalist = ui.sellerNameList;
@@ -2003,31 +1981,29 @@
                 });
             }
         }
+        
         async function initializeFirebaseAndAuth() {
             if (isAppInitialized) return;
-            if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
-                return showAlert('การตั้งค่า Firebase ไม่ถูกต้อง ไม่สามารถเชื่อมต่อฐานข้อมูลได้');
-            }
+            if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) return showAlert('การตั้งค่า Firebase ไม่ถูกต้อง ไม่สามารถเชื่อมต่อฐานข้อมูลได้');
+            
             try {
                 const app = initializeApp(firebaseConfig);
                 getAnalytics(app);
                 auth = getAuth(app);
                 db = getFirestore(app);
+                
                 onAuthStateChanged(auth, async (user) => {
                     if (user && !isAppInitialized) {
                         userId = user.uid;
-                        // --- Define collection references ---
                         const appDataPath = `artifacts/${appId}/public/data`;
                         salesCollectionRef = collection(db, `${appDataPath}/sales`);
                         weighingsCollectionRef = collection(db, `${appDataPath}/weighings`);
                         truckLoadsCollectionRef = collection(db, `${appDataPath}/truckLoads`);
                         countersDocRef = doc(db, `${appDataPath}/counters`, 'salesCounter');
+                        
                         if (unsubscribeSales) unsubscribeSales();
                         unsubscribeSales = onSnapshot(query(salesCollectionRef), (snapshot) => {
-                            localSalesData = snapshot.docs.map(doc => ({
-                                id: doc.id,
-                                ...doc.data()
-                            }));
+                            localSalesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                             localSalesData.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
                             filterAndRenderSalesTable();
                             renderDashboard();
@@ -2038,23 +2014,20 @@
                             calculateTruckSummary();
                             populateSellerDatalist(ui.selectedReceiptScale.value);
                         });
+                        
                         if (unsubscribeAllWeighings) unsubscribeAllWeighings();
                         unsubscribeAllWeighings = onSnapshot(query(weighingsCollectionRef), (snapshot) => {
-                            localWeighingData = snapshot.docs.map(doc => ({
-                                id: doc.id,
-                                ...doc.data()
-                            }));
+                            localWeighingData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                             renderWeighingHistory();
                             populateSellerDatalist(ui.selectedReceiptScale.value);
                         });
+
                         if (unsubscribeTruckLoads) unsubscribeTruckLoads();
                         unsubscribeTruckLoads = onSnapshot(query(truckLoadsCollectionRef), (snapshot) => {
-                            localTruckLoads = snapshot.docs.map(doc => ({
-                                id: doc.id,
-                                ...doc.data()
-                            }));
+                            localTruckLoads = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                             calculateTruckSummary();
                         });
+
                         setupWeighingListeners();
                         isAppInitialized = true;
                     } else if (!user) {
@@ -2065,13 +2038,14 @@
                         Object.keys(unsubscribeWeighings).forEach(k => unsubscribeWeighings[k]());
                     }
                 });
-                if (!auth.currentUser) {
-                    await signInAnonymously(auth);
-                }
+                
+                if (!auth.currentUser) await signInAnonymously(auth);
+
             } catch (error) {
                 showAlert(`เกิดข้อผิดพลาดในการเริ่มต้นระบบ: ${error.message}`);
             }
         }
+        
         async function handleWeighingTableClick(e) {
             const target = e.target.closest('button');
             if (!target) return;
@@ -2100,7 +2074,7 @@
                 `;
                 showModal(`แก้ไขลำดับ`, modalContentHTML, [{
                     text: 'บันทึก',
-                    classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:w-auto sm:text-sm',
+                    classes: 'w-full sm:w-auto inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700',
                     onClick: async () => {
                         const inputEl = document.getElementById('modal-edit-queue-input');
                         const errorEl = document.getElementById('edit-queue-error');
@@ -2124,9 +2098,7 @@
                             return false;
                         }
                         try {
-                            await updateDoc(doc(weighingsCollectionRef, id), {
-                                dailyQueueNumber: newQueue
-                            });
+                            await updateDoc(doc(weighingsCollectionRef, id), { dailyQueueNumber: newQueue });
                             showAlert('แก้ไขลำดับสำเร็จ');
                             return true;
                         } catch (error) {
@@ -2137,72 +2109,19 @@
                     }
                 }, {
                     text: 'ยกเลิก',
-                    classes: 'mt-3 w-full inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 sm:mt-0 sm:w-auto sm:text-sm'
+                    classes: 'w-full sm:w-auto mt-2 sm:mt-0 inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50'
                 }]);
             }
         }
-        const scaleColorPalette = [{
-            bg: 'bg-red-100',
-            border: 'border-red-300',
-            textH: 'text-red-800',
-            textP: 'text-red-900',
-            textS: 'text-red-700'
-        }, {
-            bg: 'bg-sky-100',
-            border: 'border-sky-300',
-            textH: 'text-sky-800',
-            textP: 'text-sky-900',
-            textS: 'text-sky-700'
-        }, {
-            bg: 'bg-green-100',
-            border: 'border-green-300',
-            textH: 'text-green-800',
-            textP: 'text-green-900',
-            textS: 'text-green-700'
-        }, {
-            bg: 'bg-yellow-100',
-            border: 'border-yellow-300',
-            textH: 'text-yellow-800',
-            textP: 'text-yellow-900',
-            textS: 'text-yellow-700'
-        }, {
-            bg: 'bg-indigo-100',
-            border: 'border-indigo-300',
-            textH: 'text-indigo-800',
-            textP: 'text-indigo-900',
-            textS: 'text-indigo-700'
-        }, {
-            bg: 'bg-pink-100',
-            border: 'border-pink-300',
-            textH: 'text-pink-800',
-            textP: 'text-pink-900',
-            textS: 'text-pink-700'
-        }, {
-            bg: 'bg-purple-100',
-            border: 'border-purple-300',
-            textH: 'text-purple-800',
-            textP: 'text-purple-900',
-            textS: 'text-purple-700'
-        }, {
-            bg: 'bg-cyan-100',
-            border: 'border-cyan-300',
-            textH: 'text-cyan-800',
-            textP: 'text-cyan-900',
-            textS: 'text-cyan-700'
-        }, {
-            bg: 'bg-orange-100',
-            border: 'border-orange-300',
-            textH: 'text-orange-800',
-            textP: 'text-orange-900',
-            textS: 'text-orange-700'
-        }, ];
-        const defaultScaleColor = {
-            bg: 'bg-stone-100',
-            border: 'border-stone-300',
-            textH: 'text-stone-800',
-            textP: 'text-stone-900',
-            textS: 'text-stone-700'
-        };
+        
+        const scaleColorPalette = [
+            { bg: 'bg-red-100', border: 'border-red-300', textH: 'text-red-800', textP: 'text-red-900', textS: 'text-red-700' }, 
+            { bg: 'bg-sky-100', border: 'border-sky-300', textH: 'text-sky-800', textP: 'text-sky-900', textS: 'text-sky-700' },
+            { bg: 'bg-green-100', border: 'border-green-300', textH: 'text-green-800', textP: 'text-green-900', textS: 'text-green-700' },
+            { bg: 'bg-yellow-100', border: 'border-yellow-300', textH: 'text-yellow-800', textP: 'text-yellow-900', textS: 'text-yellow-700' }
+        ];
+        const defaultScaleColor = { bg: 'bg-stone-100', border: 'border-stone-300', textH: 'text-stone-800', textP: 'text-stone-900', textS: 'text-stone-700' };
+        
         function renderScaleSummaries() {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
@@ -2212,13 +2131,7 @@
                 todayStart.setHours(0, 0, 0, 0);
                 if (saleDate >= todayStart) {
                     const scale = sale.scaleNumber || 'ไม่ระบุ';
-                    if (!acc[scale]) {
-                        acc[scale] = {
-                            totalWeight: 0,
-                            totalAmount: 0,
-                            count: 0
-                        };
-                    }
+                    if (!acc[scale]) acc[scale] = { totalWeight: 0, totalAmount: 0, count: 0 };
                     acc[scale].totalWeight += sale.weight;
                     acc[scale].totalAmount += sale.total;
                     acc[scale].count++;
@@ -2239,11 +2152,7 @@
                 totalAmountToday += summary.totalAmount;
                 let colors;
                 const scaleNum = parseInt(scale);
-                if (!isNaN(scaleNum) && scaleNum > 0) {
-                    colors = scaleColorPalette[(scaleNum - 1) % scaleColorPalette.length];
-                } else {
-                    colors = defaultScaleColor;
-                }
+                colors = (scaleNum > 0) ? scaleColorPalette[(scaleNum - 1) % scaleColorPalette.length] : defaultScaleColor;
                 const summaryHtml = `
                     <div class="${colors.bg} border ${colors.border} p-3 rounded-lg text-center shadow-sm">
                         <p class="text-sm font-medium ${colors.textH}">ตาชั่งที่ ${scale}</p>
@@ -2253,25 +2162,17 @@
                 `;
                 ui.salesSummaryByScale.insertAdjacentHTML('beforeend', summaryHtml);
             });
-            ui.summaryTodayTotalWeight.textContent = totalWeightToday.toLocaleString('th-TH', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
-            ui.summaryTodayTotalAmount.textContent = totalAmountToday.toLocaleString('th-TH', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
+            ui.summaryTodayTotalWeight.textContent = totalWeightToday.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            ui.summaryTodayTotalAmount.textContent = totalAmountToday.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             ui.salesSummaryTodayTotal.classList.remove('hidden');
         }
+        
         function filterAndRenderSalesTable() {
             const searchTerm = ui.searchBox.value.toLowerCase().trim();
             const selectedDate = ui.reportDateSelect.value;
             let dataToRender = localSalesData;
             if (selectedDate) {
-                dataToRender = dataToRender.filter(sale => {
-                    const saleDateKey = getUTCDateKey(sale.date.toDate());
-                    return saleDateKey === selectedDate;
-                });
+                dataToRender = dataToRender.filter(sale => getUTCDateKey(sale.date.toDate()) === selectedDate);
             } else if (!searchTerm) {
                 const todayStart = new Date();
                 todayStart.setHours(0, 0, 0, 0);
@@ -2291,6 +2192,7 @@
             }
             renderTable(dataToRender);
         }
+        
         function populateReportDateSelector() {
             const dateSet = new Set(localSalesData.map(sale => getUTCDateKey(sale.date.toDate())));
             const sortedDates = Array.from(dateSet).sort((a, b) => b.localeCompare(a));
@@ -2301,15 +2203,13 @@
                 option.value = dateStr;
                 const dateParts = dateStr.split('-');
                 option.textContent = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2])).toLocaleDateString('th-TH', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    timeZone: 'UTC'
+                    year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC'
                 });
                 ui.reportDateSelect.appendChild(option);
             });
             ui.reportDateSelect.value = currentValue;
         }
+        
         function populateTruckSummaryDateSelector() {
             const dateSet = new Set(localSalesData.map(sale => getUTCDateKey(sale.date.toDate())));
             const sortedDates = Array.from(dateSet).sort((a, b) => b.localeCompare(a));
@@ -2325,10 +2225,7 @@
                 option.value = dateStr;
                 const dateParts = dateStr.split('-');
                 option.textContent = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2])).toLocaleDateString('th-TH', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    timeZone: 'UTC'
+                    year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC'
                 });
                 selector.appendChild(option);
             });
@@ -2338,6 +2235,7 @@
                 selector.value = sortedDates[0];
             }
         }
+        
         function promptChangePassword() {
             const modalContentHTML = `
                 <div class="space-y-4 text-left">
@@ -2348,7 +2246,7 @@
                 </div>`;
             showModal('เปลี่ยนรหัสผ่าน', modalContentHTML, [{
                 text: 'ยืนยันการเปลี่ยนแปลง',
-                classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-amber-600 text-base font-medium text-white hover:bg-amber-700 sm:ml-3 sm:w-auto sm:text-sm',
+                classes: 'w-full sm:w-auto inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-amber-600 text-base font-medium text-white hover:bg-amber-700',
                 onClick: () => {
                     const oldPassword = document.getElementById('old-password-input').value;
                     const newPassword = document.getElementById('new-password-input').value;
@@ -2377,21 +2275,16 @@
                 }
             }, {
                 text: 'ยกเลิก',
-                classes: 'mt-3 w-full inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50 sm:mt-0 sm:w-auto sm:text-sm'
+                classes: 'w-full sm:w-auto mt-2 sm:mt-0 inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50'
             }]);
         }
+        
         async function backupData() {
             showAlert('กำลังเตรียมข้อมูลสำรอง...');
             try {
-                const backupObject = {
-                    sales: localSalesData,
-                    weighings: localWeighingData,
-                    truckLoads: localTruckLoads
-                };
+                const backupObject = { sales: localSalesData, weighings: localWeighingData, truckLoads: localTruckLoads };
                 const jsonString = JSON.stringify(backupObject, null, 2);
-                const blob = new Blob([jsonString], {
-                    type: 'application/json'
-                });
+                const blob = new Blob([jsonString], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -2406,23 +2299,16 @@
                 showAlert(`เกิดข้อผิดพลาดในการสำรองข้อมูล: ${error.message}`);
             }
         }
+        
         async function restoreDataFromFile(file) {
             const reader = new FileReader();
             reader.onload = async (e) => {
                 let data;
                 try {
                     data = JSON.parse(e.target.result);
-                    // --- Validation Step ---
-                    const isValid = (data.sales && Array.isArray(data.sales)) &&
-                        (data.weighings && Array.isArray(data.weighings)) &&
-                        (data.truckLoads && Array.isArray(data.truckLoads));
-                    if (!isValid) {
-                        throw new Error("ไฟล์มีโครงสร้างที่ไม่รู้จักหรือไม่สมบูรณ์ (ต้องมี sales, weighings, truckLoads เป็น array)");
-                    }
-                    // Check a sample record
-                    if (data.sales.length > 0 && (typeof data.sales[0].seller === 'undefined' || typeof data.sales[0].total === 'undefined')) {
-                        throw new Error("ข้อมูลใน 'sales' array ดูเหมือนจะไม่ถูกต้อง");
-                    }
+                    const isValid = (data.sales && Array.isArray(data.sales)) && (data.weighings && Array.isArray(data.weighings)) && (data.truckLoads && Array.isArray(data.truckLoads));
+                    if (!isValid) throw new Error("ไฟล์มีโครงสร้างที่ไม่รู้จักหรือไม่สมบูรณ์");
+                    if (data.sales.length > 0 && (typeof data.sales[0].seller === 'undefined' || typeof data.sales[0].total === 'undefined')) throw new Error("ข้อมูลใน 'sales' array ดูเหมือนจะไม่ถูกต้อง");
                 } catch (error) {
                     return showAlert(`ไฟล์สำรองข้อมูลไม่ถูกต้อง: ${error.message}`);
                 }
@@ -2430,7 +2316,6 @@
                     async () => {
                         showAlert('กำลังประมวลผล... กรุณาอย่าปิดหน้านี้');
                         try {
-                            // Step 1: Delete all old data using batch writes
                             const collections = [salesCollectionRef, weighingsCollectionRef, truckLoadsCollectionRef];
                             for (const collRef of collections) {
                                 if (!collRef) continue;
@@ -2441,11 +2326,9 @@
                                     await deleteBatch.commit();
                                 }
                             }
-                            // Step 2: Restore new data using batch writes
                             const restoreBatch = writeBatch(db);
                             data.sales.forEach(sale => {
                                 const newDocRef = doc(salesCollectionRef);
-                                // Re-create Date objects from Firestore's timestamp format in JSON
                                 if (sale.date && sale.date.seconds) sale.date = new Date(sale.date.seconds * 1000);
                                 if (sale.timestamp && sale.timestamp.seconds) sale.timestamp = new Date(sale.timestamp.seconds * 1000);
                                 restoreBatch.set(newDocRef, sale);
@@ -2471,6 +2354,7 @@
             };
             reader.readAsText(file);
         }
+        
         function confirmDeleteAllData() {
             showConfirm("คุณแน่ใจจริงๆ หรือว่าต้องการลบข้อมูลทั้งหมด? การกระทำนี้ไม่สามารถย้อนกลับได้!", () => {
                 showConfirm("นี่คือการยืนยันครั้งสุดท้าย! ข้อมูลการขาย, การรับวางยาง และการบันทึกขึ้นรถทั้งหมดจะถูกลบถาวร กด 'ยืนยัน' เพื่อดำเนินการต่อ", async () => {
@@ -2479,9 +2363,9 @@
                         const collections = [salesCollectionRef, weighingsCollectionRef, truckLoadsCollectionRef, countersDocRef];
                         for (const ref of collections) {
                             if (!ref) continue;
-                            if (ref.type === 'document') { // Handle document reference
+                            if (ref.type === 'document') {
                                 await deleteDoc(ref);
-                            } else { // Handle collection reference
+                            } else {
                                 const allDocsSnapshot = await getDocs(ref);
                                 if (!allDocsSnapshot.empty) {
                                     const batch = writeBatch(db);
@@ -2497,6 +2381,7 @@
                 });
             });
         }
+        
         function applyUserPermissions() {
             const username = sessionStorage.getItem('loggedInUser');
             if (!username || !users[username]) {
@@ -2511,32 +2396,19 @@
                 const tabId = btn.dataset.tab;
                 if (permissions.includes('all') || permissions.includes(tabId)) {
                     btn.style.display = 'inline-block';
-                    if (!firstVisibleTab) {
-                        firstVisibleTab = tabId;
-                    }
+                    if (!firstVisibleTab) firstVisibleTab = tabId;
                 } else {
                     btn.style.display = 'none';
                 }
             });
-            if (username === 'admin') {
-                ui.changePasswordBtn.style.display = 'block';
-            } else {
-                ui.changePasswordBtn.style.display = 'none';
-            }
-            if (firstVisibleTab) {
-                switchToTab(firstVisibleTab);
-            }
+            ui.changePasswordBtn.style.display = (username === 'admin') ? 'block' : 'none';
+            if (firstVisibleTab) switchToTab(firstVisibleTab);
         }
+
         function _switchToSubTab(type, targetId) {
             const context = {
-                'weighing': {
-                    contents: document.querySelectorAll('.weighing-sub-content'),
-                    buttons: document.querySelectorAll('.weighing-sub-btn')
-                },
-                'receipt': {
-                    contents: document.querySelectorAll('.receipt-sub-content'),
-                    buttons: document.querySelectorAll('.receipt-sub-btn')
-                }
+                'weighing': { contents: document.querySelectorAll('.weighing-sub-content'), buttons: document.querySelectorAll('.weighing-sub-btn') },
+                'receipt': { contents: document.querySelectorAll('.receipt-sub-content'), buttons: document.querySelectorAll('.receipt-sub-btn') }
             }[type];
             if (!context) return;
             context.contents.forEach(content => content.classList.remove('active'));
@@ -2545,7 +2417,6 @@
             const targetBtn = document.querySelector(`[data-subtab="${targetId}"]`);
             if (targetContent) targetContent.classList.add('active');
             if (targetBtn) targetBtn.classList.add('active');
-            // Special logic for receipt truck summary tab
             if (targetId === 'receipt-truck-summary') {
                 const dateSelector = ui.truckSummaryDate;
                 if (dateSelector.options.length > 0 && dateSelector.options[0].value) {
@@ -2554,6 +2425,7 @@
                 calculateTruckSummary();
             }
         }
+        
         document.addEventListener('DOMContentLoaded', () => {
             const handleLogin = () => {
                 const username = ui.usernameInput.value.trim().toLowerCase();
@@ -2566,9 +2438,7 @@
                     ui.loginError.classList.add('hidden');
                     ui.passwordInput.value = '';
                     applyUserPermissions();
-                    if (!isAppInitialized) {
-                        initializeFirebaseAndAuth();
-                    }
+                    if (!isAppInitialized) initializeFirebaseAndAuth();
                 } else {
                     ui.loginError.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
                     ui.loginError.classList.remove('hidden');
@@ -2576,6 +2446,7 @@
                     ui.passwordInput.focus();
                 }
             };
+            
             const loggedInUser = sessionStorage.getItem('loggedInUser');
             if (loggedInUser && users[loggedInUser]) {
                 ui.loginScreen.classList.add('hidden');
@@ -2586,25 +2457,21 @@
                 ui.loginScreen.classList.remove('hidden');
                 ui.appContainer.classList.add('hidden');
             }
+            
             ui.loginButton.addEventListener('click', handleLogin);
-            ui.passwordInput.addEventListener('keyup', (event) => {
-                if (event.key === 'Enter') {
-                    handleLogin();
-                }
-            });
+            ui.passwordInput.addEventListener('keyup', (event) => { if (event.key === 'Enter') handleLogin(); });
             ui.logoutButton.addEventListener('click', () => {
                 sessionStorage.removeItem('loggedInUser');
                 window.location.reload();
             });
+
             ui.changePasswordBtn.addEventListener('click', promptChangePassword);
             renderWeighingStations();
-            ui.tabs.addEventListener('click', (e) => {
-                if (e.target.dataset.tab) switchToTab(e.target.dataset.tab);
-            });
+            ui.tabs.addEventListener('click', (e) => { if (e.target.dataset.tab) switchToTab(e.target.dataset.tab); });
             ui.saveButton.addEventListener('click', handleSave);
             ui.cancelEditButton.addEventListener('click', clearForm);
             ui.priceLockBtn.addEventListener('click', togglePriceLock);
-            ui.typeLockBtn.addEventListener('click', toggleTypeLock); // Add listener for new type lock button
+            ui.typeLockBtn.addEventListener('click', toggleTypeLock);
             ui.salesTableBody.addEventListener('click', handleTableClick);
             ui.printReportBtn.addEventListener('click', createDailySummaryReport);
             ui.exportExcelBtn.addEventListener('click', exportToExcel);
@@ -2619,23 +2486,16 @@
             ui.restoreDataBtn.addEventListener('click', () => ui.restoreFileInput.click());
             ui.restoreFileInput.addEventListener('change', (e) => {
                 const file = e.target.files[0];
-                if (file) {
-                    restoreDataFromFile(file);
-                }
+                if (file) restoreDataFromFile(file);
                 e.target.value = '';
             });
             ui.deleteAllDataBtn.addEventListener('click', confirmDeleteAllData);
             ui.truckSummaryDate.addEventListener('change', calculateTruckSummary);
-            ui.truckSummaryContainer.addEventListener('click', (e) => {
-                const target = e.target.closest('.save-load-btn');
-                if (target) {
-                    handleSaveTruckLoad(e);
-                }
-            });
+            ui.truckSummaryContainer.addEventListener('click', (e) => { if (e.target.closest('.save-load-btn')) handleSaveTruckLoad(e); });
             ui.truckLoadHistoryContainer.addEventListener('click', handleTruckLoadHistoryClick);
             ui.receiptDateInput.valueAsDate = new Date();
             updateDateDisplay();
-            // NEW: Event listener for the new receipt scale sub-tabs
+            
             ui.receiptScaleSubTabs.addEventListener('click', (e) => {
                 const targetBtn = e.target.closest('.receipt-scale-sub-btn');
                 if (targetBtn) {
@@ -2644,48 +2504,37 @@
                     targetBtn.classList.add('active');
                     ui.selectedReceiptScale.value = scale;
                     populateSellerDatalist(scale);
-                    // Clear seller-specific fields when changing scale
                     ui.sellerNameInput.value = '';
                     ui.receiptBagsCount.value = '';
                     ui.sellerNameInput.focus();
                 }
             });
-            // NEW: Event listener to auto-fill bags count
+            
             ui.sellerNameInput.addEventListener('input', (e) => {
                 const selectedName = e.target.value;
                 const scaleNumber = ui.selectedReceiptScale.value;
                 if (!selectedName || !scaleNumber) return;
+
                 const allWeighingDates = localWeighingData.map(w => getUTCDateKey(w.timestamp.toDate())).filter(Boolean);
                 if (allWeighingDates.length === 0) return;
                 const mostRecentWeighingDate = allWeighingDates.sort().pop();
+                
                 const weighingEntry = localWeighingData.find(w =>
                     w.scaleId == scaleNumber &&
                     getUTCDateKey(w.timestamp.toDate()) === mostRecentWeighingDate &&
                     w.sellerName === selectedName
                 );
-                if (weighingEntry) {
-                    ui.receiptBagsCount.value = weighingEntry.bags;
-                }
+                
+                if (weighingEntry) ui.receiptBagsCount.value = weighingEntry.bags;
             });
-            ui.weighingSubTabs.addEventListener('click', (e) => {
-                const targetSubTabId = e.target.dataset.subtab;
-                if (targetSubTabId) {
-                    _switchToSubTab('weighing', targetSubTabId);
-                }
-            });
-            ui.receiptSubTabs.addEventListener('click', (e) => {
-                const targetSubTabId = e.target.dataset.subtab;
-                if (targetSubTabId) {
-                    _switchToSubTab('receipt', targetSubTabId);
-                }
-            });
-            // Set initial state for tabs
+
+            ui.weighingSubTabs.addEventListener('click', (e) => { if (e.target.dataset.subtab) _switchToSubTab('weighing', e.target.dataset.subtab); });
+            ui.receiptSubTabs.addEventListener('click', (e) => { if (e.target.dataset.subtab) _switchToSubTab('receipt', e.target.dataset.subtab); });
+            
             _switchToSubTab('weighing', 'weighing-scale-1');
             _switchToSubTab('receipt', 'receipt-form');
             const firstReceiptScaleTab = ui.receiptScaleSubTabs.querySelector('.receipt-scale-sub-btn');
-            if(firstReceiptScaleTab) {
-                firstReceiptScaleTab.click();
-            }
+            if (firstReceiptScaleTab) firstReceiptScaleTab.click();
         });
     </script>
 </body>
