@@ -126,7 +126,7 @@
                 <button data-tab="tab-daily-summary" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">2.
                     สรุปยอดวางยาง</button>
                 <button data-tab="tab-history-report" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">3.
-                    ประวัติและรายงาน</button>
+                    ออกใบเสร็จ</button>
                 <button data-tab="tab-settings" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">5.
                     ตั้งค่า</button>
             </nav>
@@ -237,12 +237,16 @@
             </div>
             <div id="tab-history-report" class="tab-content">
                 <section class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
-                    <h2 class="text-2xl font-bold mb-6 border-b pb-3 text-stone-800">3. ประวัติและรายงาน</h2>
-                    <div class="space-y-6">
-                        <p class="text-stone-600">ส่วนนี้จะแสดงประวัติการขายทั้งหมดและสร้างรายงานสรุปตามช่วงเวลาที่กำหนด</p>
-                        <div class="bg-stone-50 p-8 rounded-lg text-center">
-                            <p class="text-stone-500">ฟังก์ชันรายงานกำลังอยู่ในระหว่างการพัฒนา</p>
-                        </div>
+                    <h2 class="text-2xl font-bold mb-4 border-b pb-3 text-stone-800">3. ประวัติและรายงาน (คิวออกใบเสร็จ)</h2>
+                    <div id="receipt-queue-section">
+                        <h3 class="text-xl font-semibold text-stone-700 mb-4">รายการรอออกใบเสร็จ</h3>
+                        <div id="receipt-queue-table-container" class="overflow-x-auto rounded-lg border">
+                            </div>
+                    </div>
+                    <div id="receipt-issued-section" class="mt-10">
+                        <h3 class="text-xl font-semibold text-stone-700 mb-4">รายการที่ออกใบเสร็จแล้ว</h3>
+                        <div id="receipt-issued-table-container" class="overflow-x-auto rounded-lg border">
+                            </div>
                     </div>
                 </section>
             </div>
@@ -337,11 +341,11 @@
             },
             'bill': {
                 password: 'bill12345',
-                allowedTabs: []
+                allowedTabs: ['tab-history-report']
             },
             'rub': {
                 password: 'kaset1234',
-                allowedTabs: ['tab-weighing-consolidated', 'tab-daily-summary', 'tab-history-report']
+                allowedTabs: ['tab-weighing-consolidated', 'tab-daily-summary']
             }
         };
         let currentPassword = localStorage.getItem('customPassword') || users.admin.password;
@@ -388,6 +392,8 @@
             deleteAllDataBtn: document.getElementById('delete-all-data-btn'),
             summaryDatePicker: document.getElementById('summary-date-picker'),
             printDailyWeighingSummaryBtn: document.getElementById('print-daily-weighing-summary'),
+            receiptQueueContainer: document.getElementById('receipt-queue-table-container'),
+            receiptIssuedContainer: document.getElementById('receipt-issued-table-container'),
         };
 
         function getUTCDateKey(date) {
@@ -411,6 +417,9 @@
             }
             if (targetTabId === 'tab-daily-summary') {
                 renderDailyWeighingSummary();
+            }
+            if (targetTabId === 'tab-history-report') {
+                renderHistoryAndReports();
             }
         }
 
@@ -1340,6 +1349,9 @@
                             if (document.getElementById('tab-daily-summary')?.classList.contains('active')) {
                                 renderDailyWeighingSummary();
                             }
+                            if (document.getElementById('tab-history-report')?.classList.contains('active')) {
+                                renderHistoryAndReports();
+                            }
                         });
 
                         setupWeighingListeners();
@@ -1572,6 +1584,119 @@
             });
         }
 
+        function renderHistoryAndReports() {
+            if (!localWeighingData) return;
+
+            const receiptQueue = localWeighingData
+                .filter(item => item.actualWeight > 0 && item.total > 0 && !item.receiptIssued)
+                .sort((a, b) => a.timestamp.toDate() - b.timestamp.toDate());
+
+            const issuedReceipts = localWeighingData
+                .filter(item => item.receiptIssued === true)
+                .sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
+
+            const createTable = (data, isQueue) => {
+                if (data.length === 0) {
+                    return `<table class="w-full text-sm"><tbody><tr><td class="p-8 text-center text-stone-400">${isQueue ? 'ไม่มีรายการรอออกใบเสร็จ' : 'ยังไม่มีการออกใบเสร็จ'}</td></tr></tbody></table>`;
+                }
+
+                const headers = `
+                <thead class="text-xs text-stone-700 uppercase bg-stone-100">
+                    <tr>
+                        <th class="px-3 py-3">วันที่/เวลา</th>
+                        <th class="px-3 py-3">ชื่อผู้ขาย</th>
+                        <th class="px-3 py-3 text-right">น้ำหนัก (กก.)</th>
+                        <th class="px-3 py-3 text-right">ยอดรวม (บาท)</th>
+                        <th class="px-3 py-3 text-center">สถานะ</th>
+                        <th class="px-3 py-3 text-center">จัดการ</th>
+                    </tr>
+                </thead>`;
+
+                const rows = data.map(item => {
+                    const formattedDate = item.timestamp.toDate().toLocaleString('th-TH');
+                    return `
+                    <tr class="border-b">
+                        <td class="px-3 py-3 font-medium">${formattedDate}</td>
+                        <td class="px-3 py-3">${item.sellerName}</td>
+                        <td class="px-3 py-3 text-right font-semibold">${(item.actualWeight || 0).toFixed(2)}</td>
+                        <td class="px-3 py-3 text-right font-bold text-blue-600">${(item.total || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}</td>
+                        <td class="px-3 py-3 text-center">${isQueue ? `<span class="font-semibold text-amber-600">รอพิมพ์</span>` : `<span class="font-semibold text-green-600">เรียบร้อย</span>`}</td>
+                        <td class="px-3 py-3 text-center">
+                            ${isQueue ? `<button class="issue-receipt-btn bg-sky-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-sky-700" data-id="${item.id}">🖨️ ออกใบเสร็จ</button>` : '-'}
+                        </td>
+                    </tr>`;
+                }).join('');
+
+                return `<table class="w-full text-sm">${headers}<tbody>${rows}</tbody></table>`;
+            };
+
+            ui.receiptQueueContainer.innerHTML = createTable(receiptQueue, true);
+            ui.receiptIssuedContainer.innerHTML = createTable(issuedReceipts, false);
+        }
+
+        async function handleIssueReceipt(event) {
+            const button = event.target.closest('.issue-receipt-btn');
+            if (!button) return;
+
+            button.disabled = true;
+            button.textContent = 'กำลังพิมพ์...';
+
+            const weighingId = button.dataset.id;
+            const itemData = localWeighingData.find(item => item.id === weighingId);
+
+            if (!itemData) {
+                showAlert('ไม่พบข้อมูลสำหรับออกใบเสร็จ');
+                return;
+            }
+
+            const date = itemData.timestamp.toDate();
+            const receiptHTML = `
+                <div class="p-8 bg-white text-black" style="width: 80mm; font-family: 'Sarabun', sans-serif;">
+                    <div class="text-center mb-4">
+                        <h2 class="text-lg font-bold">ใบเสร็จรับเงิน</h2>
+                        <p class="text-sm">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</p>
+                    </div>
+                    <div class="text-sm space-y-1 mb-4">
+                        <p><strong>วันที่:</strong> ${date.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric'})}</p>
+                        <p><strong>เวลา:</strong> ${date.toLocaleTimeString('th-TH')}</p>
+                        <p><strong>ผู้ขาย:</strong> ${itemData.sellerName}</p>
+                    </div>
+                    <table class="w-full text-sm my-4">
+                       <thead>
+                         <tr class="border-t border-b border-black border-dashed">
+                           <th class="py-1 text-left">รายการ</th>
+                           <th class="py-1 text-right">จำนวน</th>
+                           <th class="py-1 text-right">ราคา</th>
+                           <th class="py-1 text-right">รวม</th>
+                         </tr>
+                       </thead>
+                       <tbody>
+                         <tr class="border-b border-black border-dashed">
+                           <td class="py-1">ยางก้อนถ้วย</td>
+                           <td class="py-1 text-right">${(itemData.actualWeight || 0).toFixed(2)} กก.</td>
+                           <td class="py-1 text-right">${(itemData.price || 0).toFixed(2)}</td>
+                           <td class="py-1 text-right">${(itemData.total || 0).toFixed(2)}</td>
+                         </tr>
+                       </tbody>
+                    </table>
+                     <div class="text-right mt-4">
+                        <p class="text-md">ยอดรวมสุทธิ</p>
+                        <p class="text-2xl font-bold">${(itemData.total || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท</p>
+                    </div>
+                    <div class="text-center mt-6 text-xs">
+                        <p>ขอบคุณที่ใช้บริการ</p>
+                    </div>
+                </div>`;
+
+            ui.printArea.innerHTML = receiptHTML;
+            window.print();
+
+            await updateDoc(doc(weighingsCollectionRef, weighingId), {
+                receiptIssued: true
+            });
+        }
+
+
         function applyUserPermissions() {
             const username = sessionStorage.getItem('loggedInUser');
             if (!username || !users[username]) {
@@ -1672,6 +1797,7 @@
                 handleSaveActualWeight(e);
                 handleScalePriceLock(e);
                 handleRevertMove(e);
+                handleIssueReceipt(e);
             });
             ui.mainContent.addEventListener('focusout', handleWeightCalculation);
             ui.mainContent.addEventListener('input', handleCalculationTrigger);
@@ -1720,4 +1846,3 @@
 </body>
 
 </html>
-```
