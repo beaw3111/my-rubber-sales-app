@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบบันทึกการขายยางก้อนถ้วย v3.0 (Complete)</title>
+    <title>ระบบบันทึกการขายยางก้อนถ้วย v3.1 (Final)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
@@ -632,12 +632,47 @@
             currentUserId = null;
         }
 
-        // --- 7. APPLICATION FUNCTIONS (COPY FROM ORIGINAL) ---
-        // All your original functions go here.
-        // e.g. function bahttext(number) { ... }
-        //      function calculateTotals() { ... }
-        //      ... etc.
+        // --- 7. APPLICATION HELPER FUNCTIONS ---
+        function _switchToSubTab(type, targetId) {
+            const context = {
+                'weighing': { contents: document.querySelectorAll('.weighing-sub-content'), buttons: document.querySelectorAll('.weighing-sub-btn') },
+                'receipt': { contents: document.querySelectorAll('.receipt-sub-content'), buttons: document.querySelectorAll('.receipt-sub-btn') }
+            }[type];
+            if (!context) return;
+            context.contents.forEach(content => content.classList.remove('active'));
+            context.buttons.forEach(btn => btn.classList.remove('active'));
+            const targetContent = document.getElementById(targetId + '-content');
+            const targetBtn = document.querySelector(`[data-subtab="${targetId}"]`);
+            if (targetContent) targetContent.classList.add('active');
+            if (targetBtn) targetBtn.classList.add('active');
+            if (targetId === 'receipt-form') {
+                const firstReceiptScaleTab = document.querySelector('.receipt-scale-sub-btn');
+                if (firstReceiptScaleTab && !document.querySelector('.receipt-scale-sub-btn.active')) {
+                    firstReceiptScaleTab.click();
+                }
+            }
+        }
 
+        function switchToTab(targetTabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            const targetButton = document.querySelector(`.tab-btn[data-tab="${targetTabId}"]`);
+            if (targetButton) {
+                targetButton.classList.add('active');
+            }
+            const targetContent = document.getElementById(targetTabId);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+            if (targetTabId === 'tab-receipt') {
+                const firstSubTab = document.querySelector('.receipt-sub-btn');
+                if (firstSubTab) _switchToSubTab('receipt', firstSubTab.dataset.subtab);
+            } else if (targetTabId === 'tab-weighing-consolidated') {
+                const firstSubTab = document.querySelector('.weighing-sub-btn');
+                if (firstSubTab) _switchToSubTab('weighing', firstSubTab.dataset.subtab);
+            }
+        }
+        
         function getUTCDateKey(date) {
             if (!date) return null;
             const d = (date.toDate) ? date.toDate() : date;
@@ -743,6 +778,7 @@
         }
         
         function renderTable(dataToRender) {
+            if (!ui.salesTableBody) return;
             ui.salesTableBody.innerHTML = '';
             if (dataToRender.length === 0) {
                 ui.salesTableBody.innerHTML = '<tr><td colspan="8" class="px-6 py-12 text-center text-stone-400">ไม่พบข้อมูล...</td></tr>';
@@ -844,6 +880,7 @@
                 ui.saveButton.textContent = editingId ? 'อัปเดตข้อมูล' : 'บันทึกข้อมูล';
             }
         }
+        
         // --- 8. EVENT LISTENERS & APP STARTUP ---
         document.addEventListener('DOMContentLoaded', () => {
             onAuthStateChanged(auth, async (user) => {
@@ -869,7 +906,65 @@
                 }
             });
             ui.saveButton.addEventListener('click', handleSave);
-            // ... Add other event listeners here
+            
+            // Add other event listeners from original code here
+            ui.cancelEditButton.addEventListener('click', clearForm);
+            ui.priceLockBtn.addEventListener('click', togglePriceLock);
+            ui.typeLockBtn.addEventListener('click', toggleTypeLock);
+            ui.salesTableBody.addEventListener('click', handleTableClick);
+            ui.printReportBtn.addEventListener('click', createDailySummaryReport);
+            ui.exportExcelBtn.addEventListener('click', exportToExcel);
+            if (ui.printDashboardBtn) ui.printDashboardBtn.addEventListener('click', () => window.print());
+            ui.receiptDateInput.addEventListener('input', updateDateDisplay);
+            [...document.querySelectorAll('.weight-input'), ui.pricePerKgInput].forEach(input => input.addEventListener('input', calculateTotals));
+            ui.searchBox.addEventListener('input', filterAndRenderSalesTable);
+            ui.reportDateSelect.addEventListener('change', filterAndRenderSalesTable);
+            ui.summaryMultiplierWeight.addEventListener('input', calculateSummaryTotalWeight);
+            ui.deleteAllWeighingsBtn.addEventListener('click', deleteAllTodaysWeighings);
+            ui.backupDataBtn.addEventListener('click', backupData);
+            ui.restoreDataBtn.addEventListener('click', () => ui.restoreFileInput.click());
+            ui.restoreFileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) restoreDataFromFile(file);
+                e.target.value = '';
+            });
+            ui.deleteAllDataBtn.addEventListener('click', confirmDeleteAllData);
+            ui.truckSummaryDate.addEventListener('change', calculateTruckSummary);
+            ui.truckSummaryContainer.addEventListener('click', (e) => { if (e.target.closest('.save-load-btn')) handleSaveTruckLoad(e); });
+            ui.truckLoadHistoryContainer.addEventListener('click', handleTruckLoadHistoryClick);
+            ui.receiptScaleSubTabs.addEventListener('click', (e) => {
+                const targetBtn = e.target.closest('.receipt-scale-sub-btn');
+                if (targetBtn) {
+                    const scale = targetBtn.dataset.scale;
+                    document.querySelectorAll('.receipt-scale-sub-btn').forEach(btn => btn.classList.remove('active'));
+                    targetBtn.classList.add('active');
+                    ui.selectedReceiptScale.value = scale;
+                    populateSellerDatalist(scale);
+                    ui.sellerNameInput.value = '';
+                    ui.receiptBagsCount.value = '';
+                    ui.sellerNameInput.focus();
+                }
+            });
+            ui.sellerNameInput.addEventListener('input', (e) => {
+                const selectedName = e.target.value;
+                const scaleNumber = ui.selectedReceiptScale.value;
+                if (!selectedName || !scaleNumber) return;
+                const allWeighingDates = localWeighingData.map(w => getUTCDateKey(w.timestamp.toDate())).filter(Boolean);
+                if (allWeighingDates.length === 0) return;
+                const mostRecentWeighingDate = allWeighingDates.sort().pop();
+                const weighingEntry = localWeighingData.find(w =>
+                    w.scaleId == scaleNumber &&
+                    getUTCDateKey(w.timestamp.toDate()) === mostRecentWeighingDate &&
+                    w.sellerName === selectedName
+                );
+                if (weighingEntry) ui.receiptBagsCount.value = weighingEntry.bags;
+            });
+            ui.weighingSubTabs.addEventListener('click', (e) => { if (e.target.dataset.subtab) _switchToSubTab('weighing', e.target.dataset.subtab); });
+            ui.receiptSubTabs.addEventListener('click', (e) => { if (e.target.dataset.subtab) _switchToSubTab('receipt', e.target.dataset.subtab); });
+            
+            renderWeighingStations();
+            ui.receiptDateInput.valueAsDate = new Date();
+            updateDateDisplay();
         });
 
     </script>
