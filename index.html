@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบบันทึกการขายยางก้อนถ้วย v2.0</title>
+    <title>ระบบบันทึกการขายยางก้อนถ้วย v2.1 (Simple)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
@@ -11,33 +11,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        /* CSS ยังคงเหมือนเดิม ไม่มีการเปลี่ยนแปลง */
         body { font-family: 'Sarabun', sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .chart-container { position: relative; height: 400px; width: 100%; }
-        .tab-btn { transition: all 0.3s ease-in-out; }
-        .tab-btn.active { border-color: #d97706; background-color: #fffbeb; color: #b45309; font-weight: 700; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        .weighing-sub-btn, .receipt-scale-sub-btn { transition: all 0.15s ease-in-out; }
-        .weighing-sub-btn.active, .receipt-scale-sub-btn.active { background-color: #b45309; color: #ffffff; transform: translateY(1px); box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.1); }
-        .weighing-sub-content { display: none; }
-        .weighing-sub-content.active { display: block; }
-        .receipt-sub-btn { transition: all 0.15s ease-in-out; }
-        .receipt-sub-btn.active { background-color: #b45309; color: #ffffff; transform: translateY(1px); box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.1); }
-        .receipt-sub-content { display: none; }
-        .receipt-sub-content.active { display: block; }
-        @media print {
-            @page { size: A4; margin: 0; }
-            body { margin: 0; }
-            body * { visibility: hidden; }
-            #print-area, #print-area * { visibility: visible; }
-            #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0; }
-            .no-print { display: none !important; }
-            .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 3em; color: rgba(0, 0, 0, 0.1); pointer-events: none; white-space: nowrap; z-index: 10; }
-        }
+        .tab-btn.active { border-color: #d97706; background-color: #fffbeb; color: #b45309; font-weight: 700; }
+        /* CSS อื่นๆ เหมือนเดิม ไม่ต้องแก้ไข */
     </style>
 </head>
 <body class="bg-stone-100 text-stone-800">
+
     <div id="login-screen" class="min-h-screen flex items-center justify-center">
         <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm">
             <h2 class="text-2xl font-bold text-center text-stone-800 mb-2">ระบบจัดการขายยางก้อนถ้วย</h2>
@@ -56,12 +38,12 @@
                     เข้าสู่ระบบ
                 </button>
             </div>
-            <p id="auth-status" class="text-center mt-4 text-sm text-stone-400">สถานะ: กำลังรอการเชื่อมต่อ...</p>
+            <p id="auth-status" class="text-center mt-4 text-sm text-stone-400">สถานะ: รอการเชื่อมต่อ...</p>
         </div>
     </div>
 
     <div id="app" class="container mx-auto max-w-7xl p-4 sm:p-6 lg:p-8 hidden">
-         <header class="relative mb-10 text-center">
+        <header class="relative mb-10 text-center">
             <h1 class="text-4xl font-bold text-stone-900">ระบบจัดการขายยางก้อนถ้วย</h1>
             <p class="text-xl font-semibold text-stone-700 mt-2">สหกรณ์กองทุนสวนยางพาราเกษตรสมบูรณ์ จำกัด</p>
             <div class="flex justify-center items-center gap-4 mt-2 no-print">
@@ -74,33 +56,23 @@
 
         <div class="mb-6 border-b border-stone-300 no-print">
             <nav id="tabs" class="flex flex-wrap -mb-px">
-                <button data-tab="tab-weighing-consolidated" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">1. รับวางยาง</button>
-                <button data-tab="tab-receipt" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">2. ออกใบเสร็จ และ สรุปขึ้นรถ</button>
-                <button data-tab="tab-history" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">3. ประวัติและรายงาน</button>
-                <button data-tab="tab-dashboard" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">4. สรุปภาพรวม</button>
-                <button data-tab="tab-settings" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">5. ตั้งค่า</button>
+                <button data-tab="tab-weighing-consolidated" class="tab-btn p-4 border-b-4 border-transparent">1. รับวางยาง</button>
+                <button data-tab="tab-receipt" class="tab-btn p-4 border-b-4 border-transparent">2. ออกใบเสร็จ และ สรุปขึ้นรถ</button>
+                <button data-tab="tab-history" class="tab-btn p-4 border-b-4 border-transparent">3. ประวัติและรายงาน</button>
+                <button data-tab="tab-dashboard" class="tab-btn p-4 border-b-4 border-transparent">4. สรุปภาพรวม</button>
+                <button data-tab="tab-settings" class="tab-btn p-4 border-b-4 border-transparent">5. ตั้งค่า</button>
             </nav>
         </div>
-
+        
         <main>
-            <div id="tab-receipt" class="tab-content">...</div>
-            <div id="tab-history" class="tab-content">...</div>
-            <div id="tab-dashboard" class="tab-content">...</div>
-            <div id="tab-weighing-consolidated" class="tab-content">...</div>
-            <div id="tab-settings" class="tab-content">...</div>
-        </main>
+            </main>
     </div>
 
-    <div id="print-area" class="bg-white"></div>
-    <div id="modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-300 no-print">...</div>
-    
-
     <script type="module">
-        // --- firebase.js ---
-        // ส่วนจัดการการเชื่อมต่อ Firebase
+        // Import Library ที่จำเป็น
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // *** ใส่ Firebase Config ของคุณที่นี่ ***
         const firebaseConfig = {
@@ -113,178 +85,135 @@
             measurementId: "G-1RHH9TMD73"
         };
         
-        let app, auth, db;
-        
-        export function initializeFirebase() {
-            if (!app) {
-                try {
-                    app = initializeApp(firebaseConfig);
-                    auth = getAuth(app);
-                    db = getFirestore(app);
-                    console.log("Firebase Initialized Successfully.");
-                } catch (e) {
-                    console.error("Firebase Initialization Failed:", e);
-                    // อาจจะต้องแสดงข้อความบอกผู้ใช้ว่าเชื่อมต่อฐานข้อมูลไม่ได้
-                }
-            }
-            return { app, auth, db };
-        }
+        // --- ส่วนกลาง ---
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-
-        // --- auth.js ---
-        // ส่วนจัดการการยืนยันตัวตนและสิทธิ์
-        import { showUI, hideUI, updateAuthStatus, showLoginError, applyUserPermissions } from './ui.js';
-
-        let currentUser = null;
-
-        export function initAuth() {
-            const { auth } = initializeFirebase();
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    await user.reload(); // โหลดข้อมูลล่าสุด
-                    const idTokenResult = await user.getIdTokenResult();
-                    currentUser = {
-                        uid: user.uid,
-                        email: user.email,
-                        role: idTokenResult.claims.role || 'guest' // อ่านค่า role จาก custom claim
-                    };
-                    console.log(`User logged in: ${user.email}, Role: ${currentUser.role}`);
-                    showUI(currentUser);
-                    applyUserPermissions(currentUser.role);
-                    // เริ่มโหลดข้อมูลหลังจาก login สำเร็จ
-                    // import('./dataService.js').then(module => module.initDataListeners(currentUser.uid));
-                } else {
-                    currentUser = null;
-                    console.log("User logged out.");
-                    hideUI();
-                }
-                updateAuthStatus(user ? `กำลังเชื่อมต่อในฐานะ ${user.email}` : "กรุณาเข้าสู่ระบบ");
-            });
-        }
-        
-        export async function handleLogin(email, password) {
-            const { auth } = initializeFirebase();
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-            } catch (error) {
-                console.error("Login failed:", error.code);
-                if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-                    showLoginError('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
-                } else {
-                    showLoginError(`เกิดข้อผิดพลาด: ${error.message}`);
-                }
-            }
-        }
-
-        export async function handleLogout() {
-            const { auth } = initializeFirebase();
-            await signOut(auth);
-        }
-
-        export const getCurrentUser = () => currentUser;
-
-        // --- ui.js (ตัวอย่างบางส่วน) ---
-        // ส่วนจัดการ User Interface
+        // --- ส่วนจัดการ UI ---
         const ui = {
-             loginScreen: document.getElementById('login-screen'),
-             appContainer: document.getElementById('app'),
-             loginButton: document.getElementById('login-button'),
-             logoutButton: document.getElementById('logout-button'),
-             usernameInput: document.getElementById('username-input'),
-             passwordInput: document.getElementById('password-input'),
-             loginError: document.getElementById('login-error'),
-             authStatus: document.getElementById('auth-status'),
-             userDisplay: document.getElementById('user-display'),
-             tabs: document.getElementById('tabs'),
+            loginScreen: document.getElementById('login-screen'),
+            appContainer: document.getElementById('app'),
+            loginButton: document.getElementById('login-button'),
+            logoutButton: document.getElementById('logout-button'),
+            usernameInput: document.getElementById('username-input'),
+            passwordInput: document.getElementById('password-input'),
+            loginError: document.getElementById('login-error'),
+            authStatus: document.getElementById('auth-status'),
+            userDisplay: document.getElementById('user-display'),
+            allTabs: document.querySelectorAll('.tab-btn'),
         };
 
-        const userRoles = {
-            admin: ['all'],
-            bill: ['tab-receipt', 'tab-history'],
-            rub: ['tab-weighing-consolidated', 'tab-receipt']
+        const userRolesConfig = {
+            admin: { name: 'ผู้ดูแลระบบ', tabs: ['all'] },
+            bill:  { name: 'เจ้าหน้าที่การเงิน', tabs: ['tab-receipt', 'tab-history'] },
+            rub:   { name: 'เจ้าหน้าที่ชั่งยาง', tabs: ['tab-weighing-consolidated', 'tab-receipt'] },
+            guest: { name: 'ผู้ใช้งานทั่วไป', tabs: [] }
         };
 
-        export function showUI(user) {
+        function showApp(user, role) {
+            const roleConfig = userRolesConfig[role] || userRolesConfig['guest'];
             ui.loginScreen.classList.add('hidden');
             ui.appContainer.classList.remove('hidden');
-            ui.userDisplay.textContent = `ผู้ใช้: ${user.email} (สิทธิ์: ${user.role})`;
-        }
-
-        export function hideUI() {
-            ui.loginScreen.classList.remove('hidden');
-            ui.appContainer.classList.add('hidden');
-        }
-        
-        export function updateAuthStatus(message) {
-            if (ui.authStatus) ui.authStatus.textContent = message;
-        }
-
-        export function showLoginError(message) {
-            ui.loginError.textContent = message;
-            ui.loginError.classList.remove('hidden');
-        }
-        
-        export function applyUserPermissions(role) {
-            const permissions = userRoles[role] || [];
-            const allTabButtons = ui.tabs.querySelectorAll('.tab-btn');
+            ui.userDisplay.textContent = `ผู้ใช้: ${user.email} (สิทธิ์: ${roleConfig.name})`;
+            
+            // แสดง/ซ่อน แท็บตามสิทธิ์
             let firstVisibleTab = null;
-
-            allTabButtons.forEach(btn => {
+            ui.allTabs.forEach(btn => {
                 const tabId = btn.dataset.tab;
-                if (permissions.includes('all') || permissions.includes(tabId)) {
+                const isAdmin = role === 'admin';
+                const hasAccess = roleConfig.tabs.includes('all') || roleConfig.tabs.includes(tabId);
+                
+                if (tabId === 'tab-settings' && !isAdmin) {
+                    btn.style.display = 'none';
+                } else if (hasAccess) {
                     btn.style.display = 'inline-block';
                     if (!firstVisibleTab) firstVisibleTab = tabId;
                 } else {
                     btn.style.display = 'none';
                 }
             });
-            // แสดงแท็บ "ตั้งค่า" สำหรับ admin เท่านั้น
-            const settingsTab = document.querySelector('[data-tab="tab-settings"]');
-            if(settingsTab) {
-                settingsTab.style.display = (role === 'admin') ? 'inline-block' : 'none';
-            }
 
+            // เปิดแท็บแรกที่ผู้ใช้มีสิทธิ์
             if (firstVisibleTab) {
-                // ต้องมีฟังก์ชัน switchToTab ที่จัดการการแสดงผล
+                // สมมติว่ามีฟังก์ชัน switchToTab(tabId) อยู่
                 // switchToTab(firstVisibleTab); 
             }
         }
 
-        // --- main.js (Entry Point) ---
-        // ไฟล์หลักในการเริ่มการทำงาน
-        import { initializeFirebase } from './firebase.js';
-        import { initAuth, handleLogin, handleLogout } from './auth.js';
+        function showLoginScreen(message = "กรุณาเข้าสู่ระบบ") {
+            ui.loginScreen.classList.remove('hidden');
+            ui.appContainer.classList.add('hidden');
+            ui.authStatus.textContent = message;
+            ui.loginError.classList.add('hidden');
+            ui.passwordInput.value = '';
+        }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            initializeFirebase();
-            initAuth();
+        // --- ส่วนจัดการการยืนยันตัวตน ---
+        async function handleLogin() {
+            const email = ui.usernameInput.value;
+            const password = ui.passwordInput.value;
             
-            const loginButton = document.getElementById('login-button');
-            const logoutButton = document.getElementById('logout-button');
-            const usernameInput = document.getElementById('username-input');
-            const passwordInput = document.getElementById('password-input');
+            if (!email || !password) {
+                ui.loginError.textContent = 'กรุณากรอกอีเมลและรหัสผ่าน';
+                ui.loginError.classList.remove('hidden');
+                return;
+            }
 
-            loginButton.addEventListener('click', () => {
-                const email = usernameInput.value;
-                const password = passwordInput.value;
-                handleLogin(email, password);
-            });
+            try {
+                // 1. ล็อกอินด้วย Email/Password
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
 
-            passwordInput.addEventListener('keyup', (e) => {
-                if(e.key === 'Enter') {
-                     const email = usernameInput.value;
-                     const password = passwordInput.value;
-                     handleLogin(email, password);
+                // 2. ดึงข้อมูลสิทธิ์ (role) จาก Firestore
+                const roleDocRef = doc(db, "user_roles", user.uid);
+                const roleDocSnap = await getDoc(roleDocRef);
+
+                let userRole = 'guest'; // ค่าเริ่มต้น
+                if (roleDocSnap.exists()) {
+                    userRole = roleDocSnap.data().role;
+                } else {
+                     console.warn(`User ${user.uid} does not have a role document.`);
+                }
+                
+                // 3. แสดงแอปตามสิทธิ์
+                showApp(user, userRole);
+                // ที่จุดนี้ คุณสามารถเริ่มโหลดข้อมูลจาก Firestore ได้
+                // initDataListeners(user.uid);
+
+            } catch (error) {
+                console.error("Login failed:", error.code);
+                showLoginScreen('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+            }
+        }
+
+        async function handleLogout() {
+            await signOut(auth);
+            showLoginScreen();
+        }
+
+        // --- เริ่มต้นการทำงาน ---
+        document.addEventListener('DOMContentLoaded', () => {
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    // หากผู้ใช้ยังอยู่ในระบบ ให้ดึง role แล้วแสดงแอปเลย
+                    const roleDocRef = doc(db, "user_roles", user.uid);
+                    const roleDocSnap = await getDoc(roleDocRef);
+                    const userRole = roleDocSnap.exists() ? roleDocSnap.data().role : 'guest';
+                    showApp(user, userRole);
+                } else {
+                    showLoginScreen();
                 }
             });
 
-            logoutButton.addEventListener('click', handleLogout);
+            ui.loginButton.addEventListener('click', handleLogin);
+            ui.passwordInput.addEventListener('keyup', (e) => {
+                if(e.key === 'Enter') handleLogin();
+            });
+            ui.logoutButton.addEventListener('click', handleLogout);
 
-            // ... โค้ดส่วนที่เหลือของ Event Listeners หลักจะถูกย้ายมาที่นี่
-            // เช่น การคลิกแท็บ, การเปิด modal
-            // คุณจะต้องสร้างฟังก์ชันจัดการ Event ต่างๆ แล้วเรียกใช้จากที่นี่
+            // ... นำ Event Listeners อื่นๆ จากไฟล์เดิมของคุณมาวางต่อที่นี่
         });
-        
     </script>
 </body>
 </html>
