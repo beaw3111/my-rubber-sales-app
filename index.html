@@ -139,11 +139,12 @@
         </header>
         <div class="mb-6 border-b border-stone-300 no-print">
             <nav id="tabs" class="flex flex-wrap -mb-px">
-                <button data-tab="tab-weighing-consolidated" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">1. รับวางยาง</button>
-                <button data-tab="tab-receipt" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">2. ออกใบเสร็จ และ สรุปขึ้นรถ</button>
-                <button data-tab="tab-history" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">3. ประวัติและรายงาน</button>
-                <button data-tab="tab-dashboard" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">4. สรุปภาพรวม</button>
-                <button data-tab="tab-settings" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">5. ตั้งค่า</button>
+                 <button data-tab="tab-weighing-consolidated" class="tab-btn ...">1. รับวางยาง</button>
+                 <button data-tab="tab-receipt" class="tab-btn ...">2. ออกใบเสร็จ และ สรุปขึ้นรถ</button>
+                 <button data-tab="tab-history" class="tab-btn ...">3. ประวัติและรายงาน</button>
+                 <button data-tab="tab-dashboard" class="tab-btn ...">4. สรุปภาพรวม</button>
+                 <button data-tab="tab-settings" class="tab-btn ...">5. ตั้งค่า</button>
+                 <button data-tab="tab-movement-report" class="tab-btn inline-block p-4 border-b-4 border-transparent rounded-t-lg hover:text-amber-600 hover:border-amber-300">6. รายงานการเคลื่อนไหว</button>
             </nav>
         </div>
         <main>
@@ -461,6 +462,26 @@
                     </div>
                 </section>
             </div>
+             <div id="tab-settings" class="tab-content">
+       ...
+    </div>
+
+    <div id="tab-movement-report" class="tab-content">
+        <section class="bg-white p-6 sm:p-8 rounded-xl shadow-lg space-y-8">
+            <div>
+                <h2 class="text-2xl font-bold mb-4 border-b pb-3 text-stone-800">สรุปยอดขายแยกตามตาชั่ง (วันนี้)</h2>
+                <div id="report-sales-summary-by-scale" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                    </div>
+                <div id="report-sales-summary-today-total" class="mt-6 p-4 bg-amber-200 rounded-lg text-center hidden shadow">
+                    </div>
+            </div>
+            <div class="border-t pt-8">
+                 <h2 class="text-2xl font-bold mb-4 border-b pb-3 text-stone-800">ประวัติการบันทึกน้ำหนักขึ้นรถ (วันนี้)</h2>
+                 <div id="report-truck-load-history-container">
+                    </div>
+            </div>
+        </section>
+    </div>
         </main>
     </div>
     <div id="print-area" class="bg-white"></div>
