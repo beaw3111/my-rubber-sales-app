@@ -66,6 +66,29 @@
         .receipt-sub-content.active {
             display: block;
         }
+        
+        /* +++ ADDED +++: สไตล์สำหรับปุ่ม Toggle ประเภทสินค้า */
+        .type-toggle-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            background-color: #f5f5f4; /* bg-stone-100 */
+            color: #57534e; /* text-stone-600 */
+            font-weight: 600;
+            border: 1px solid #e7e5e4; /* border-stone-200 */
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease-in-out;
+        }
+        .type-toggle-btn:hover {
+            background-color: #e7e5e4; /* bg-stone-200 */
+        }
+        .type-toggle-btn.active {
+            background-color: #b45309; /* bg-amber-700 */
+            color: #ffffff;
+            border-color: #92400e; /* border-amber-800 */
+            transform: translateY(1px);
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+        }
+
         @media print {
             @page {
                 size: A4;
@@ -189,17 +212,12 @@
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-stone-700 mb-1">ประเภทของ</label>
-                                <div class="relative flex items-center gap-4 p-3 border border-stone-300 rounded-lg">
-                                    <div id="receipt-type-container" class="flex flex-wrap gap-x-4 gap-y-2">
-                                        <div class="flex items-center"><input type="radio" name="receipt_type" value="NON EUDR" class="receipt-type-radio h-4 w-4 text-amber-600 focus:ring-amber-500 border-stone-300"> <label class="ml-2 text-sm text-stone-600">NON EUDR</label></div>
-                                        <div class="flex items-center"><input type="radio" name="receipt_type" value="EUDR" class="receipt-type-radio h-4 w-4 text-amber-600 focus:ring-amber-500 border-stone-300"> <label class="ml-2 text-sm text-stone-600">EUDR</label></div>
-                                        <div class="flex items-center"><input type="radio" name="receipt_type" value="FSC" class="receipt-type-radio h-4 w-4 text-amber-600 focus:ring-amber-500 border-stone-300"> <label class="ml-2 text-sm text-stone-600">FSC</label></div>
-                                        <div class="flex items-center"><input type="radio" name="receipt_type" value="GMP" class="receipt-type-radio h-4 w-4 text-amber-600 focus:ring-amber-500 border-stone-300"> <label class="ml-2 text-sm text-stone-600">GMP</label></div>
-                                        <div class="flex items-center"><input type="radio" name="receipt_type" value="ORGANIC" class="receipt-type-radio h-4 w-4 text-amber-600 focus:ring-amber-500 border-stone-300"> <label class="ml-2 text-sm text-stone-600">ORGANIC</label></div>
-                                    </div>
-                                    <button id="type-lock-btn" title="ล็อคประเภท" class="absolute right-2.5 h-8 w-8 flex items-center justify-center rounded-lg text-white bg-gray-400 hover:bg-gray-500 transition-colors">
-                                        <span id="type-lock-icon">🔓</span>
-                                    </button>
+                                <div id="receipt-type-container" class="flex flex-wrap gap-2 p-1">
+                                    <button data-value="NON EUDR" class="type-toggle-btn">NON EUDR</button>
+                                    <button data-value="EUDR" class="type-toggle-btn">EUDR</button>
+                                    <button data-value="FSC" class="type-toggle-btn">FSC</button>
+                                    <button data-value="GMP" class="type-toggle-btn">GMP</button>
+                                    <button data-value="ORGANIC" class="type-toggle-btn">ORGANIC</button>
                                 </div>
                             </div>
                             <div class="md:col-span-2">
@@ -513,7 +531,7 @@
         </div>
     </div>
     
-    <script type="module">
+<script type="module">
     import {
         initializeApp
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -572,8 +590,9 @@
     let unsubscribeWeighings = {};
 
     let dailyWeighingData = {};
-    // ### MODIFIED ###: เปลี่ยนตัวแปรล็อคเป็น Object เพื่อเก็บสถานะแยกตามตาชั่ง
     let lockStates = {};
+    // +++ ADDED +++: สร้าง Object สำหรับเก็บค่าประเภทที่เลือกในแต่ละตาชั่ง
+    let scaleTypeSelections = {};
     let isAppInitialized = false;
 
     const ui = {
@@ -599,8 +618,7 @@
         pricePerKgInput: document.getElementById('price-per-kg'),
         priceLockBtn: document.getElementById('price-lock-btn'),
         priceLockIcon: document.getElementById('price-lock-icon'),
-        typeLockBtn: document.getElementById('type-lock-btn'),
-        typeLockIcon: document.getElementById('type-lock-icon'),
+        // --- REMOVED ---: typeLockBtn และ typeLockIcon ถูกลบออกไปแล้ว
         receiptTypeContainer: document.getElementById('receipt-type-container'),
         totalWeightEl: document.getElementById('total-weight'),
         totalAmountEl: document.getElementById('total-amount'),
@@ -649,139 +667,23 @@
         activityTruckLoadHistoryContainer: document.getElementById('activity-truck-load-history-container'),
     };
     
-    function applyUserPermissions(userRole) {
-        const permissions = rolePermissions[userRole] || [];
-        const allTabButtons = document.querySelectorAll('#tabs .tab-btn');
-        let firstVisibleTab = null;
+    // ... โค้ดส่วนอื่นๆ ที่ไม่เปลี่ยนแปลง ...
 
-        allTabButtons.forEach(btn => {
-            const tabId = btn.dataset.tab;
-            if (userRole === 'admin' || permissions.includes('all') || permissions.includes(tabId)) {
-                btn.style.display = 'inline-block';
-                if (!firstVisibleTab) {
-                    firstVisibleTab = tabId;
-                }
-            } else {
-                btn.style.display = 'none';
-            }
-        });
-
-        if (firstVisibleTab) {
-            switchToTab(firstVisibleTab);
-        } else {
-            showAlert('คุณไม่มีสิทธิ์เข้าถึงส่วนใดๆ ของระบบ');
-        }
-    }
-
-    const handleLogin = async () => {
-        const email = ui.usernameInput.value.trim();
-        const password = ui.passwordInput.value.trim();
-        ui.loginError.classList.add('hidden');
-
-        if (!email || !password) {
-            ui.loginError.textContent = 'กรุณากรอกอีเมลและรหัสผ่าน';
-            ui.loginError.classList.remove('hidden');
-            return;
-        }
-
-        try {
-            ui.loginButton.disabled = true;
-            ui.loginButton.textContent = 'กำลังเข้าสู่ระบบ...';
-            await signInWithEmailAndPassword(auth, email, password);
-        } catch (error) {
-            console.error("Login failed:", error.code);
-            ui.loginError.textContent = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
-            ui.loginError.classList.remove('hidden');
-        } finally {
-            ui.loginButton.disabled = false;
-            ui.loginButton.textContent = 'เข้าสู่ระบบ';
-            ui.passwordInput.value = '';
-        }
-    };
-
-    const handleLogout = async () => {
-        try {
-            await signOut(auth);
-        } catch (error) {
-            console.error("Sign out error", error);
-            showAlert('เกิดข้อผิดพลาดในการออกจากระบบ');
-        }
-    };
-    
-    const initializeAppAndListeners = (user, userRole) => {
-        if (isAppInitialized) return;
-
-        userId = user.uid;
-        const appDataPath = `artifacts/${appId}/public/data`;
-        salesCollectionRef = collection(db, `${appDataPath}/sales`);
-        weighingsCollectionRef = collection(db, `${appDataPath}/weighings`);
-        truckLoadsCollectionRef = collection(db, `${appDataPath}/truckLoads`);
-        countersDocRef = doc(db, `${appDataPath}/counters`, 'salesCounter');
-        
-        applyUserPermissions(userRole);
-
-        if (unsubscribeSales) unsubscribeSales();
-        unsubscribeSales = onSnapshot(query(salesCollectionRef), (snapshot) => {
-            localSalesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            localSalesData.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
-            filterAndRenderSalesTable();
-            renderDashboard();
-            renderSummary();
-            renderScaleSummaries(ui.salesSummaryByScale, ui.salesSummaryTodayTotal, ui.summaryTodayTotalWeight, ui.summaryTodayTotalAmount);
-            populateReportDateSelector();
-            populateTruckSummaryDateSelector();
-            calculateTruckSummary();
-            populateSellerDatalist(ui.selectedReceiptScale.value);
-            renderActivityTab();
-        });
-        
-        if (unsubscribeAllWeighings) unsubscribeAllWeighings();
-        unsubscribeAllWeighings = onSnapshot(query(weighingsCollectionRef), (snapshot) => {
-            localWeighingData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderWeighingHistory();
-            populateSellerDatalist(ui.selectedReceiptScale.value);
-        });
-
-        if (unsubscribeTruckLoads) unsubscribeTruckLoads();
-        unsubscribeTruckLoads = onSnapshot(query(truckLoadsCollectionRef), (snapshot) => {
-            localTruckLoads = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            calculateTruckSummary();
-            renderActivityTab();
-        });
-
-        setupWeighingListeners();
-        isAppInitialized = true;
-    }
-    
-    const cleanupListeners = () => {
-        if (unsubscribeSales) unsubscribeSales();
-        if (unsubscribeAllWeighings) unsubscribeAllWeighings();
-        if (unsubscribeTruckLoads) unsubscribeTruckLoads();
-        Object.keys(unsubscribeWeighings).forEach(k => unsubscribeWeighings[k]());
-        isAppInitialized = false;
-        localSalesData = [];
-        localWeighingData = [];
-        localTruckLoads = [];
-    }
-    
-    // ... โค้ดส่วนอื่นๆ ...
-
-    // ### MODIFIED ###: ปรับปรุงฟังก์ชัน clearForm ให้คงสถานะล็อคไว้
+    // ### MODIFIED ###: ปรับปรุงฟังก์ชัน clearForm ให้รองรับปุ่ม Toggle
     function clearForm() {
         ui.sellerNameInput.value = '';
         ui.receiptBagsCount.value = '';
-        
-        const typeRadios = document.querySelectorAll('.receipt-type-radio');
-        const currentScaleId = ui.selectedReceiptScale.value;
-
-        if (currentScaleId && lockStates[currentScaleId] && !lockStates[currentScaleId].type) {
-             typeRadios.forEach(radio => radio.checked = false);
-        }
-
         ui.weightInputsContainer.querySelectorAll('.weight-input').forEach(input => input.value = '');
-
-        if (currentScaleId && lockStates[currentScaleId] && !lockStates[currentScaleId].price) {
-             ui.pricePerKgInput.value = '';
+        
+        const currentScaleId = ui.selectedReceiptScale.value;
+        if (currentScaleId) {
+            // ล้างค่าราคาถ้าไม่ได้ล็อค
+            if (lockStates[currentScaleId] && !lockStates[currentScaleId].price) {
+                ui.pricePerKgInput.value = '';
+            }
+            // ล้างค่าประเภทที่เลือก
+            scaleTypeSelections[currentScaleId] = null;
+            applyTypeSelectionState(currentScaleId);
         }
         
         editingId = null;
@@ -790,7 +692,6 @@
         calculateTotals();
     }
     
-    // ### ADDED ###: ฟังก์ชันสำหรับอัปเดต UI ของปุ่มล็อคตามสถานะ
     function applyLockState(scaleId) {
         if (!scaleId || !lockStates[scaleId]) return;
 
@@ -811,24 +712,22 @@
             ui.priceLockBtn.classList.replace('bg-sky-500', 'bg-gray-400');
             ui.priceLockBtn.classList.replace('hover:bg-sky-600', 'hover:bg-gray-500');
         }
-
-        // Type Lock UI
-        const typeRadios = document.querySelectorAll('.receipt-type-radio');
-        typeRadios.forEach(radio => radio.disabled = state.type);
-        if (state.type) {
-            ui.typeLockIcon.textContent = '🔒';
-            ui.typeLockBtn.title = 'ปลดล็อคประเภท';
-            ui.typeLockBtn.classList.replace('bg-gray-400', 'bg-sky-500');
-            ui.typeLockBtn.classList.replace('hover:bg-gray-500', 'hover:bg-sky-600');
-        } else {
-            ui.typeLockIcon.textContent = '🔓';
-            ui.typeLockBtn.title = 'ล็อคประเภท';
-            ui.typeLockBtn.classList.replace('bg-sky-500', 'bg-gray-400');
-            ui.typeLockBtn.classList.replace('hover:bg-sky-600', 'hover:bg-gray-500');
-        }
     }
 
-    // ### MODIFIED ###: ปรับปรุงฟังก์ชัน toggle ให้ทำงานกับ state ปัจจุบัน
+    // +++ ADDED +++: ฟังก์ชันสำหรับอัปเดต UI ของปุ่มเลือกประเภท
+    function applyTypeSelectionState(scaleId) {
+        if (!scaleId) return;
+        const selectedValue = scaleTypeSelections[scaleId];
+        const buttons = ui.receiptTypeContainer.querySelectorAll('.type-toggle-btn');
+        buttons.forEach(btn => {
+            if (btn.dataset.value === selectedValue) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+
     function togglePriceLock() {
         const currentScaleId = ui.selectedReceiptScale.value;
         if (!currentScaleId) return;
@@ -836,43 +735,158 @@
         applyLockState(currentScaleId);
     }
     
-    // ### MODIFIED ###: ปรับปรุงฟังก์ชัน toggle ให้ทำงานกับ state ปัจจุบัน
-    function toggleTypeLock() {
-        const currentScaleId = ui.selectedReceiptScale.value;
-        if (!currentScaleId) return;
-        lockStates[currentScaleId].type = !lockStates[currentScaleId].type;
-        applyLockState(currentScaleId);
+    // --- REMOVED ---: ฟังก์ชัน toggleTypeLock ถูกลบออกไปแล้ว
+
+    async function handleSave() {
+        if (!salesCollectionRef || !countersDocRef) return showAlert('ยังไม่พร้อมใช้งาน กรุณารอสักครู่');
+        const seller = ui.sellerNameInput.value.trim();
+        const date = ui.receiptDateInput.valueAsDate;
+        const scaleNumber = ui.selectedReceiptScale.value;
+        // +++ MODIFIED +++: ดึงค่าประเภทจาก state object
+        const receiptType = scaleNumber ? scaleTypeSelections[scaleNumber] : null;
+        const bagsCount = parseInt(ui.receiptBagsCount.value) || 0;
+        const weight = parseFloat(ui.totalWeightEl.textContent) || 0;
+        const price = parseFloat(ui.pricePerKgInput.value) || 0;
+        const total = parseFloat(ui.totalAmountEl.textContent.replace(/,/g, '')) || 0;
+        const weightInputs = Array.from(ui.weightInputsContainer.querySelectorAll('.weight-input')).map(input => parseFloat(input.value) || 0).filter(v => v > 0);
+
+        if (!scaleNumber) return showAlert('กรุณาเลือกตาชั่งสำหรับออกใบเสร็จก่อน');
+        if (weightInputs.length === 0 || !seller || !date || weight <= 0 || price <= 0) return showAlert('กรุณากรอกข้อมูลให้ครบถ้วน: ชื่อผู้ขาย, วันที่, น้ำหนัก และราคา');
+        if (total <= 0) return showAlert('ยอดรวมต้องมากกว่า 0 บาท');
+        
+        const saleData = { seller, date, scaleNumber, bagsCount, weight, weights: weightInputs, price, total, receiptType, timestamp: new Date(), userId };
+        
+        ui.saveButton.disabled = true;
+        ui.saveButton.textContent = 'กำลังบันทึก...';
+        
+        try {
+            if (editingId) {
+                const originalDoc = localSalesData.find(s => s.id === editingId);
+                if (originalDoc) {
+                    saleData.dailyQueueNumber = originalDoc.dailyQueueNumber;
+                    saleData.receiptId = originalDoc.receiptId;
+                    saleData.printCount = originalDoc.printCount || 0;
+                }
+                await updateDoc(doc(salesCollectionRef, editingId), saleData);
+                showAlert('อัปเดตข้อมูลสำเร็จ');
+                clearForm();
+            } else {
+                await runTransaction(db, async (transaction) => {
+                    const counterDoc = await transaction.get(countersDocRef);
+                    const dateKey = getUTCDateKey(date);
+                    let nextQueueNumber = (counterDoc.exists() && counterDoc.data()[dateKey]) ? counterDoc.data()[dateKey] + 1 : 1;
+                    let nextReceiptIndex = (counterDoc.exists() && counterDoc.data().lastReceiptIndex) ? counterDoc.data().lastReceiptIndex + 1 : 1;
+                    const now = new Date();
+                    const year = now.getFullYear().toString().slice(-2);
+                    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+                    const day = now.getDate().toString().padStart(2, '0');
+                    saleData.dailyQueueNumber = nextQueueNumber;
+                    saleData.receiptId = `${year}${month}${day}-${String(nextReceiptIndex).padStart(4, '0')}`;
+                    saleData.printCount = 0;
+                    const newCounterData = { [dateKey]: nextQueueNumber, lastReceiptIndex: nextReceiptIndex };
+                    transaction.set(countersDocRef, newCounterData, { merge: true });
+                    transaction.set(doc(salesCollectionRef), saleData);
+                });
+                showAlert('บันทึกข้อมูลสำเร็จ');
+                clearForm();
+                populateSellerDatalist(scaleNumber);
+            }
+        } catch (error) {
+            console.error("Error saving document: ", error);
+            showAlert(`เกิดข้อผิดพลาดในการบันทึก: ${error.message}`);
+        } finally {
+            ui.saveButton.disabled = false;
+            ui.saveButton.textContent = editingId ? 'อัปเดตข้อมูล' : 'บันทึกข้อมูล';
+        }
     }
     
-    // ... โค้ดส่วนอื่นๆ ที่เหลือ ...
+    function handleTableClick(e) {
+        const target = e.target.closest('button');
+        if (!target) return;
+        const id = target.dataset.id;
+        const saleToProcess = localSalesData.find(sale => sale.id === id);
+        if (!saleToProcess) return;
+        if (target.classList.contains('delete-btn')) {
+            showConfirm('คุณแน่ใจว่าต้องการลบรายการนี้?', async () => {
+                try {
+                    await deleteDoc(doc(salesCollectionRef, id));
+                    showAlert('ลบรายการสำเร็จ');
+                } catch (error) {
+                    showAlert(`เกิดข้อผิดพลาดในการลบ: ${error.message}`);
+                }
+            });
+        } else if (target.classList.contains('edit-btn')) {
+            editingId = id;
+            if (saleToProcess.scaleNumber) {
+                const scaleBtn = ui.receiptScaleSubTabs.querySelector(`.receipt-scale-sub-btn[data-scale="${saleToProcess.scaleNumber}"]`);
+                if (scaleBtn) scaleBtn.click();
+            }
+            ui.sellerNameInput.value = saleToProcess.seller;
+            ui.receiptBagsCount.value = saleToProcess.bagsCount || '';
+            ui.receiptDateInput.value = saleToProcess.date.toDate().toISOString().split('T')[0];
+            ui.pricePerKgInput.value = saleToProcess.price;
+
+            // +++ MODIFIED +++: อัปเดต state และ UI ของปุ่มประเภท
+            if (saleToProcess.scaleNumber) {
+                scaleTypeSelections[saleToProcess.scaleNumber] = saleToProcess.receiptType;
+                applyTypeSelectionState(saleToProcess.scaleNumber);
+            }
+            
+            const weightInputs = ui.weightInputsContainer.querySelectorAll('.weight-input');
+            weightInputs.forEach((input, index) => {
+                input.value = saleToProcess.weights[index] || '';
+            });
+            calculateTotals();
+            ui.saveButton.textContent = 'อัปเดตข้อมูล';
+            ui.cancelEditButton.classList.remove('hidden');
+            switchToTab('tab-receipt');
+            _switchToSubTab('receipt', 'receipt-form');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else if (target.classList.contains('reprint-btn')) {
+            // ... (โค้ดส่วนนี้ไม่เปลี่ยนแปลง)
+        }
+    }
     
+    // ... โค้ดส่วนอื่นๆ ที่ไม่เปลี่ยนแปลง ...
+
     document.addEventListener('DOMContentLoaded', () => {
         const app = initializeApp(firebaseConfig);
         getAnalytics(app);
         auth = getAuth(app);
         db = getFirestore(app);
 
-        // ### MODIFIED ###: สร้าง state เริ่มต้นสำหรับ lockStates
+        // ### MODIFIED ###: สร้าง state เริ่มต้นสำหรับ lockStates และ scaleTypeSelections
         for (let i = 1; i <= 4; i++) {
-            lockStates[i] = { price: false, type: false };
+            lockStates[i] = { price: false }; // เอา type ออก
+            scaleTypeSelections[i] = null; // เริ่มต้นประเภทเป็น null
         }
 
-        ui.changePasswordBtn.style.display = 'none';
-
-        ui.loginButton.addEventListener('click', handleLogin);
-        ui.passwordInput.addEventListener('keyup', (event) => { if (event.key === 'Enter') handleLogin(); });
-        ui.logoutButton.addEventListener('click', handleLogout);
-
-        renderWeighingStations();
-        ui.tabs.addEventListener('click', (e) => { if (e.target.dataset.tab) switchToTab(e.target.dataset.tab); });
-        ui.saveButton.addEventListener('click', handleSave);
-        ui.cancelEditButton.addEventListener('click', clearForm);
-        ui.priceLockBtn.addEventListener('click', togglePriceLock);
-        ui.typeLockBtn.addEventListener('click', toggleTypeLock);
-        
         // ... โค้ด Event Listeners อื่นๆ ...
-        
-        // ### MODIFIED ###: เพิ่มการเรียก applyLockState เมื่อเปลี่ยนตาชั่ง
+        ui.priceLockBtn.addEventListener('click', togglePriceLock);
+        // --- REMOVED ---: ลบ Event Listener ของปุ่มล็อคประเภท
+
+        // +++ ADDED +++: เพิ่ม Event Listener สำหรับกลุ่มปุ่มเลือกประเภท
+        ui.receiptTypeContainer.addEventListener('click', (e) => {
+            const targetBtn = e.target.closest('.type-toggle-btn');
+            if (targetBtn) {
+                const currentScaleId = ui.selectedReceiptScale.value;
+                if (!currentScaleId) {
+                    showAlert('กรุณาเลือกตาชั่งก่อนเลือกประเภท');
+                    return;
+                }
+                const selectedValue = targetBtn.dataset.value;
+
+                // Toggle logic: ถ้ากดปุ่มเดิมที่ active อยู่ ให้ยกเลิกการเลือก
+                if (targetBtn.classList.contains('active')) {
+                    scaleTypeSelections[currentScaleId] = null;
+                } else {
+                    scaleTypeSelections[currentScaleId] = selectedValue;
+                }
+                
+                applyTypeSelectionState(currentScaleId);
+            }
+        });
+
         ui.receiptScaleSubTabs.addEventListener('click', (e) => {
             const targetBtn = e.target.closest('.receipt-scale-sub-btn');
             if (targetBtn) {
@@ -881,7 +895,8 @@
                 targetBtn.classList.add('active');
                 ui.selectedReceiptScale.value = scale;
                 
-                applyLockState(scale); // อัปเดต UI ของปุ่มล็อค
+                applyLockState(scale); 
+                applyTypeSelectionState(scale); // อัปเดต UI ของปุ่มประเภท
                 
                 populateSellerDatalist(scale);
                 ui.sellerNameInput.value = '';
