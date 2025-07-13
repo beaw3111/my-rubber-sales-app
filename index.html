@@ -555,7 +555,6 @@
     const rolePermissions = {
         'admin': ['all', 'tab-activity'],
         'staff': ['tab-weighing-consolidated', 'tab-receipt'],
-        'visitor': ['tab-activity'],
     };
 
     let localSalesData = [];
@@ -572,7 +571,7 @@
     let unsubscribeWeighings = {};
 
     let dailyWeighingData = {};
-    // +++ MODIFIED +++: เปลี่ยนตัวแปรล็อคเป็น Object เพื่อเก็บสถานะแยกตามตาชั่ง
+    // ### MODIFIED ###: เปลี่ยนตัวแปรล็อคเป็น Object เพื่อเก็บสถานะแยกตามตาชั่ง
     let lockStates = {};
     let isAppInitialized = false;
 
@@ -1631,7 +1630,7 @@
         window.print();
     }
     
-    // +++ MODIFIED +++: ปรับปรุงฟังก์ชัน clearForm ให้คงสถานะล็อคไว้
+    // ### MODIFIED ###: ปรับปรุงฟังก์ชัน clearForm ให้คงสถานะล็อคไว้
     function clearForm() {
         ui.sellerNameInput.value = '';
         ui.receiptBagsCount.value = '';
@@ -1652,7 +1651,7 @@
         calculateTotals();
     }
     
-    // +++ ADDED +++: ฟังก์ชันสำหรับอัปเดต UI ของปุ่มล็อคตามสถานะ
+    // ### ADDED ###: ฟังก์ชันสำหรับอัปเดต UI ของปุ่มล็อคตามสถานะ
     function applyLockState(scaleId) {
         if (!scaleId || !lockStates[scaleId]) return;
 
@@ -1690,7 +1689,7 @@
         }
     }
 
-    // +++ MODIFIED +++: ปรับปรุงฟังก์ชัน toggle ให้ทำงานกับ state ปัจจุบัน
+    // ### MODIFIED ###: ปรับปรุงฟังก์ชัน toggle ให้ทำงานกับ state ปัจจุบัน
     function togglePriceLock() {
         const currentScaleId = ui.selectedReceiptScale.value;
         if (!currentScaleId) return;
@@ -1698,7 +1697,7 @@
         applyLockState(currentScaleId);
     }
     
-    // +++ MODIFIED +++: ปรับปรุงฟังก์ชัน toggle ให้ทำงานกับ state ปัจจุบัน
+    // ### MODIFIED ###: ปรับปรุงฟังก์ชัน toggle ให้ทำงานกับ state ปัจจุบัน
     function toggleTypeLock() {
         const currentScaleId = ui.selectedReceiptScale.value;
         if (!currentScaleId) return;
@@ -1794,7 +1793,6 @@
             ui.receiptDateInput.value = saleToProcess.date.toDate().toISOString().split('T')[0];
             ui.pricePerKgInput.value = saleToProcess.price;
 
-            // ไม่ต้อง toggle lock ที่นี่ เพราะ applyLockState ตอนเปลี่ยนตาชั่งจะจัดการเอง
             document.querySelectorAll('.receipt-type-radio').forEach(radio => {
                 radio.checked = (radio.value === saleToProcess.receiptType);
             });
@@ -2469,7 +2467,7 @@
         auth = getAuth(app);
         db = getFirestore(app);
 
-        // +++ MODIFIED +++: สร้าง state เริ่มต้นสำหรับ lockStates
+        // ### MODIFIED ###: สร้าง state เริ่มต้นสำหรับ lockStates
         for (let i = 1; i <= 4; i++) {
             lockStates[i] = { price: false, type: false };
         }
@@ -2511,7 +2509,7 @@
         ui.receiptDateInput.valueAsDate = new Date();
         updateDateDisplay();
         
-        // +++ MODIFIED +++: เพิ่มการเรียก applyLockState เมื่อเปลี่ยนตาชั่ง
+        // ### MODIFIED ###: เพิ่มการเรียก applyLockState เมื่อเปลี่ยนตาชั่ง
         ui.receiptScaleSubTabs.addEventListener('click', (e) => {
             const targetBtn = e.target.closest('.receipt-scale-sub-btn');
             if (targetBtn) {
