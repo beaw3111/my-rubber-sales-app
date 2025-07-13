@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -92,17 +93,18 @@
             .no-print {
                 display: none !important;
             }
-            .watermark {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%) rotate(-45deg);
-                font-size: 3em;
-                color: rgba(0, 0, 0, 0.1);
-                pointer-events: none;
-                white-space: nowrap;
-                z-index: 10;
-            }
+.watermark {
+    position: absolute;
+    top: 50%;
+    left: 70%; /* ปรับจาก 55% เป็น 70% เพื่อเลื่อนไปทางขวา */
+    transform: translate(-50%, -50%) rotate(-45deg);
+    font-size: 6em; /* เพิ่มขนาดตัวอักษรจาก 3em */
+    font-weight: 900; /* เพิ่มความหนา (bold) เข้าไป */
+    color: rgba(0, 0, 0, 0.08); /* ลดความเข้มลงเล็กน้อยเพื่อให้ดูสวยงาม */
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 10;
+}
         }
     </style>
 </head>
@@ -123,11 +125,6 @@
                 <p id="login-error" class="text-sm text-red-600 text-center hidden"></p>
                 <button id="login-button" class="w-full bg-amber-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-amber-700 transition-colors">
                     เข้าสู่ระบบ
-                </button>
-            </div>
-            <div class="text-center mt-4">
-                <button id="change-password-btn" class="text-sm text-stone-500 hover:text-amber-600 underline" style="display: none;">
-                    เปลี่ยนรหัสผ่าน
                 </button>
             </div>
         </div>
@@ -482,36 +479,15 @@
             </div>
         </div>
     </div>
-    <script type="module">
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import {
-        initializeApp
-    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import {
-        getAnalytics
-    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
-    import {
-        getAuth,
-        onAuthStateChanged,
-        signInWithEmailAndPassword,
-        signOut
-    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import {
-        getFirestore,
-        collection,
-        doc,
-        addDoc,
-        updateDoc,
-        deleteDoc,
-        onSnapshot,
-        query,
-        where,
-        getDocs,
-        getDoc,
-        writeBatch,
-        runTransaction
+        getFirestore, collection, doc, addDoc, updateDoc, deleteDoc,
+        onSnapshot, query, where, getDocs, getDoc, writeBatch, runTransaction
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+    const firebaseConfig = {
         apiKey: "AIzaSyCNVxG6s46SRXOYAeT0rJHAtz_-3IPUJNE",
         authDomain: "coopksb001.firebaseapp.com",
         projectId: "coopksb001",
@@ -520,13 +496,11 @@
         appId: "1:259378610497:web:fd12679830e97bf5e761c0",
         measurementId: "G-1RHH9TMD73"
     };
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'cup-rubber-sales-app';
+    const appId = 'cup-rubber-sales-app';
 
-    // +++ ADDED +++: กำหนดสิทธิ์ของแต่ละ Role ที่นี่
     const rolePermissions = {
-        'admin': ['all'], // admin เข้าได้ทุกแท็บ
-        'staff': ['tab-weighing-consolidated', 'tab-receipt'], // staff เข้าได้ 2 แท็บ
-        // Role อื่นๆ สามารถเพิ่มได้ตามต้องการ
+        'admin': ['all'],
+        'staff': ['tab-weighing-consolidated', 'tab-receipt'],
     };
 
     let localSalesData = [];
@@ -555,7 +529,6 @@
         usernameInput: document.getElementById('username-input'),
         passwordInput: document.getElementById('password-input'),
         loginError: document.getElementById('login-error'),
-        changePasswordBtn: document.getElementById('change-password-btn'),
         weighingHistoryBody: document.getElementById('weighing-history-body'),
         tabs: document.getElementById('tabs'),
         tabContents: document.querySelectorAll('.tab-content'),
@@ -615,15 +588,13 @@
         receiptSubTabs: document.getElementById('receipt-sub-tabs'),
     };
     
-    // +++ ADDED +++: ฟังก์ชันสำหรับกำหนดสิทธิ์การเข้าถึงแท็บ
     function applyUserPermissions(userRole) {
-        const permissions = rolePermissions[userRole] || []; // หากไม่มี role จะได้ array ว่าง
+        const permissions = rolePermissions[userRole] || [];
         const allTabButtons = document.querySelectorAll('#tabs .tab-btn');
         let firstVisibleTab = null;
 
         allTabButtons.forEach(btn => {
             const tabId = btn.dataset.tab;
-            // ถ้า role เป็น 'admin' หรือสิทธิ์ใน role นั้นมี 'all' หรือมี tabId นี้อยู่
             if (userRole === 'admin' || permissions.includes('all') || permissions.includes(tabId)) {
                 btn.style.display = 'inline-block';
                 if (!firstVisibleTab) {
@@ -634,11 +605,9 @@
             }
         });
 
-        // แสดงแท็บแรกที่ผู้ใช้มีสิทธิ์
         if (firstVisibleTab) {
             switchToTab(firstVisibleTab);
         } else {
-            // กรณีไม่มีสิทธิ์เข้าถึงแท็บใดๆ เลย
             showAlert('คุณไม่มีสิทธิ์เข้าถึงส่วนใดๆ ของระบบ');
         }
     }
@@ -678,7 +647,6 @@
         }
     };
     
-    // ### MODIFIED ###: แก้ไขฟังก์ชันนี้ให้รับ Role มาด้วย
     const initializeAppAndListeners = (user, userRole) => {
         if (isAppInitialized) return;
 
@@ -689,9 +657,8 @@
         truckLoadsCollectionRef = collection(db, `${appDataPath}/truckLoads`);
         countersDocRef = doc(db, `${appDataPath}/counters`, 'salesCounter');
         
-        applyUserPermissions(userRole); // เรียกใช้ฟังก์ชันกำหนดสิทธิ์
+        applyUserPermissions(userRole);
 
-        // เริ่มต้น Listener ทั้งหมด...
         if (unsubscribeSales) unsubscribeSales();
         unsubscribeSales = onSnapshot(query(salesCollectionRef), (snapshot) => {
             localSalesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -734,7 +701,6 @@
         localTruckLoads = [];
     }
     
-    // ... (วางโค้ดฟังก์ชันเดิมทั้งหมดที่นี่ ตั้งแต่ printBatchDetails จนถึง confirmDeleteAllData) ...
     function printBatchDetails(salesInBatch, title) {
         if (!salesInBatch || salesInBatch.length === 0) {
             showAlert('ไม่มีข้อมูลสำหรับพิมพ์');
@@ -2418,11 +2384,8 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         const app = initializeApp(firebaseConfig);
-        getAnalytics(app);
         auth = getAuth(app);
         db = getFirestore(app);
-
-        ui.changePasswordBtn.style.display = 'none';
 
         ui.loginButton.addEventListener('click', handleLogin);
         ui.passwordInput.addEventListener('keyup', (event) => { if (event.key === 'Enter') handleLogin(); });
@@ -2498,15 +2461,12 @@
         const firstReceiptScaleTab = ui.receiptScaleSubTabs.querySelector('.receipt-scale-sub-btn');
         if (firstReceiptScaleTab) firstReceiptScaleTab.click();
         
-        // ### MODIFIED ###: Central Auth State Observer with Role Check
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // User is signed in.
                 ui.loginScreen.classList.add('hidden');
                 ui.appContainer.classList.remove('hidden');
                 ui.usernameInput.value = '';
 
-                // +++ ADDED +++: ดึงข้อมูล Role จาก Firestore
                 const userDocRef = doc(db, 'users', user.uid);
                 const userDocSnap = await getDoc(userDocRef);
                 let userRole = null;
@@ -2516,7 +2476,6 @@
                 
                 initializeAppAndListeners(user, userRole);
             } else {
-                // User is signed out.
                 ui.loginScreen.classList.remove('hidden');
                 ui.appContainer.classList.add('hidden');
                 cleanupListeners();
