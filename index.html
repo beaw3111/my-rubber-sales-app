@@ -92,17 +92,18 @@
             .no-print {
                 display: none !important;
             }
-            .watermark {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%) rotate(-45deg);
-                font-size: 3em;
-                color: rgba(0, 0, 0, 0.1);
-                pointer-events: none;
-                white-space: nowrap;
-                z-index: 10;
-            }
+.watermark {
+    position: absolute;
+    top: 50%;
+    left: 55%; /* ปรับจาก 50% เป็น 55% เพื่อเลื่อนไปทางขวา */
+    transform: translate(-50%, -50%) rotate(-45deg);
+    font-size: 4.5em; /* เพิ่มขนาดตัวอักษรจาก 3em */
+    font-weight: 900; /* เพิ่มความหนา (bold) เข้าไป */
+    color: rgba(0, 0, 0, 0.08); /* ลดความเข้มลงเล็กน้อยเพื่อให้ดูสวยงาม */
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 10;
+}
         }
     </style>
 </head>
