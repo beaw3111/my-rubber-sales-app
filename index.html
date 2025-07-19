@@ -810,6 +810,7 @@
             <tr class="border-b">
                 <td class="px-2 py-2 text-center">${sale.dailyQueueNumber || '-'}</td>
                 <td class="px-2 py-2">${sale.seller}</td>
+                <td class="px-2 py-2">${sale.receiptType || ''}</td>
                 <td class="px-2 py-2 text-right">${sale.weight.toFixed(2)}</td>
             </tr>
         `).join('');
@@ -822,14 +823,15 @@
                     <thead class="bg-stone-200">
                         <tr class="border-b-2 border-black">
                             <th class="px-2 py-2 border-r border-black" style="width: 15%;">คิว</th>
-                            <th class="px-2 py-2 border-r border-black" style="width: 55%;">ชื่อผู้ขาย</th>
-                            <th class="px-2 py-2 border-black" style="width: 30%;">น้ำหนัก (กก.)</th>
+                            <th class="px-2 py-2 border-r border-black" style="width: 45%;">ชื่อผู้ขาย</th>
+                            <th class="px-2 py-2 border-r border-black" style="width: 15%;">ประเภท</th>
+                            <th class="px-2 py-2 border-black" style="width: 25%;">น้ำหนัก (กก.)</th>
                         </tr>
                     </thead>
                     <tbody>${tableRows}</tbody>
                     <tfoot class="font-bold bg-stone-200">
                        <tr class="border-t-2 border-black">
-                         <td class="px-2 py-2 text-right" colspan="2">รวมน้ำหนัก</td>
+                         <td class="px-2 py-2 text-right" colspan="3">รวมน้ำหนัก</td>
                          <td class="px-2 py-2 text-right">${totalWeight.toFixed(2)}</td>
                        </tr>
                     </tfoot>
@@ -843,12 +845,13 @@
             showAlert('ไม่มีข้อมูลสำหรับ Export');
             return;
         }
-        const headers = ['คิว', 'ชื่อผู้ขาย', 'น้ำหนัก (กก.)'];
+        const headers = ['คิว', 'ชื่อผู้ขาย', 'ประเภท', 'น้ำหนัก (กก.)'];
         const exportData = [headers];
         salesInBatch.forEach(sale => {
             exportData.push([
                 sale.dailyQueueNumber || '',
                 sale.seller,
+                sale.receiptType || '',
                 sale.weight
             ]);
         });
@@ -858,11 +861,13 @@
         }, {
             wch: 40
         }, {
+            wch: 15
+        }, {
             wch: 20
         }];
         for (let i = 1; i < exportData.length; i++) {
             const cellRef = XLSX.utils.encode_cell({
-                c: 2,
+                c: 3,
                 r: i
             });
             if (ws[cellRef]) {
@@ -969,12 +974,12 @@
         }
         const formattedTime = endTime.toLocaleTimeString('th-TH');
         let modalTitle = `รายชื่อในล็อต (ตาชั่งที่ ${scaleId} - ${formattedTime})`;
-        let modalContentHTML = `<div class="text-left text-sm max-h-80 overflow-y-auto"><table class="w-full"><thead class="sticky top-0 bg-stone-100"><tr><th class="p-2">คิว</th><th class="p-2 text-left">ชื่อผู้ขาย</th><th class="p-2 text-right">น้ำหนัก (กก.)</th></tr></thead><tbody>`;
+        let modalContentHTML = `<div class="text-left text-sm max-h-80 overflow-y-auto"><table class="w-full"><thead class="sticky top-0 bg-stone-100"><tr><th class="p-2">คิว</th><th class="p-2 text-left">ชื่อผู้ขาย</th><th class="p-2 text-left">ประเภท</th><th class="p-2 text-right">น้ำหนัก (กก.)</th></tr></thead><tbody>`;
         salesInBatch.forEach(sale => {
-            modalContentHTML += `<tr class="border-b"><td class="p-2 text-center">${sale.dailyQueueNumber || '-'}</td><td class="p-2">${sale.seller}</td><td class="p-2 text-right">${sale.weight.toFixed(2)}</td></tr>`;
+            modalContentHTML += `<tr class="border-b"><td class="p-2 text-center">${sale.dailyQueueNumber || '-'}</td><td class="p-2">${sale.seller}</td><td class="p-2">${sale.receiptType || ''}</td><td class="p-2 text-right">${sale.weight.toFixed(2)}</td></tr>`;
         });
         const totalWeight = salesInBatch.reduce((sum, sale) => sum + sale.weight, 0);
-        modalContentHTML += `</tbody><tfoot><tr class="font-bold border-t-2"><td class="p-2" colspan="2">รวม</td><td class="p-2 text-right">${totalWeight.toFixed(2)}</td></tr></tfoot></table></div>`;
+        modalContentHTML += `</tbody><tfoot><tr class="font-bold border-t-2"><td class="p-2" colspan="3">รวม</td><td class="p-2 text-right">${totalWeight.toFixed(2)}</td></tr></tfoot></table></div>`;
         const modalButtons = [{
             text: '🖨️ พิมพ์รายงาน',
             classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-sky-600 text-base font-medium text-white hover:bg-sky-700',
@@ -1618,7 +1623,7 @@
         if (!reportDateStr) {
             return showAlert('กรุณาเลือกวันที่ที่ต้องการทำรายงาน');
         }
-        const salesForDay = localSalesData; // Use the already fetched data
+        const salesForDay = localSalesData;
         if (salesForDay.length === 0) {
             return showAlert(`ไม่พบข้อมูลการขายในวันที่เลือก`);
         }
@@ -1637,6 +1642,7 @@
             <tr class="border-b">
                 <td class="px-2 py-2 text-center">${sale.dailyQueueNumber || index + 1}</td>
                 <td class="px-2 py-2">${sale.seller}</td>
+                <td class="px-2 py-2">${sale.receiptType || ''}</td>
                 <td class="px-2 py-2 text-right">${sale.weight.toFixed(2)}</td>
                 <td class="px-2 py-2 text-right">${sale.price.toFixed(2)}</td>
                 <td class="px-2 py-2 text-right">${sale.total.toFixed(2)}</td>
@@ -1653,9 +1659,10 @@
                     <thead class="bg-stone-200">
                         <tr class="border-b-2 border-black">
                             <th class="px-2 py-2 border-r border-black" style="width: 5%;">คิว</th>
-                            <th class="px-2 py-2 border-r border-black" style="width: 30%;">ชื่อ</th>
+                            <th class="px-2 py-2 border-r border-black" style="width: 25%;">ชื่อ</th>
+                            <th class="px-2 py-2 border-r border-black" style="width: 10%;">ประเภท</th>
                             <th class="px-2 py-2 border-r border-black" style="width: 15%;">น้ำหนัก</th>
-                            <th class="px-2 py-2 border-r border-black" style="width: 15%;">ราคา</th>
+                            <th class="px-2 py-2 border-r border-black" style="width: 10%;">ราคา</th>
                             <th class="px-2 py-2 border-r border-black" style="width: 15%;">ยอดรวม</th>
                             <th class="px-2 py-2 border-r border-black" style="width: 5%;">ตาชั่ง</th>
                             <th class="px-2 py-2" style="width: 15%;">ลายเซ็น</th>
@@ -1664,7 +1671,7 @@
                     <tbody>${tableRows}</tbody>
                     <tfoot class="font-bold bg-stone-200">
                     <tr class="border-t-2 border-black">
-                        <td class="px-2 py-2 text-right" colspan="2">รวมทั้งสิ้น</td>
+                        <td class="px-2 py-2 text-right" colspan="3">รวมทั้งสิ้น</td>
                         <td class="px-2 py-2 text-right">${totalWeight.toFixed(2)}</td>
                         <td class="px-2 py-2 text-right"></td>
                         <td class="px-2 py-2 text-right">${totalAmount.toFixed(2)}</td>
