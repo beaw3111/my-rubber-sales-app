@@ -1559,15 +1559,14 @@
         });
     }
     function renderActivityTab() {
-        const allLoadDates = [...new Set(localTruckLoads.map(load => load.date))];
-        if (allLoadDates.length > 0) {
-            const mostRecentDate = allLoadDates.sort().pop();
-            const loadsForDay = localTruckLoads.filter(load => load.date === mostRecentDate);
-            renderTruckLoadHistory(loadsForDay, ui.activityTruckLoadHistoryContainer, false);
+        const todayDateStr = getUTCDateKey(new Date());
+        const loadsForToday = localTruckLoads.filter(load => load.date === todayDateStr);
+        if (loadsForToday.length > 0) {
+            renderTruckLoadHistory(loadsForToday, ui.activityTruckLoadHistoryContainer, false);
         } else {
             ui.activityTruckLoadHistoryContainer.innerHTML = `
-                <h3 class="text-xl font-bold text-stone-800 border-b pb-2">ประวัติการบันทึกน้ำหนักขึ้นรถ (ล่าสุด)</h3>
-                <p class="text-stone-500 mt-4 text-center">ยังไม่มีประวัติการบันทึกน้ำหนักขึ้นรถ</p>
+                <h3 class="text-xl font-bold text-stone-800 border-b pb-2">ประวัติการบันทึกน้ำหนักขึ้นรถ (วันนี้)</h3>
+                <p class="text-stone-500 mt-4 text-center">ยังไม่มีประวัติการบันทึกน้ำหนักขึ้นรถสำหรับวันนี้</p>
             `;
         }
     }
