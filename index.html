@@ -673,14 +673,14 @@
         }
     }
     async function fetchAllTimeStats() {
-        if (allTimeSalesStats.length > 0) {
+        if (allTimeSalesStats.length > 0 && allTimeSalesStats[0].id) {
             renderSummary();
             renderDashboard();
             return;
         }
         try {
             const snapshot = await getDocs(query(salesCollectionRef));
-            allTimeSalesStats = snapshot.docs.map(doc => doc.data());
+            allTimeSalesStats = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderSummary();
             renderDashboard();
             populateReportDateSelector();
@@ -1772,7 +1772,7 @@
         ui.saveButton.textContent = 'กำลังบันทึก...';
         try {
             if (editingId) {
-                const originalDoc = localSalesData.find(s => s.id === editingId);
+                const originalDoc = allTimeSalesStats.find(s => s.id === editingId);
                 if (originalDoc) {
                     saleData.dailyQueueNumber = originalDoc.dailyQueueNumber;
                     saleData.receiptId = originalDoc.receiptId;
@@ -1781,7 +1781,8 @@
                 await updateDoc(doc(salesCollectionRef, editingId), saleData);
                 showAlert('อัปเดตข้อมูลสำเร็จ');
                 clearForm();
-                fetchSalesDataForDate(getUTCDateKey(date)); // Refresh table for the edited date
+                await fetchAllTimeStats();
+                fetchSalesDataForDate(getUTCDateKey(date));
             } else {
                 await runTransaction(db, async (transaction) => {
                     const counterDoc = await transaction.get(countersDocRef);
@@ -1802,12 +1803,13 @@
                     transaction.set(countersDocRef, newCounterData, {
                         merge: true
                     });
-                    transaction.set(doc(salesCollectionRef), saleData);
+                    const newSaleRef = doc(salesCollectionRef);
+                    transaction.set(newSaleRef, saleData);
                 });
                 showAlert('บันทึกข้อมูลสำเร็จ');
                 clearForm();
                 populateSellerDatalist(scaleNumber);
-                fetchAllTimeStats(); // Refresh dashboard data
+                await fetchAllTimeStats();
             }
         } catch (error) {
             console.error("Error saving document: ", error);
@@ -1821,15 +1823,18 @@
         const target = e.target.closest('button');
         if (!target) return;
         const id = target.dataset.id;
-        const saleToProcess = localSalesData.find(sale => sale.id === id);
-        if (!saleToProcess) return;
+        const saleToProcess = allTimeSalesStats.find(sale => sale.id === id);
+        if (!saleToProcess) {
+             showAlert('ไม่พบข้อมูลใบเสร็จที่ต้องการ กรุณารีเฟรชหน้าจอ');
+             return;
+        }
         if (target.classList.contains('delete-btn')) {
             showConfirm('คุณแน่ใจว่าต้องการลบรายการนี้?', async () => {
                 try {
                     await deleteDoc(doc(salesCollectionRef, id));
                     showAlert('ลบรายการสำเร็จ');
-                    fetchSalesDataForDate(ui.reportDateSelect.value); // Refresh current view
-                    fetchAllTimeStats(); // Refresh dashboard data
+                    await fetchAllTimeStats();
+                    fetchSalesDataForDate(ui.reportDateSelect.value);
                 } catch (error) {
                     showAlert(`เกิดข้อผิดพลาดในการลบ: ${error.message}`);
                 }
@@ -1871,7 +1876,8 @@
                         printCount: currentCount + 1
                     };
                     createPrintableReceipt(updatedSaleDataForPrint);
-                    fetchSalesDataForDate(ui.reportDateSelect.value); // Refresh view to show new print count
+                    await fetchAllTimeStats();
+                    fetchSalesDataForDate(ui.reportDateSelect.value);
                 } catch (error) {
                     showAlert(`เกิดข้อผิดพลาดในการอัปเดตสถานะ: ${error.message}`);
                 }
