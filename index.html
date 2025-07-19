@@ -1819,7 +1819,7 @@
             ui.saveButton.textContent = editingId ? 'อัปเดตข้อมูล' : 'บันทึกข้อมูล';
         }
     }
-    function handleTableClick(e) {
+    async function handleTableClick(e) {
         const target = e.target.closest('button');
         if (!target) return;
         const id = target.dataset.id;
@@ -1879,7 +1879,14 @@
                     await fetchAllTimeStats();
                     fetchSalesDataForDate(ui.reportDateSelect.value);
                 } catch (error) {
-                    showAlert(`เกิดข้อผิดพลาดในการอัปเดตสถานะ: ${error.message}`);
+                    console.error("Reprint error:", error);
+                    if (error.code === 'not-found' || (error.message && error.message.includes('No document to update'))) {
+                        showAlert('ไม่สามารถอัปเดตสถานะได้ เนื่องจากรายการนี้อาจถูกลบไปแล้ว กำลังรีเฟรชข้อมูล...');
+                        await fetchAllTimeStats();
+                        fetchSalesDataForDate(ui.reportDateSelect.value);
+                    } else {
+                        showAlert(`เกิดข้อผิดพลาดในการอัปเดตสถานะ: ${error.message}`);
+                    }
                 }
             });
         }
