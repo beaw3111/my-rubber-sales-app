@@ -280,21 +280,23 @@
                                 <select id="truck-summary-date" class="w-full sm:w-auto mt-1 p-2 border border-stone-300 rounded-lg shadow-sm bg-white"></select>
                             </div>
                         </div>
-                        <div id="truck-summary-container" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 border-t-2 border-stone-300 pt-6">
-                            <div class="bg-amber-100 border border-amber-300 p-6 rounded-xl text-center">
-                                <h3 class="text-xl font-bold text-amber-800">ยอดรวมน้ำหนักที่ยังไม่บันทึก</h3>
-                                <p id="truck-grand-total-weight" class="text-5xl font-extrabold text-amber-900 my-2">0.00</p>
-                                <p class="text-lg text-amber-800">กิโลกรัม</p>
+                        <div id="truck-summary-details-wrapper" class="hidden">
+                            <div id="truck-summary-container" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                             </div>
-                            <div class="bg-green-100 border border-green-300 p-6 rounded-xl text-center">
-                                <h3 class="text-xl font-bold text-green-800">ยอดรวมน้ำหนักที่บันทึกไปแล้ว</h3>
-                                <p id="truck-total-loaded-weight" class="text-5xl font-extrabold text-green-900 my-2">0.00</p>
-                                <p class="text-lg text-green-800">กิโลกรัม</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 border-t-2 border-stone-300 pt-6">
+                                <div class="bg-amber-100 border border-amber-300 p-6 rounded-xl text-center">
+                                    <h3 class="text-xl font-bold text-amber-800">ยอดรวมน้ำหนักที่ยังไม่บันทึก</h3>
+                                    <p id="truck-grand-total-weight" class="text-5xl font-extrabold text-amber-900 my-2">0.00</p>
+                                    <p class="text-lg text-amber-800">กิโลกรัม</p>
+                                </div>
+                                <div class="bg-green-100 border border-green-300 p-6 rounded-xl text-center">
+                                    <h3 class="text-xl font-bold text-green-800">ยอดรวมน้ำหนักที่บันทึกไปแล้ว</h3>
+                                    <p id="truck-total-loaded-weight" class="text-5xl font-extrabold text-green-900 my-2">0.00</p>
+                                    <p class="text-lg text-green-800">กิโลกรัม</p>
+                                </div>
                             </div>
-                        </div>
-                        <div id="truck-load-history-container" class="mt-8">
+                            <div id="truck-load-history-container" class="mt-8">
+                            </div>
                         </div>
                     </section>
                 </div>
@@ -540,7 +542,6 @@
         runTransaction,
         orderBy
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
     const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
         apiKey: "AIzaSyCNVxG6s46SRXOYAeT0rJHAtz_-3IPUJNE",
         authDomain: "coopksb001.firebaseapp.com",
@@ -551,31 +552,25 @@
         measurementId: "G-1RHH9TMD73"
     };
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'cup-rubber-sales-app';
-
     const rolePermissions = {
         'admin': ['all', 'tab-activity'],
         'staff': ['tab-weighing-consolidated', 'tab-receipt'],
     };
-
     let localSalesData = [];
-    let localWeighingData = []; 
+    let localWeighingData = [];
     let localTruckLoads = [];
-    let allTimeSalesStats = []; 
-
+    let allTimeSalesStats = [];
     let dailyStatsChart;
     let editingId = null;
     let editingWeighingId = null;
-
     let db, auth, userId, salesCollectionRef, weighingsCollectionRef, truckLoadsCollectionRef, countersDocRef;
-    let unsubscribeSalesToday = null; 
+    let unsubscribeSalesToday = null;
     let unsubscribeAllWeighings = null;
     let unsubscribeTruckLoads = null;
     let unsubscribeWeighings = {};
-
     let dailyWeighingData = {};
     let lockStates = {};
     let isAppInitialized = false;
-
     const ui = {
         loginScreen: document.getElementById('login-screen'),
         appContainer: document.getElementById('app'),
@@ -637,6 +632,7 @@
         deleteAllDataBtn: document.getElementById('delete-all-data-btn'),
         truckSummaryDate: document.getElementById('truck-summary-date'),
         truckSummaryContainer: document.getElementById('truck-summary-container'),
+        truckSummaryDetailsWrapper: document.getElementById('truck-summary-details-wrapper'),
         truckGrandTotalWeight: document.getElementById('truck-grand-total-weight'),
         truckTotalLoadedWeight: document.getElementById('truck-total-loaded-weight'),
         truckLoadHistoryContainer: document.getElementById('truck-load-history-container'),
@@ -648,10 +644,8 @@
         activitySummaryTodayTotalAmount: document.getElementById('activity-summary-today-total-amount'),
         activityTruckLoadHistoryContainer: document.getElementById('activity-truck-load-history-container'),
     };
-    
     async function fetchSalesDataForDate(dateStr) {
         ui.salesTableBody.innerHTML = '<tr><td colspan="8" class="px-6 py-8 text-center text-stone-400">กำลังโหลดข้อมูล...</td></tr>';
-        
         let salesQuery;
         if (dateStr) {
             const selectedDate = new Date(dateStr);
@@ -665,10 +659,12 @@
             todayEnd.setHours(23, 59, 59, 999);
             salesQuery = query(salesCollectionRef, where("date", ">=", todayStart), where("date", "<=", todayEnd), orderBy("date", "desc"));
         }
-
         try {
             const snapshot = await getDocs(salesQuery);
-            localSalesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            localSalesData = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
             filterAndRenderSalesTable();
         } catch (error) {
             console.error("Error fetching sales data:", error);
@@ -676,14 +672,12 @@
             ui.salesTableBody.innerHTML = '<tr><td colspan="8" class="px-6 py-8 text-center text-red-500">ไม่สามารถโหลดข้อมูลได้</td></tr>';
         }
     }
-
     async function fetchAllTimeStats() {
         if (allTimeSalesStats.length > 0) {
             renderSummary();
             renderDashboard();
-            return; 
+            return;
         }
-        
         try {
             const snapshot = await getDocs(query(salesCollectionRef));
             allTimeSalesStats = snapshot.docs.map(doc => doc.data());
@@ -695,7 +689,6 @@
             console.error("Error fetching all-time stats:", error);
         }
     }
-
     function applyUserPermissions(userRole) {
         const permissions = rolePermissions[userRole] || [];
         const allTabButtons = document.querySelectorAll('#tabs .tab-btn');
@@ -717,7 +710,6 @@
             showAlert('คุณไม่มีสิทธิ์เข้าถึงส่วนใดๆ ของระบบ');
         }
     }
-
     const handleLogin = async () => {
         const email = ui.usernameInput.value.trim();
         const password = ui.passwordInput.value.trim();
@@ -741,7 +733,6 @@
             ui.passwordInput.value = '';
         }
     };
-
     const handleLogout = async () => {
         try {
             await signOut(auth);
@@ -750,56 +741,54 @@
             showAlert('เกิดข้อผิดพลาดในการออกจากระบบ');
         }
     };
-
     const initializeAppAndListeners = (user, userRole) => {
         if (isAppInitialized) return;
-
         userId = user.uid;
         const appDataPath = `artifacts/${appId}/public/data`;
         salesCollectionRef = collection(db, `${appDataPath}/sales`);
         weighingsCollectionRef = collection(db, `${appDataPath}/weighings`);
         truckLoadsCollectionRef = collection(db, `${appDataPath}/truckLoads`);
         countersDocRef = doc(db, `${appDataPath}/counters`, 'salesCounter');
-        
         applyUserPermissions(userRole);
-        
         if (unsubscribeSalesToday) unsubscribeSalesToday();
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
-
         const qSalesToday = query(salesCollectionRef, where("timestamp", ">=", todayStart));
         unsubscribeSalesToday = onSnapshot(qSalesToday, (snapshot) => {
-            const todaySalesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            
+            const todaySalesData = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
             renderScaleSummaries(ui.salesSummaryByScale, ui.salesSummaryTodayTotal, ui.summaryTodayTotalWeight, ui.summaryTodayTotalAmount, todaySalesData);
             renderScaleSummaries(ui.activitySalesSummaryByScale, ui.activitySalesSummaryTodayTotal, ui.activitySummaryTodayTotalWeight, ui.activitySummaryTodayTotalAmount, todaySalesData);
-            
             if (ui.reportDateSelect.value === '') {
-                 localSalesData = todaySalesData.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
-                 filterAndRenderSalesTable();
+                localSalesData = todaySalesData.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
+                filterAndRenderSalesTable();
             }
         });
-
         if (unsubscribeAllWeighings) unsubscribeAllWeighings();
         unsubscribeAllWeighings = onSnapshot(query(weighingsCollectionRef), (snapshot) => {
-            localWeighingData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            localWeighingData = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
             renderWeighingHistory();
             populateSellerDatalist(ui.selectedReceiptScale.value);
         });
-
         if (unsubscribeTruckLoads) unsubscribeTruckLoads();
         unsubscribeTruckLoads = onSnapshot(query(truckLoadsCollectionRef), (snapshot) => {
-            localTruckLoads = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            localTruckLoads = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
             calculateTruckSummary();
             renderActivityTab();
         });
-
         fetchSalesDataForDate('');
         fetchAllTimeStats();
         setupWeighingListeners();
         isAppInitialized = true;
     }
-
     const cleanupListeners = () => {
         if (unsubscribeSalesToday) unsubscribeSalesToday();
         if (unsubscribeAllWeighings) unsubscribeAllWeighings();
@@ -811,7 +800,6 @@
         localTruckLoads = [];
         allTimeSalesStats = [];
     }
-
     function printBatchDetails(salesInBatch, title) {
         if (!salesInBatch || salesInBatch.length === 0) {
             showAlert('ไม่มีข้อมูลสำหรับพิมพ์');
@@ -850,7 +838,6 @@
         ui.printArea.innerHTML = reportHTML;
         window.print();
     }
-
     function exportBatchDetailsToExcel(salesInBatch, title) {
         if (!salesInBatch || salesInBatch.length === 0) {
             showAlert('ไม่มีข้อมูลสำหรับ Export');
@@ -866,9 +853,18 @@
             ]);
         });
         const ws = XLSX.utils.aoa_to_sheet(exportData);
-        ws['!cols'] = [{ wch: 10 }, { wch: 40 }, { wch: 20 }];
+        ws['!cols'] = [{
+            wch: 10
+        }, {
+            wch: 40
+        }, {
+            wch: 20
+        }];
         for (let i = 1; i < exportData.length; i++) {
-            const cellRef = XLSX.utils.encode_cell({ c: 2, r: i });
+            const cellRef = XLSX.utils.encode_cell({
+                c: 2,
+                r: i
+            });
             if (ws[cellRef]) {
                 ws[cellRef].t = 'n';
                 ws[cellRef].z = '#,##0.00';
@@ -879,7 +875,6 @@
         const safeTitle = title.replace(/[^a-z0-9ก-๙]/gi, '_').toLowerCase();
         XLSX.writeFile(wb, `รายงาน_${safeTitle}.xlsx`);
     }
-
     function getUTCDateKey(date) {
         if (!date) return null;
         const d = (date.toDate) ? date.toDate() : date;
@@ -888,7 +883,6 @@
         const day = String(d.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
     }
-
     async function handleSaveTruckLoad(event) {
         const scaleId = event.target.dataset.scale;
         const weightToSave = parseFloat(event.target.dataset.weight);
@@ -943,7 +937,6 @@
             classes: 'w-full sm:w-auto mt-2 sm:mt-0 inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50'
         }]);
     }
-
     function handleViewLoadBatchDetails(loadId) {
         if (!loadId) return;
         const currentLoad = localTruckLoads.find(l => l.id === loadId);
@@ -1002,7 +995,6 @@
         }];
         showModal(modalTitle, modalContentHTML, modalButtons);
     }
-
     async function handleTruckLoadHistoryClick(e) {
         const target = e.target.closest('button');
         if (!target) return;
@@ -1059,7 +1051,10 @@
                         return false;
                     }
                     try {
-                        await updateDoc(doc(truckLoadsCollectionRef, loadId), { weight: newWeight, vehicleRegistration: newReg });
+                        await updateDoc(doc(truckLoadsCollectionRef, loadId), {
+                            weight: newWeight,
+                            vehicleRegistration: newReg
+                        });
                         showAlert('แก้ไขข้อมูลสำเร็จ');
                         return true;
                     } catch (error) {
@@ -1074,7 +1069,6 @@
             }]);
         }
     }
-
     function renderTruckLoadHistory(loadsForDay, container, showActions = true) {
         container.innerHTML = '';
         const totalLoadedWeight = loadsForDay.reduce((sum, load) => sum + load.weight, 0);
@@ -1098,7 +1092,9 @@
             return acc;
         }, {});
         const formattedDate = new Date(loadsForDay[0].date.replace(/-/g, '/')).toLocaleDateString('th-TH', {
-            year: 'numeric', month: 'long', day: 'numeric'
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
         });
         let historyHtml = `
             <div class="flex justify-between items-center mb-4">
@@ -1132,34 +1128,37 @@
             historyHtml += `</ul></div>`;
         }
         container.innerHTML = historyHtml;
-        if(showActions && document.getElementById('print-truck-history-btn')){
+        if (showActions && document.getElementById('print-truck-history-btn')) {
             document.getElementById('print-truck-history-btn').addEventListener('click', () => printTruckLoadHistory(loadsByScale, formattedDate, totalLoadedWeight));
         }
     }
-
     function calculateTruckSummary() {
         const selectedDateStr = ui.truckSummaryDate.value;
         if (!selectedDateStr) {
-            ui.truckSummaryContainer.innerHTML = '<p class="text-center text-stone-500 md:col-span-2">ไม่มีข้อมูลให้เลือก</p>';
-            ui.truckGrandTotalWeight.textContent = "0.00";
-            ui.truckTotalLoadedWeight.textContent = "0.00";
-            ui.truckLoadHistoryContainer.innerHTML = "";
+            ui.truckSummaryContainer.innerHTML = '<p class="text-center text-stone-500 md:col-span-2 p-4">กรุณาเลือกวันที่เพื่อแสดงข้อมูลสรุป</p>';
+            if (ui.truckSummaryDetailsWrapper) {
+                ui.truckSummaryDetailsWrapper.classList.add('hidden');
+            }
             return;
         };
+        if (ui.truckSummaryDetailsWrapper) {
+            ui.truckSummaryDetailsWrapper.classList.remove('hidden');
+        }
         const dateParts = selectedDateStr.split('-');
         const reportStart = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2]));
         const reportEnd = new Date(reportStart.getTime() + (24 * 60 * 60 * 1000) - 1);
-        
         const salesForDay = allTimeSalesStats.filter(sale => {
             const saleDate = sale.date.toDate();
             return saleDate >= reportStart && saleDate <= reportEnd;
         });
-
         const loadsForDay = localTruckLoads.filter(load => load.date === selectedDateStr);
         const summary = salesForDay.reduce((acc, sale) => {
             const scale = sale.scaleNumber || 'ไม่ระบุ';
             if (!acc[scale]) {
-                acc[scale] = { totalSalesWeight: 0, count: 0 };
+                acc[scale] = {
+                    totalSalesWeight: 0,
+                    count: 0
+                };
             }
             acc[scale].totalSalesWeight += sale.weight;
             acc[scale].count++;
@@ -1179,7 +1178,6 @@
         renderTruckSummary(summary, loadedSummary);
         renderTruckLoadHistory(loadsForDay, ui.truckLoadHistoryContainer, true);
     }
-
     function renderTruckSummary(salesSummary, loadedSummary) {
         ui.truckSummaryContainer.innerHTML = '';
         let grandTotal = 0;
@@ -1193,7 +1191,10 @@
             ui.truckSummaryContainer.innerHTML = '<p class="text-center text-stone-500 md:col-span-2">ไม่พบข้อมูลการขายในวันที่เลือก</p>';
         }
         for (const scale of sortedScales) {
-            const salesData = salesSummary[scale] || { totalSalesWeight: 0, count: 0 };
+            const salesData = salesSummary[scale] || {
+                totalSalesWeight: 0,
+                count: 0
+            };
             const loadedWeight = loadedSummary[scale] || 0;
             const currentWeight = salesData.totalSalesWeight - loadedWeight;
             grandTotal += currentWeight;
@@ -1223,7 +1224,6 @@
             maximumFractionDigits: 2
         });
     }
-
     function switchToTab(targetTabId) {
         ui.tabs.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         ui.tabContents.forEach(content => content.classList.remove('active'));
@@ -1245,7 +1245,6 @@
             if (firstSubTab) _switchToSubTab('weighing', firstSubTab.dataset.subtab);
         }
     }
-
     function showModal(title, message, buttons) {
         ui.modalTitle.textContent = title;
         ui.modalMessageContainer.innerHTML = message;
@@ -1268,20 +1267,17 @@
             ui.modal.querySelector('.modal-content').classList.remove('scale-95');
         }, 10);
     }
-
     function hideModal() {
         ui.modal.classList.add('opacity-0');
         ui.modal.querySelector('.modal-content').classList.add('scale-95');
         setTimeout(() => ui.modal.classList.add('hidden'), 300);
     }
-
     function showAlert(message) {
         showModal('แจ้งเตือน', `<p class="text-sm text-stone-500">${message}</p>`, [{
             text: 'ตกลง',
             classes: 'w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-amber-600 text-base font-medium text-white hover:bg-amber-700 sm:w-auto sm:text-sm'
         }]);
     }
-
     function showConfirm(message, onConfirm) {
         showModal('ยืนยันการดำเนินการ', `<p class="text-sm text-stone-500">${message}</p>`, [{
             text: 'ยืนยัน',
@@ -1292,7 +1288,6 @@
             classes: 'w-full sm:w-auto mt-2 sm:mt-0 inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50'
         }]);
     }
-
     function bahttext(number) {
         number = Number(number).toFixed(2);
         let [integer,
@@ -1323,7 +1318,6 @@
         if (!fracText && intText) fracText = 'ถ้วน';
         return intText + fracText;
     }
-
     function calculateTotals() {
         let totalWeight = 0;
         const weightInputs = ui.weightInputsContainer.querySelectorAll('.weight-input');
@@ -1340,7 +1334,6 @@
         });
         ui.totalAmountTextEl.textContent = bahttext(roundedTotal);
     }
-
     function renderTable(dataToRender) {
         ui.salesTableBody.innerHTML = '';
         if (dataToRender.length === 0) {
@@ -1377,7 +1370,6 @@
             ui.salesTableBody.appendChild(row);
         });
     }
-
     function renderSummary() {
         if (!allTimeSalesStats || allTimeSalesStats.length === 0) {
             ui.summaryTotalSellers.textContent = '0';
@@ -1398,12 +1390,14 @@
             maximumFractionDigits: 2
         });
     }
-
     function renderDashboard() {
         const statsByDay = allTimeSalesStats.reduce((acc, sale) => {
             const day = sale.date.toDate().toISOString().split('T')[0];
             if (!acc[day]) {
-                acc[day] = { totalWeight: 0, totalValue: 0 };
+                acc[day] = {
+                    totalWeight: 0,
+                    totalValue: 0
+                };
             }
             acc[day].totalWeight += sale.weight;
             acc[day].totalValue += sale.total;
@@ -1411,7 +1405,9 @@
         }, {});
         const sortedDays = Object.keys(statsByDay).sort((a, b) => new Date(a) - new Date(b));
         const labels = sortedDays.map(day => new Date(day).toLocaleDateString('th-TH', {
-            year: '2-digit', month: 'short', day: 'numeric'
+            year: '2-digit',
+            month: 'short',
+            day: 'numeric'
         }));
         const weightData = sortedDays.map(day => statsByDay[day].totalWeight);
         const priceData = sortedDays.map(day => {
@@ -1447,36 +1443,73 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
                     scales: {
-                        x: { ticks: { font: { family: "'Sarabun', sans-serif" } } },
+                        x: {
+                            ticks: {
+                                font: {
+                                    family: "'Sarabun', sans-serif"
+                                }
+                            }
+                        },
                         yWeight: {
                             type: 'linear',
                             display: true,
                             position: 'left',
-                            title: { display: true, text: 'ปริมาณ (กก.)', font: { family: "'Sarabun', sans-serif", size: 14 } }
+                            title: {
+                                display: true,
+                                text: 'ปริมาณ (กก.)',
+                                font: {
+                                    family: "'Sarabun', sans-serif",
+                                    size: 14
+                                }
+                            }
                         },
                         yPrice: {
                             type: 'linear',
                             display: true,
                             position: 'right',
-                            title: { display: true, text: 'ราคาเฉลี่ย (บาท)', font: { family: "'Sarabun', sans-serif", size: 14 } },
-                            grid: { drawOnChartArea: false }
+                            title: {
+                                display: true,
+                                text: 'ราคาเฉลี่ย (บาท)',
+                                font: {
+                                    family: "'Sarabun', sans-serif",
+                                    size: 14
+                                }
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
                         }
                     },
                     plugins: {
-                        legend: { position: 'top', labels: { font: { family: "'Sarabun', sans-serif" } } },
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    family: "'Sarabun', sans-serif"
+                                }
+                            }
+                        },
                         tooltip: {
-                            titleFont: { family: "'Sarabun', sans-serif" },
-                            bodyFont: { family: "'Sarabun', sans-serif" },
-                            footerFont: { family: "'Sarabun', sans-serif" },
+                            titleFont: {
+                                family: "'Sarabun', sans-serif"
+                            },
+                            bodyFont: {
+                                family: "'Sarabun', sans-serif"
+                            },
+                            footerFont: {
+                                family: "'Sarabun', sans-serif"
+                            },
                         }
                     }
                 }
             });
         }
     }
-
     function renderWeighingHistory() {
         const historyBody = ui.weighingHistoryBody;
         if (!historyBody) return;
@@ -1488,7 +1521,10 @@
         }, {});
         const statsByDay = localWeighingData.reduce((acc, entry) => {
             const day = entry.timestamp.toDate().toISOString().split('T')[0];
-            if (!acc[day]) acc[day] = { totalBags: 0, recordCount: 0 };
+            if (!acc[day]) acc[day] = {
+                totalBags: 0,
+                recordCount: 0
+            };
             acc[day].totalBags += entry.bags;
             acc[day].recordCount++;
             return acc;
@@ -1507,7 +1543,9 @@
             const nextDayWeight = salesWeightByDay[nextDayKey] || 0;
             const averageWeight = (nextDayWeight > 0 && stats.totalBags > 0) ? (nextDayWeight / stats.totalBags) : 0;
             const formattedDate = new Date(day).toLocaleDateString('th-TH', {
-                year: 'numeric', month: 'long', day: 'numeric'
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
             });
             const row = document.createElement('tr');
             row.className = 'bg-white border-b hover:bg-stone-50';
@@ -1520,13 +1558,12 @@
             historyBody.appendChild(row);
         });
     }
-
-    function renderActivityTab(){
+    function renderActivityTab() {
         const allLoadDates = [...new Set(localTruckLoads.map(load => load.date))];
         if (allLoadDates.length > 0) {
-             const mostRecentDate = allLoadDates.sort().pop();
-             const loadsForDay = localTruckLoads.filter(load => load.date === mostRecentDate);
-             renderTruckLoadHistory(loadsForDay, ui.activityTruckLoadHistoryContainer, false);
+            const mostRecentDate = allLoadDates.sort().pop();
+            const loadsForDay = localTruckLoads.filter(load => load.date === mostRecentDate);
+            renderTruckLoadHistory(loadsForDay, ui.activityTruckLoadHistoryContainer, false);
         } else {
             ui.activityTruckLoadHistoryContainer.innerHTML = `
                 <h3 class="text-xl font-bold text-stone-800 border-b pb-2">ประวัติการบันทึกน้ำหนักขึ้นรถ (ล่าสุด)</h3>
@@ -1534,7 +1571,6 @@
             `;
         }
     }
-
     function createPrintableReceipt(sale) {
         const saleDate = sale.date instanceof Date ? sale.date : sale.date.toDate();
         const roundedTotal = Math.floor(sale.total);
@@ -1578,7 +1614,6 @@
         ui.printArea.innerHTML = `<div style="display: flex; width: 100%;">${generateSingleReceiptHTML('ใบเสร็จรับเงิน (ต้นฉบับ)')}${generateSingleReceiptHTML('ใบเสร็จรับเงิน (สำเนา)', true)}</div>`;
         window.print();
     }
-
     function createDailySummaryReport() {
         const reportDateStr = ui.reportDateSelect.value;
         if (!reportDateStr) {
@@ -1588,13 +1623,15 @@
         if (salesForDay.length === 0) {
             return showAlert(`ไม่พบข้อมูลการขายในวันที่เลือก`);
         }
-
         const dateParts = reportDateStr.split('-');
         const reportDate = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2]));
-        const formattedDate = reportDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
-        
+        const formattedDate = reportDate.toLocaleDateString('th-TH', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            timeZone: 'UTC'
+        });
         salesForDay.sort((a, b) => (a.dailyQueueNumber || 0) - (b.dailyQueueNumber || 0));
-
         const totalWeight = salesForDay.reduce((sum, sale) => sum + sale.weight, 0);
         const totalAmount = salesForDay.reduce((sum, sale) => sum + sale.total, 0);
         const tableRows = salesForDay.map((sale, index) => `
@@ -1640,7 +1677,6 @@
         ui.printArea.innerHTML = reportHTML;
         window.print();
     }
-
     function clearForm() {
         ui.sellerNameInput.value = '';
         ui.receiptBagsCount.value = '';
@@ -1649,14 +1685,13 @@
         ui.weightInputsContainer.querySelectorAll('.weight-input').forEach(input => input.value = '');
         const currentScaleId = ui.selectedReceiptScale.value;
         if (currentScaleId && lockStates[currentScaleId] && !lockStates[currentScaleId].price) {
-             ui.pricePerKgInput.value = '';
+            ui.pricePerKgInput.value = '';
         }
         editingId = null;
         ui.saveButton.textContent = 'บันทึกข้อมูล';
         ui.cancelEditButton.classList.add('hidden');
         calculateTotals();
     }
-
     function applyLockState(scaleId) {
         if (!scaleId || !lockStates[scaleId]) return;
         const state = lockStates[scaleId];
@@ -1688,21 +1723,18 @@
             ui.typeLockBtn.classList.replace('hover:bg-sky-600', 'hover:bg-gray-500');
         }
     }
-
     function togglePriceLock() {
         const currentScaleId = ui.selectedReceiptScale.value;
         if (!currentScaleId) return;
         lockStates[currentScaleId].price = !lockStates[currentScaleId].price;
         applyLockState(currentScaleId);
     }
-
     function toggleTypeLock() {
         const currentScaleId = ui.selectedReceiptScale.value;
         if (!currentScaleId) return;
         lockStates[currentScaleId].type = !lockStates[currentScaleId].type;
         applyLockState(currentScaleId);
     }
-
     async function handleSave() {
         if (!salesCollectionRef || !countersDocRef) return showAlert('ยังไม่พร้อมใช้งาน กรุณารอสักครู่');
         const seller = ui.sellerNameInput.value.trim();
@@ -1717,7 +1749,19 @@
         if (!scaleNumber) return showAlert('กรุณาเลือกตาชั่งสำหรับออกใบเสร็จก่อน');
         if (weightInputs.length === 0 || !seller || !date || weight <= 0 || price <= 0) return showAlert('กรุณากรอกข้อมูลให้ครบถ้วน: ชื่อผู้ขาย, วันที่, น้ำหนัก และราคา');
         if (total <= 0) return showAlert('ยอดรวมต้องมากกว่า 0 บาท');
-        const saleData = { seller, date, scaleNumber, bagsCount, weight, weights: weightInputs, price, total, receiptType, timestamp: new Date(), userId };
+        const saleData = {
+            seller,
+            date,
+            scaleNumber,
+            bagsCount,
+            weight,
+            weights: weightInputs,
+            price,
+            total,
+            receiptType,
+            timestamp: new Date(),
+            userId
+        };
         ui.saveButton.disabled = true;
         ui.saveButton.textContent = 'กำลังบันทึก...';
         try {
@@ -1745,8 +1789,13 @@
                     saleData.dailyQueueNumber = nextQueueNumber;
                     saleData.receiptId = `${year}${month}${day}-${String(nextReceiptIndex).padStart(4, '0')}`;
                     saleData.printCount = 0;
-                    const newCounterData = { [dateKey]: nextQueueNumber, lastReceiptIndex: nextReceiptIndex };
-                    transaction.set(countersDocRef, newCounterData, { merge: true });
+                    const newCounterData = {
+                        [dateKey]: nextQueueNumber,
+                        lastReceiptIndex: nextReceiptIndex
+                    };
+                    transaction.set(countersDocRef, newCounterData, {
+                        merge: true
+                    });
                     transaction.set(doc(salesCollectionRef), saleData);
                 });
                 showAlert('บันทึกข้อมูลสำเร็จ');
@@ -1762,7 +1811,6 @@
             ui.saveButton.textContent = editingId ? 'อัปเดตข้อมูล' : 'บันทึกข้อมูล';
         }
     }
-
     function handleTableClick(e) {
         const target = e.target.closest('button');
         if (!target) return;
@@ -1802,13 +1850,20 @@
             ui.cancelEditButton.classList.remove('hidden');
             switchToTab('tab-receipt');
             _switchToSubTab('receipt', 'receipt-form');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
         } else if (target.classList.contains('reprint-btn')) {
             showConfirm('ยืนยันการพิมพ์ใช่หรือไม่? ระบบจะนับจำนวนครั้งที่พิมพ์', async () => {
                 try {
                     const currentCount = saleToProcess.printCount || 0;
-                    await updateDoc(doc(salesCollectionRef, id), { printCount: currentCount + 1 });
-                    const updatedSaleDataForPrint = { ...saleToProcess, printCount: currentCount + 1 };
+                    await updateDoc(doc(salesCollectionRef, id), {
+                        printCount: currentCount + 1
+                    });
+                    const updatedSaleDataForPrint = { ...saleToProcess,
+                        printCount: currentCount + 1
+                    };
                     createPrintableReceipt(updatedSaleDataForPrint);
                     fetchSalesDataForDate(ui.reportDateSelect.value); // Refresh view to show new print count
                 } catch (error) {
@@ -1817,12 +1872,10 @@
             });
         }
     }
-
     function updateDateDisplay() {
         const date = ui.receiptDateInput.valueAsDate;
         ui.dateDisplay.textContent = `(${(date || new Date()).toLocaleDateString('th-TH')})`;
     }
-
     function createWeighingStationHTML(scaleId) {
         return `
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -1863,7 +1916,6 @@
             </div>
         `;
     }
-
     function renderWeighingStations() {
         for (let i = 1; i <= 4; i++) {
             const tabContent = document.getElementById(`weighing-scale-${i}-content`);
@@ -1876,7 +1928,6 @@
             }
         }
     }
-
     function printWeighingHistory(scaleId) {
         if (!localWeighingData) return showAlert('ข้อมูลการวางยางยังไม่ถูกโหลด');
         const scaleData = localWeighingData.filter(record => record.scaleId == scaleId);
@@ -1907,7 +1958,11 @@
                     return false;
                 }
                 const reportData = scaleData.filter(record => record.timestamp.toDate().toISOString().split('T')[0] === selectedDate).sort((a, b) => (a.dailyQueueNumber || 0) - (b.dailyQueueNumber || 0));
-                const formattedPrintDate = new Date(selectedDate).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+                const formattedPrintDate = new Date(selectedDate).toLocaleDateString('th-TH', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
                 const tableRows = reportData.map(record => `
                     <tr class="border-b">
                         <td class="px-2 py-2 text-center">${record.dailyQueueNumber}</td>
@@ -1942,7 +1997,6 @@
             classes: 'w-full sm:w-auto mt-2 sm:mt-0 inline-flex justify-center rounded-md border border-stone-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-stone-700 hover:bg-stone-50'
         }]);
     }
-
     function exportWeighingHistoryToXLSX(scaleId) {
         if (!localWeighingData) return showAlert('ข้อมูลการวางยางยังไม่ถูกโหลด');
         const scaleData = localWeighingData.filter(record => record.scaleId == scaleId).sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
@@ -1954,35 +2008,55 @@
             exportData.push([timestamp.toLocaleDateString('th-TH'), timestamp.toLocaleTimeString('th-TH'), record.sellerName, record.bags]);
         });
         const ws = XLSX.utils.aoa_to_sheet(exportData);
-        ws['!cols'] = [{ wch: 15 }, { wch: 15 }, { wch: 30 }, { wch: 15 }];
+        ws['!cols'] = [{
+            wch: 15
+        }, {
+            wch: 15
+        }, {
+            wch: 30
+        }, {
+            wch: 15
+        }];
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, `ประวัติตาชั่งที่ ${scaleId}`);
         XLSX.writeFile(wb, `weighing-history-scale-${scaleId}.xlsx`);
     }
-
     function exportToExcel() {
         if (localSalesData.length === 0) return showAlert('ไม่มีข้อมูลการขายสำหรับ Export');
-        
         const daySales = localSalesData.sort((a, b) => (a.dailyQueueNumber || 0) - (b.dailyQueueNumber || 0));
         const headers = ['คิว', 'วันที่', 'ชื่อผู้ขาย', 'น้ำหนัก (กก.)', 'ราคา/หน่วย (บาท)', 'ยอดรวม (บาท)', 'ตาชั่งที่'];
         const exportData = [headers];
-        
         daySales.forEach(sale => {
             exportData.push([sale.dailyQueueNumber || '', sale.date.toDate().toLocaleDateString('th-TH'), sale.seller, sale.weight, sale.price, sale.total, sale.scaleNumber || '']);
         });
-
         const ws = XLSX.utils.aoa_to_sheet(exportData);
-        ws['!cols'] = [{ wch: 5 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 10 }];
+        ws['!cols'] = [{
+            wch: 5
+        }, {
+            wch: 15
+        }, {
+            wch: 25
+        }, {
+            wch: 15
+        }, {
+            wch: 15
+        }, {
+            wch: 15
+        }, {
+            wch: 10
+        }];
         for (let R = 1; R < exportData.length; ++R) {
             for (let C of [3, 4, 5]) {
-                const cell_ref = XLSX.utils.encode_cell({ c: C, r: R });
+                const cell_ref = XLSX.utils.encode_cell({
+                    c: C,
+                    r: R
+                });
                 if (ws[cell_ref]) {
                     ws[cell_ref].t = 'n';
                     ws[cell_ref].z = '#,##0.00';
                 }
             }
         }
-
         const wb = XLSX.utils.book_new();
         const reportDateStr = ui.reportDateSelect.value || new Date().toISOString().slice(0, 10);
         const dateParts = reportDateStr.split('-');
@@ -1990,7 +2064,6 @@
         XLSX.utils.book_append_sheet(wb, ws, sheetName);
         XLSX.writeFile(wb, `daily-sales-report-${reportDateStr}.xlsx`);
     }
-
     async function saveWeighing(event) {
         if (!weighingsCollectionRef) return showAlert('ยังไม่พร้อมใช้งาน กรุณารอสักครู่');
         const scaleId = parseInt(event.target.dataset.scale);
@@ -2001,14 +2074,24 @@
         if (!sellerName || !bags || bags <= 0) return showAlert('กรุณากรอกชื่อผู้ขายและจำนวนถุงให้ถูกต้อง');
         try {
             if (editingWeighingId) {
-                await updateDoc(doc(weighingsCollectionRef, editingWeighingId), { sellerName, bags });
+                await updateDoc(doc(weighingsCollectionRef, editingWeighingId), {
+                    sellerName,
+                    bags
+                });
                 editingWeighingId = null;
             } else {
                 const todayStart = new Date();
                 todayStart.setHours(0, 0, 0, 0);
                 const todaysEntriesOnScale = localWeighingData.filter(d => d.scaleId === scaleId && d.timestamp.toDate() >= todayStart);
                 const newQueueNumber = todaysEntriesOnScale.length + 1;
-                await addDoc(weighingsCollectionRef, { sellerName, bags, scaleId, timestamp: new Date(), userId, dailyQueueNumber: newQueueNumber });
+                await addDoc(weighingsCollectionRef, {
+                    sellerName,
+                    bags,
+                    scaleId,
+                    timestamp: new Date(),
+                    userId,
+                    dailyQueueNumber: newQueueNumber
+                });
             }
             sellerNameInput.value = '';
             bagsInput.value = '';
@@ -2017,13 +2100,11 @@
             showAlert(`เกิดข้อผิดพลาดในการบันทึกน้ำหนัก: ${error.message}`);
         }
     }
-
     function calculateSummaryTotalWeight() {
         const totalBags = parseFloat(ui.summaryTotalBags.textContent) || 0;
         const multiplier = parseFloat(ui.summaryMultiplierWeight.value) || 0;
         ui.summaryCalculatedWeight.textContent = (totalBags * multiplier).toFixed(2);
     }
-
     function updateWeighingSummary() {
         let totalBags = 0;
         for (const scaleId in dailyWeighingData) {
@@ -2032,7 +2113,6 @@
         ui.summaryTotalBags.textContent = totalBags;
         calculateSummaryTotalWeight();
     }
-
     async function deleteAllTodaysWeighings() {
         showConfirm(
             'คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลการวางยางทั้งหมดของวันนี้? <strong>การกระทำนี้ไม่สามารถย้อนกลับได้</strong>',
@@ -2054,7 +2134,6 @@
             }
         );
     }
-
     function setupWeighingListeners() {
         if (!weighingsCollectionRef) return;
         for (let i = 1; i <= 4; i++) {
@@ -2066,7 +2145,10 @@
                 const tableBody = document.getElementById(`weighing-table-body-${i}`);
                 if (!tableBody) return;
                 tableBody.innerHTML = '';
-                const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const docs = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
                 const todaysDocs = docs.filter(data => data.timestamp.toDate() >= todayStart);
                 dailyWeighingData[i] = todaysDocs;
                 updateWeighingSummary();
@@ -2095,7 +2177,6 @@
             });
         }
     }
-
     function populateSellerDatalist(scaleNumber) {
         if (!localWeighingData || !scaleNumber) {
             if (ui.sellerNameList) ui.sellerNameList.innerHTML = '';
@@ -2113,13 +2194,11 @@
                 getUTCDateKey(w.timestamp.toDate()) === mostRecentWeighingDate
             )
             .sort((a, b) => (a.dailyQueueNumber || 999) - (b.dailyQueueNumber || 999));
-        
         const sellersWithReceiptsToday = new Set(
             allTimeSalesStats
-                .filter(s => getUTCDateKey(s.date.toDate()) === mostRecentWeighingDate && s.scaleNumber == scaleNumber)
-                .map(s => s.seller)
+            .filter(s => getUTCDateKey(s.date.toDate()) === mostRecentWeighingDate && s.scaleNumber == scaleNumber)
+            .map(s => s.seller)
         );
-
         const datalist = ui.sellerNameList;
         if (datalist) {
             datalist.innerHTML = '';
@@ -2132,7 +2211,6 @@
             });
         }
     }
-
     async function handleWeighingTableClick(e) {
         const target = e.target.closest('button');
         if (!target) return;
@@ -2185,7 +2263,9 @@
                         return false;
                     }
                     try {
-                        await updateDoc(doc(weighingsCollectionRef, id), { dailyQueueNumber: newQueue });
+                        await updateDoc(doc(weighingsCollectionRef, id), {
+                            dailyQueueNumber: newQueue
+                        });
                         showAlert('แก้ไขลำดับสำเร็จ');
                         return true;
                     } catch (error) {
@@ -2200,27 +2280,52 @@
             }]);
         }
     }
-
-    const scaleColorPalette = [
-        { bg: 'bg-red-100', border: 'border-red-300', textH: 'text-red-800', textP: 'text-red-900', textS: 'text-red-700' },
-        { bg: 'bg-sky-100', border: 'border-sky-300', textH: 'text-sky-800', textP: 'text-sky-900', textS: 'text-sky-700' },
-        { bg: 'bg-green-100', border: 'border-green-300', textH: 'text-green-800', textP: 'text-green-900', textS: 'text-green-700' },
-        { bg: 'bg-yellow-100', border: 'border-yellow-300', textH: 'text-yellow-800', textP: 'text-yellow-900', textS: 'text-yellow-700' }
-    ];
-    const defaultScaleColor = { bg: 'bg-stone-100', border: 'border-stone-300', textH: 'text-stone-800', textP: 'text-stone-900', textS: 'text-stone-700' };
-
+    const scaleColorPalette = [{
+        bg: 'bg-red-100',
+        border: 'border-red-300',
+        textH: 'text-red-800',
+        textP: 'text-red-900',
+        textS: 'text-red-700'
+    }, {
+        bg: 'bg-sky-100',
+        border: 'border-sky-300',
+        textH: 'text-sky-800',
+        textP: 'text-sky-900',
+        textS: 'text-sky-700'
+    }, {
+        bg: 'bg-green-100',
+        border: 'border-green-300',
+        textH: 'text-green-800',
+        textP: 'text-green-900',
+        textS: 'text-green-700'
+    }, {
+        bg: 'bg-yellow-100',
+        border: 'border-yellow-300',
+        textH: 'text-yellow-800',
+        textP: 'text-yellow-900',
+        textS: 'text-yellow-700'
+    }];
+    const defaultScaleColor = {
+        bg: 'bg-stone-100',
+        border: 'border-stone-300',
+        textH: 'text-stone-800',
+        textP: 'text-stone-900',
+        textS: 'text-stone-700'
+    };
     function renderScaleSummaries(container, totalContainer, totalWeightEl, totalAmountEl, data) {
-        if(!container || !totalContainer || !totalWeightEl || !totalAmountEl) return;
-
+        if (!container || !totalContainer || !totalWeightEl || !totalAmountEl) return;
         const salesByScaleToday = data.reduce((acc, sale) => {
-                const scale = sale.scaleNumber || 'ไม่ระบุ';
-                if (!acc[scale]) acc[scale] = { totalWeight: 0, totalAmount: 0, count: 0 };
-                acc[scale].totalWeight += sale.weight;
-                acc[scale].totalAmount += sale.total;
-                acc[scale].count++;
+            const scale = sale.scaleNumber || 'ไม่ระบุ';
+            if (!acc[scale]) acc[scale] = {
+                totalWeight: 0,
+                totalAmount: 0,
+                count: 0
+            };
+            acc[scale].totalWeight += sale.weight;
+            acc[scale].totalAmount += sale.total;
+            acc[scale].count++;
             return acc;
         }, {});
-
         container.innerHTML = '';
         if (Object.keys(salesByScaleToday).length === 0) {
             container.innerHTML = '<div class="col-span-full text-center text-stone-500 py-4">ไม่มีข้อมูลการขายสำหรับวันนี้</div>';
@@ -2245,15 +2350,19 @@
             `;
             container.insertAdjacentHTML('beforeend', summaryHtml);
         });
-        totalWeightEl.textContent = totalWeightToday.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        totalAmountEl.textContent = totalAmountToday.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        totalWeightEl.textContent = totalWeightToday.toLocaleString('th-TH', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+        totalAmountEl.textContent = totalAmountToday.toLocaleString('th-TH', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
         totalContainer.classList.remove('hidden');
     }
-
     function filterAndRenderSalesTable() {
         const searchTerm = ui.searchBox.value.toLowerCase().trim();
         let dataToRender = localSalesData;
-
         if (searchTerm) {
             dataToRender = dataToRender.filter(sale =>
                 sale.seller.toLowerCase().includes(searchTerm) ||
@@ -2261,11 +2370,9 @@
                 sale.date.toDate().toLocaleDateString('th-TH').includes(searchTerm)
             );
         }
-        
         dataToRender.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
         renderTable(dataToRender);
     }
-
     function populateReportDateSelector() {
         const dateSet = new Set(allTimeSalesStats.map(sale => getUTCDateKey(sale.date.toDate())));
         const sortedDates = Array.from(dateSet).sort((a, b) => b.localeCompare(a));
@@ -2276,45 +2383,56 @@
             option.value = dateStr;
             const dateParts = dateStr.split('-');
             option.textContent = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2])).toLocaleDateString('th-TH', {
-                year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC'
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                timeZone: 'UTC'
             });
             ui.reportDateSelect.appendChild(option);
         });
         ui.reportDateSelect.value = currentValue;
     }
-
     function populateTruckSummaryDateSelector() {
         const dateSet = new Set(allTimeSalesStats.map(sale => getUTCDateKey(sale.date.toDate())));
         const sortedDates = Array.from(dateSet).sort((a, b) => b.localeCompare(a));
         const selector = ui.truckSummaryDate;
         const currentValue = selector.value;
-        selector.innerHTML = '';
+        selector.innerHTML = '<option value="">-- กรุณาเลือกวันที่ --</option>';
         if (sortedDates.length === 0) {
-            selector.innerHTML = '<option value="">ไม่มีข้อมูล</option>';
+            selector.disabled = true;
             return;
         }
+        selector.disabled = false;
         sortedDates.forEach(dateStr => {
             const option = document.createElement('option');
             option.value = dateStr;
             const dateParts = dateStr.split('-');
             option.textContent = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2])).toLocaleDateString('th-TH', {
-                year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC'
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                timeZone: 'UTC'
             });
             selector.appendChild(option);
         });
         if (currentValue && sortedDates.includes(currentValue)) {
             selector.value = currentValue;
-        } else if (sortedDates.length > 0) {
-            selector.value = sortedDates[0];
+        } else {
+            selector.value = "";
         }
     }
-
     async function backupData() {
         showAlert('กำลังเตรียมข้อมูลสำรอง...');
         try {
-            const backupObject = { sales: allTimeSalesStats, weighings: localWeighingData, truckLoads: localTruckLoads };
+            const backupObject = {
+                sales: allTimeSalesStats,
+                weighings: localWeighingData,
+                truckLoads: localTruckLoads
+            };
             const jsonString = JSON.stringify(backupObject, null, 2);
-            const blob = new Blob([jsonString], { type: 'application/json' });
+            const blob = new Blob([jsonString], {
+                type: 'application/json'
+            });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -2329,7 +2447,6 @@
             showAlert(`เกิดข้อผิดพลาดในการสำรองข้อมูล: ${error.message}`);
         }
     }
-
     async function restoreDataFromFile(file) {
         const reader = new FileReader();
         reader.onload = async (e) => {
@@ -2385,7 +2502,6 @@
         };
         reader.readAsText(file);
     }
-
     function confirmDeleteAllData() {
         showConfirm("คุณแน่ใจจริงๆ หรือว่าต้องการลบข้อมูลทั้งหมด? การกระทำนี้ไม่สามารถย้อนกลับได้!", () => {
             showConfirm("นี่คือการยืนยันครั้งสุดท้าย! ข้อมูลการขาย, การรับวางยาง และการบันทึกขึ้นรถทั้งหมดจะถูกลบถาวร กด 'ยืนยัน' เพื่อดำเนินการต่อ", async () => {
@@ -2413,11 +2529,16 @@
             });
         });
     }
-
     function _switchToSubTab(type, targetId) {
         const context = {
-            'weighing': { contents: document.querySelectorAll('.weighing-sub-content'), buttons: document.querySelectorAll('.weighing-sub-btn') },
-            'receipt': { contents: document.querySelectorAll('.receipt-sub-content'), buttons: document.querySelectorAll('.receipt-sub-btn') }
+            'weighing': {
+                contents: document.querySelectorAll('.weighing-sub-content'),
+                buttons: document.querySelectorAll('.weighing-sub-btn')
+            },
+            'receipt': {
+                contents: document.querySelectorAll('.receipt-sub-content'),
+                buttons: document.querySelectorAll('.receipt-sub-btn')
+            }
         }[type];
         if (!context) return;
         context.contents.forEach(content => content.classList.remove('active'));
@@ -2427,44 +2548,38 @@
         if (targetContent) targetContent.classList.add('active');
         if (targetBtn) targetBtn.classList.add('active');
         if (targetId === 'receipt-truck-summary') {
-            const dateSelector = ui.truckSummaryDate;
-            if (dateSelector.options.length > 0 && dateSelector.options[0].value) {
-                dateSelector.value = dateSelector.options[0].value;
-            }
             calculateTruckSummary();
         }
     }
-
     document.addEventListener('DOMContentLoaded', () => {
         const app = initializeApp(firebaseConfig);
         getAnalytics(app);
         auth = getAuth(app);
         db = getFirestore(app);
-
         for (let i = 1; i <= 4; i++) {
-            lockStates[i] = { price: false, type: false };
+            lockStates[i] = {
+                price: false,
+                type: false
+            };
         }
-
         ui.changePasswordBtn.style.display = 'none';
-
         ui.loginButton.addEventListener('click', handleLogin);
-        ui.passwordInput.addEventListener('keyup', (event) => { if (event.key === 'Enter') handleLogin(); });
+        ui.passwordInput.addEventListener('keyup', (event) => {
+            if (event.key === 'Enter') handleLogin();
+        });
         ui.logoutButton.addEventListener('click', handleLogout);
-
         renderWeighingStations();
-        
-        ui.tabs.addEventListener('click', (e) => { 
+        ui.tabs.addEventListener('click', (e) => {
             if (e.target.dataset.tab) {
                 const tabId = e.target.dataset.tab;
-                switchToTab(tabId); 
-                if(tabId === 'tab-dashboard') {
+                switchToTab(tabId);
+                if (tabId === 'tab-dashboard') {
                     fetchAllTimeStats();
                 } else if (tabId === 'tab-history') {
                     fetchSalesDataForDate(ui.reportDateSelect.value);
                 }
             }
         });
-
         ui.saveButton.addEventListener('click', handleSave);
         ui.cancelEditButton.addEventListener('click', clearForm);
         ui.priceLockBtn.addEventListener('click', togglePriceLock);
@@ -2475,12 +2590,10 @@
         if (ui.printDashboardBtn) ui.printDashboardBtn.addEventListener('click', () => window.print());
         ui.receiptDateInput.addEventListener('input', updateDateDisplay);
         [...document.querySelectorAll('.weight-input'), ui.pricePerKgInput].forEach(input => input.addEventListener('input', calculateTotals));
-        
         ui.reportDateSelect.addEventListener('change', () => {
             fetchSalesDataForDate(ui.reportDateSelect.value);
         });
         ui.searchBox.addEventListener('input', filterAndRenderSalesTable);
-
         ui.summaryMultiplierWeight.addEventListener('input', calculateSummaryTotalWeight);
         ui.deleteAllWeighingsBtn.addEventListener('click', deleteAllTodaysWeighings);
         ui.backupDataBtn.addEventListener('click', backupData);
@@ -2492,12 +2605,13 @@
         });
         ui.deleteAllDataBtn.addEventListener('click', confirmDeleteAllData);
         ui.truckSummaryDate.addEventListener('change', calculateTruckSummary);
-        ui.truckSummaryContainer.addEventListener('click', (e) => { if (e.target.closest('.save-load-btn')) handleSaveTruckLoad(e); });
+        ui.truckSummaryContainer.addEventListener('click', (e) => {
+            if (e.target.closest('.save-load-btn')) handleSaveTruckLoad(e);
+        });
         ui.truckLoadHistoryContainer.addEventListener('click', handleTruckLoadHistoryClick);
         ui.activityTruckLoadHistoryContainer.addEventListener('click', handleTruckLoadHistoryClick);
         ui.receiptDateInput.valueAsDate = new Date();
         updateDateDisplay();
-
         ui.receiptScaleSubTabs.addEventListener('click', (e) => {
             const targetBtn = e.target.closest('.receipt-scale-sub-btn');
             if (targetBtn) {
@@ -2512,12 +2626,10 @@
                 ui.sellerNameInput.focus();
             }
         });
-
         ui.sellerNameInput.addEventListener('input', (e) => {
             const selectedName = e.target.value;
             const scaleNumber = ui.selectedReceiptScale.value;
             if (!selectedName || !scaleNumber) return;
-
             const allWeighingDates = localWeighingData.map(w => getUTCDateKey(w.timestamp.toDate())).filter(Boolean);
             if (allWeighingDates.length === 0) return;
             const mostRecentWeighingDate = allWeighingDates.sort().pop();
@@ -2528,21 +2640,21 @@
             );
             if (weighingEntry) ui.receiptBagsCount.value = weighingEntry.bags;
         });
-
-        ui.weighingSubTabs.addEventListener('click', (e) => { if (e.target.dataset.subtab) _switchToSubTab('weighing', e.target.dataset.subtab); });
-        ui.receiptSubTabs.addEventListener('click', (e) => { if (e.target.dataset.subtab) _switchToSubTab('receipt', e.target.dataset.subtab); });
-
+        ui.weighingSubTabs.addEventListener('click', (e) => {
+            if (e.target.dataset.subtab) _switchToSubTab('weighing', e.target.dataset.subtab);
+        });
+        ui.receiptSubTabs.addEventListener('click', (e) => {
+            if (e.target.dataset.subtab) _switchToSubTab('receipt', e.target.dataset.subtab);
+        });
         _switchToSubTab('weighing', 'weighing-scale-1');
         _switchToSubTab('receipt', 'receipt-form');
         const firstReceiptScaleTab = ui.receiptScaleSubTabs.querySelector('.receipt-scale-sub-btn');
         if (firstReceiptScaleTab) firstReceiptScaleTab.click();
-
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 ui.loginScreen.classList.add('hidden');
                 ui.appContainer.classList.remove('hidden');
                 ui.usernameInput.value = '';
-
                 const userDocRef = doc(db, 'users', user.uid);
                 const userDocSnap = await getDoc(userDocRef);
                 let userRole = null;
